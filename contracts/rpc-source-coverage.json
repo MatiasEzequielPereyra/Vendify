@@ -1,0 +1,499 @@
+{
+  "baselineVersion": "2.31.1",
+  "rpcCount": 71,
+  "definitionsFound": 53,
+  "missingCount": 18,
+  "missing": [
+    "actualizar_rol_miembro_v2",
+    "actualizar_sucursal_v1",
+    "ajustar_stock_sucursal_v1",
+    "autorizar_descuento_v1",
+    "cambiar_estado_caja_v1",
+    "cambiar_estado_miembro_v3",
+    "configurar_pin_descuento_v1",
+    "crear_caja_v1",
+    "crear_sucursal_v1",
+    "diagnostico_integridad_v1",
+    "estado_pin_descuento_v1",
+    "listar_equipo_v3",
+    "listar_productos_sucursal_v1",
+    "listar_sucursales_admin_v1",
+    "obtener_negocio_admin_actual",
+    "obtener_perfil_empleado_actual",
+    "registrar_venta_v4",
+    "transferir_stock_v1"
+  ],
+  "rows": [
+    {
+      "rpc": "abrir_caja_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "actualizar_permiso_stock_miembro_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "actualizar_plan_negocio_plataforma_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "actualizar_rol_miembro_v2",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "actualizar_sucursal_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "ajustar_stock_inicial_rapido_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "ajustar_stock_inventario_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "ajustar_stock_sucursal_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "alertas_operativas_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "anular_compra_borrador_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "anular_venta_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/012_ventas_profesionales.sql"
+      ]
+    },
+    {
+      "rpc": "aplicar_conteo_fisico_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "autorizar_descuento_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "cambiar_estado_caja_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "cambiar_estado_miembro_v3",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "cerrar_caja_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql",
+        "supabase/legacy/modules/012_ventas_profesionales.sql"
+      ]
+    },
+    {
+      "rpc": "configurar_pin_descuento_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "confirmar_stock_por_scanner_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "crear_caja_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "crear_sucursal_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "dashboard_propietario_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "devolver_venta_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/012_ventas_profesionales.sql"
+      ]
+    },
+    {
+      "rpc": "diagnostico_integridad_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "eliminar_categoria_segura_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "eliminar_producto_seguro_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "eliminar_todos_productos_seguro_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "es_admin_plataforma_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "estado_onboarding_comercial_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "estado_pin_descuento_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "exportar_respaldo_operativo_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "guardar_categoria_segura_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "guardar_compra_borrador_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "guardar_config_operativa_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "guardar_producto_seguro_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "guardar_proveedor_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "importar_productos_masivo_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "importar_productos_seguro_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "inicializar_categorias_seguras_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "listar_cajas_sucursal_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "listar_categorias_seguras_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "listar_compras_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "listar_equipo_v3",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "listar_errores_plataforma_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "listar_historial_cajas_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "listar_movimientos_caja_abierta_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "listar_movimientos_inventario_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/inventario_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "listar_negocios_plataforma_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "listar_permisos_stock_equipo_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "listar_productos_sucursal_seguro_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "listar_productos_sucursal_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "listar_proveedores_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "listar_sucursales_admin_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "listar_sucursales_app",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/002_contexto_app_permisos.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_compra_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_config_operativa_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_contexto_app",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/002_contexto_app_permisos.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_contexto_sucursal",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/002_contexto_app_permisos.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_estado_caja_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql",
+        "supabase/legacy/modules/012_ventas_profesionales.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_negocio_admin_actual",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "obtener_perfil_empleado_actual",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "obtener_permisos_personalizados_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_plan_actual_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "obtener_stock_inteligente_sucursal",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/stock_inteligente.sql"
+      ]
+    },
+    {
+      "rpc": "platform_overview_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "recibir_compra_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql",
+        "supabase/legacy/modules/compras_proveedores.sql"
+      ]
+    },
+    {
+      "rpc": "registrar_error_cliente_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+      ]
+    },
+    {
+      "rpc": "registrar_movimiento_caja_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "registrar_venta_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql",
+        "supabase/legacy/modules/011_caja_profesional.sql"
+      ]
+    },
+    {
+      "rpc": "registrar_venta_v4",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "transferir_stock_v1",
+      "sourceFound": false,
+      "files": []
+    },
+    {
+      "rpc": "transferir_stock_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/legacy/modules/inventario_profesional.sql"
+      ]
+    }
+  ]
+}
