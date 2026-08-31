@@ -1,0 +1,2504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="description" content="Vendify: ventas, stock, caja y gestión comercial en tiempo real." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vendify" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <title>Vendify · Tu negocio, bajo control</title>
+  <link rel="stylesheet" href="styles.css?v=2311" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+  <!-- Vendify v2.31.1 — iconos internos consistentes -->
+  <svg class="vendify-icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="vi-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="vi-settings" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21h-4v-.08A1.7 1.7 0 0 0 8.97 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.52-1.03H3v-4h.08A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7l2.83-2.83.06.06a1.7 1.7 0 0 0 1.88.34A1.7 1.7 0 0 0 10 3.05V3h4v.05a1.7 1.7 0 0 0 1.03 1.52 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88A1.7 1.7 0 0 0 20.92 10H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"/></symbol>
+    <symbol id="vi-logout" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></symbol>
+    <symbol id="vi-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10"/><path d="M3 10 5 4h14l2 6"/><path d="M8 20v-6h8v6"/><path d="M3 10a3 3 0 0 0 5 2 3 3 0 0 0 4 0 3 3 0 0 0 4 0 3 3 0 0 0 5-2"/></symbol>
+    <symbol id="vi-register" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V4h7v3"/><path d="M7 12h4"/><circle cx="17" cy="14" r="2"/></symbol>
+    <symbol id="vi-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 10.2a2 2 0 0 0 2 1.5h7.8a2 2 0 0 0 2-1.6L21 7H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></symbol>
+    <symbol id="vi-plus-box" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
+    <symbol id="vi-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="vi-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="vi-inventory" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="m4 7 8 4 8-4v10l-8 4-8-4V7Z"/><path d="M12 11v10"/></symbol>
+    <symbol id="vi-purchases" viewBox="0 0 24 24"><path d="M6 7h15l-2 8H8L6 3H3"/><path d="M9 19h.01M18 19h.01"/></symbol>
+    <symbol id="vi-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2"/><path d="M16 14a5 5 0 0 1 5 5"/></symbol>
+    <symbol id="vi-diagnostic" viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 15h4l2-6 4 9 2-6h4"/><path d="M20 5v14"/></symbol>
+    <symbol id="vi-box" viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/></symbol>
+    <symbol id="vi-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+    <symbol id="vi-money" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9H6M18 15h-1"/></symbol>
+    <symbol id="vi-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="vi-refresh" viewBox="0 0 24 24"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18 9a7 7 0 0 0-12-2L4 11M6 15a7 7 0 0 0 12 2l2-4"/></symbol>
+    <symbol id="vi-wifi" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8 16a6 6 0 0 1 8 0"/><circle cx="12" cy="20" r="1"/></symbol>
+    <symbol id="vi-wifi-off" viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M8.5 8.5a10 10 0 0 1 10.5 4M5 12.5a10 10 0 0 1 1.5-1.2M9 16a6 6 0 0 1 6 0"/><circle cx="12" cy="20" r="1"/></symbol>
+    <symbol id="vi-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="vi-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="vi-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/><path d="M10 11v5M14 11v5"/></symbol>
+    <symbol id="vi-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="vi-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+    <symbol id="vi-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="vi-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+    <symbol id="vi-rocket" viewBox="0 0 24 24"><path d="M14 4c3-2 6-1 6-1s1 3-1 6l-7 7-4-4 6-8Z"/><path d="m9 15-4 1-2 5 5-2 1-4ZM15 9h.01"/></symbol>
+    <symbol id="vi-backup" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 10v5c0 1.7 3.6 3 8 3h1"/><path d="m16 18 2 2 4-5"/></symbol>
+    <symbol id="vi-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 20h16"/></symbol>
+    <symbol id="vi-download" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/></symbol>
+    <symbol id="vi-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/></symbol>
+    <symbol id="vi-trend-up" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="vi-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="vi-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="vi-crown" viewBox="0 0 24 24"><path d="m3 7 4 4 5-7 5 7 4-4-2 11H5L3 7Z"/><path d="M6 21h12"/></symbol>
+    <symbol id="vi-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></symbol>
+    <symbol id="vi-spark" viewBox="0 0 24 24"><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z"/></symbol>
+    <symbol id="vi-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="vi-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18"/><path d="M10.6 6.2A9.7 9.7 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.2 2.8"/><path d="M6.4 6.4C3.9 8.1 2.5 12 2.5 12s3.5 6 9.5 6a9.4 9.4 0 0 0 4-.9"/><path d="M10.2 10.2a2.5 2.5 0 0 0 3.6 3.6"/></symbol>
+    <symbol id="vi-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="vi-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="vi-scan" viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><path d="M7 12h10M9 9v6M12 9v6M15 9v6"/></symbol>
+    <symbol id="vi-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></symbol>
+    <symbol id="vi-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18h1.5a1.5 1.5 0 0 0 0-3H12a2 2 0 0 1 0-4h3a6 6 0 0 0 0-12h-3Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="9.5" cy="6.5" r=".8"/><circle cx="14" cy="6.5" r=".8"/></symbol>
+    <symbol id="vi-transfer" viewBox="0 0 24 24"><path d="M7 7h12l-3-3M17 17H5l3 3"/><path d="m19 7-3 3M5 17l3-3"/></symbol>
+    <symbol id="vi-count" viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/><path d="m17 17 2 2 3-4"/></symbol>
+  </svg>
+
+  <!-- Autenticación Vendify -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-card auth-card-v23">
+      <div class="onboarding-logo">V</div>
+      <h1>Vendify</h1>
+      <p class="onboarding-lead">Tu negocio, bajo control.</p>
+
+      <div class="auth-tabs" id="auth-tabs-wrap">
+        <button type="button" class="auth-tab active" id="tab-owner">Dueño / Admin</button>
+        <button type="button" class="auth-tab" id="tab-employee">Empleado</button>
+      </div>
+
+      <div id="auth-owner-panel">
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required placeholder="tu@email.com" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <div class="password-wrap">
+              <input type="password" id="login-password" required minlength="6" placeholder="Tu contraseña" autocomplete="current-password" />
+              <button type="button" class="password-toggle" data-toggle-password="login-password"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-eye"></use></svg></button>
+            </div>
+          </div>
+          <span class="field-error" id="login-error"></span>
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-login">Iniciar sesión</button>
+          <button type="button" class="auth-link-btn" id="btn-forgot">¿Olvidaste tu contraseña?</button>
+        </form>
+
+        <div class="auth-divider"><span>o</span></div>
+        <button type="button" class="btn btn-secondary btn-lg" id="btn-show-register">Crear mi negocio</button>
+      </div>
+
+      <div id="auth-employee-panel" class="hidden">
+        <form id="employee-login-form" class="auth-form">
+          <div class="form-group">
+            <label for="employee-business-code">Código del negocio</label>
+            <input type="text" id="employee-business-code" required maxlength="30" placeholder="Ej: CENTRAL01" autocomplete="organization" />
+          </div>
+          <div class="form-group">
+            <label for="employee-username">Usuario</label>
+            <input type="text" id="employee-username" required maxlength="30" placeholder="Ej: pedro" autocomplete="username" />
+          </div>
+          <div class="form-group">
+            <label for="employee-password">Contraseña</label>
+            <div class="password-wrap">
+              <input type="password" id="employee-password" required minlength="8" placeholder="Tu contraseña" autocomplete="current-password" />
+              <button type="button" class="password-toggle" data-toggle-password="employee-password"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-eye"></use></svg></button>
+            </div>
+          </div>
+          <span class="field-error" id="employee-login-error"></span>
+          <button type="submit" class="btn btn-primary btn-lg" id="btn-employee-login">Entrar a Vendify</button>
+        </form>
+      </div>
+
+      <form id="register-form" class="auth-form hidden">
+        <h2>Crear mi negocio</h2>
+        <div class="form-group">
+          <label for="register-business">Nombre del negocio</label>
+          <input type="text" id="register-business" required maxlength="80" placeholder="Ej: Kiosco Central" autocomplete="organization" />
+        </div>
+        <div class="form-group">
+          <label for="register-email">Email del propietario</label>
+          <input type="email" id="register-email" required placeholder="tu@email.com" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="register-password">Contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="register-password" required minlength="8" placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="register-password"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-eye"></use></svg></button>
+          </div>
+        </div>
+        <span class="field-error" id="register-error"></span>
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-register">Crear cuenta</button>
+        <button type="button" class="auth-link-btn" id="btn-back-login">Volver al login</button>
+      </form>
+
+      <form id="forgot-form" class="auth-form hidden">
+        <h2>Recuperar contraseña</h2>
+        <p class="hint" style="margin-bottom:.9rem;">Disponible para propietarios y administradores con email.</p>
+        <div class="form-group">
+          <label for="forgot-email">Email</label>
+          <input type="email" id="forgot-email" required placeholder="tu@email.com" autocomplete="email" />
+        </div>
+        <span class="field-error" id="forgot-error"></span>
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-forgot-send">Enviar recuperación</button>
+        <button type="button" class="auth-link-btn" id="btn-forgot-back">Volver</button>
+      </form>
+
+
+      <form id="new-password-form" class="auth-form hidden">
+        <h2>Nueva contraseña</h2>
+        <p class="hint" style="margin-bottom:.9rem;">Elegí una nueva contraseña para tu cuenta de propietario o administrador.</p>
+        <div class="form-group">
+          <label for="new-password">Nueva contraseña</label>
+          <div class="password-wrap">
+            <input type="password" id="new-password" required minlength="8" autocomplete="new-password" />
+            <button type="button" class="password-toggle" data-toggle-password="new-password"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-eye"></use></svg></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="new-password-confirm">Repetir contraseña</label>
+          <input type="password" id="new-password-confirm" required minlength="8" autocomplete="new-password" />
+        </div>
+        <span class="field-error" id="new-password-error"></span>
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-new-password">Guardar contraseña</button>
+      </form>
+
+      <div id="auth-message" class="auth-check-email hidden"></div>
+    </div>
+  </div>
+
+  <!-- Banner instalar PWA -->
+  <div id="install-banner" class="install-banner hidden">
+    <div class="install-banner-content">
+      <span>📱 Instalá Vendify en tu dispositivo</span>
+      <div class="install-banner-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-install">Instalar</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-install-dismiss">Ahora no</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding primera vez -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="onboarding-card">
+      <div class="onboarding-logo">V</div>
+      <h1>Vendify</h1>
+      <p class="onboarding-lead">Empezá a controlar ventas, stock y rendimiento de tu negocio.</p>
+      <ul class="onboarding-list">
+        <li>📦 Stock en tiempo real</li>
+        <li>💰 Precio de compra y venta</li>
+        <li>📷 Fotos desde la cámara</li>
+        <li>⚠️ Alertas de stock bajo</li>
+        <li>📱 Funciona en el celular como app</li>
+      </ul>
+      <button type="button" class="btn btn-primary btn-lg" id="btn-empezar">Empezar</button>
+      <button type="button" class="btn btn-secondary" id="btn-empezar-ejemplos">Empezar con productos de ejemplo</button>
+    </div>
+  </div>
+
+  <div class="app hidden">
+    <!-- Header -->
+    <header class="header header-vpro">
+      <div class="header-top-vpro">
+        <div class="header-left">
+          <div class="logo logo-vpro">
+            <span class="logo-icon logo-icon-vpro" aria-label="Vendify">V</span>
+            <div class="brand-copy-vpro">
+              <h1>Vendify</h1>
+              <p class="subtitle">Ventas, stock y caja. Todo bajo control.</p>
+            </div><span class="app-version-v23011" title="Versión de Vendify">v2.31.1</span>
+          </div>
+        </div>
+
+        <div class="user-menu-wrap user-menu-top-vpro">
+          <button id="btn-user-menu" class="user-menu-trigger" type="button" aria-expanded="false" aria-haspopup="menu">
+            <span class="user-avatar user-avatar-icon-v23012" id="user-avatar">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-user"></use></svg>
+            </span>
+            <span class="user-menu-copy">
+              <strong id="user-menu-name">Usuario</strong>
+              <small id="user-menu-role">Rol</small>
+            </span>
+            <svg class="vendify-icon vendify-chevron" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <div id="user-menu" class="user-menu hidden" role="menu">
+            <div class="user-menu-head">
+              <strong id="user-menu-name-popover">Usuario</strong>
+              <span id="sesion-email"></span>
+            </div>
+            <button type="button" class="user-menu-item" id="btn-user-settings">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-settings"></use></svg><span>Configuración</span>
+            </button>
+            <button type="button" class="user-menu-item hidden" id="btn-platform-admin-v231">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-server"></use></svg><span>Administración Vendify</span>
+            </button>
+            <button type="button" class="user-menu-item danger" id="btn-cerrar-sesion">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-logout"></use></svg><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions header-actions-vpro">
+        <div class="contexto-negocio" title="Usuario activo">
+          <strong id="context-usuario">Usuario</strong>
+          <span id="context-rol">Rol</span>
+        </div>
+
+        <div class="branch-switcher-v226 context-picker-v23013" title="Sucursal activa">
+          <button id="branch-trigger-v23013"
+                  class="context-picker-trigger-v23013"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false">
+            <span class="context-picker-icon-v23013">
+              <svg class="vendify-context-icon" aria-hidden="true"><use href="#vi-store"></use></svg>
+            </span>
+            <span class="context-picker-copy-v23013">
+              <small>Sucursal</small>
+              <strong id="branch-current-label-v23013">Cargando...</strong>
+            </span>
+            <svg class="vendify-icon context-picker-chevron-v23013" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <select id="branch-selector-v226"
+                  class="context-native-select-v23013"
+                  aria-hidden="true"
+                  tabindex="-1">
+            <option value="">Cargando...</option>
+          </select>
+
+          <div id="branch-menu-v23013"
+               class="context-picker-menu-v23013 hidden"
+               role="listbox"
+               aria-label="Cambiar sucursal">
+            <div class="context-picker-menu-head-v23013">
+              <span>Sucursal activa</span>
+              <small>Elegí dónde estás trabajando</small>
+            </div>
+            <div id="branch-options-v23013" class="context-picker-options-v23013"></div>
+          </div>
+        </div>
+
+        <div class="cash-switcher-v227 context-picker-v23013" title="Caja activa">
+          <button id="cash-trigger-v23013"
+                  class="context-picker-trigger-v23013"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false">
+            <span class="context-picker-icon-v23013">
+              <svg class="vendify-context-icon" aria-hidden="true"><use href="#vi-register"></use></svg>
+            </span>
+            <span class="context-picker-copy-v23013">
+              <small>Caja</small>
+              <strong id="cash-current-label-v23013">Cargando...</strong>
+            </span>
+            <svg class="vendify-icon context-picker-chevron-v23013" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <select id="cash-selector-v227"
+                  class="context-native-select-v23013"
+                  aria-hidden="true"
+                  tabindex="-1">
+            <option value="">Cargando...</option>
+          </select>
+
+          <div id="cash-menu-v23013"
+               class="context-picker-menu-v23013 hidden"
+               role="listbox"
+               aria-label="Cambiar caja">
+            <div class="context-picker-menu-head-v23013">
+              <span>Caja activa</span>
+              <small>Elegí la caja de este turno</small>
+            </div>
+            <div id="cash-options-v23013" class="context-picker-options-v23013"></div>
+          </div>
+        </div>
+
+        <button id="btn-caja-v227" class="btn btn-ghost cash-status-btn-v227" type="button" title="Abrir panel de caja">
+          <span id="cash-status-dot-v227" class="cash-status-dot-v227 closed"></span>
+          <span id="cash-status-label-v227">Caja cerrada</span>
+        </button>
+
+        <button id="connection-status-v23011"
+                class="connection-status-v23011 online"
+                type="button"
+                title="Estado de sincronización"
+                aria-label="Estado de sincronización">
+          <span class="connection-icon-v23011"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-wifi"></use></svg></span>
+          <span id="connection-label-v23011">Online</span>
+        </button>
+
+        <button id="btn-alertas-v231"
+                class="header-icon-action-v231 hidden"
+                type="button"
+                title="Alertas del negocio"
+                aria-label="Alertas del negocio">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-bell"></use></svg>
+          <span id="alertas-badge-v231" class="header-alert-badge-v231 hidden">0</span>
+        </button>
+
+
+        <button id="btn-vender" class="btn btn-primary btn-vender header-primary" title="Nueva venta (V)">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-cart"></use></svg><span>Vender</span>
+        </button>
+
+        <button id="btn-nuevo" class="btn btn-primary header-primary">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-plus-box"></use></svg><span>Producto</span>
+        </button>
+
+        <div class="gestion-menu-wrap-v230">
+          <button id="btn-gestion-v230"
+                  class="btn btn-secondary header-action gestion-trigger-v230"
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  title="Gestión del negocio">
+            <svg class="vendify-icon gestion-icon-v230" aria-hidden="true"><use href="#vi-grid"></use></svg>
+            <span class="header-action-label">Gestión</span>
+            <svg class="vendify-icon gestion-chevron-v230" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <div id="gestion-menu-v230" class="gestion-menu-v230 hidden" role="menu">
+            <div class="gestion-menu-section-v23012">Control</div>
+            <button id="btn-dashboard-v231" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-dashboard"></use></svg></span>
+              <span><strong>Dashboard</strong><small>Ventas, alertas y rendimiento</small></span>
+            </button>
+            <div class="gestion-menu-divider-v23012"></div>
+            <div class="gestion-menu-section-v23012">Operación</div>
+            <button id="btn-historial" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-history"></use></svg></span>
+              <span>
+                <strong>Historial</strong>
+                <small>Ventas y tickets</small>
+              </span>
+            </button>
+
+            <button id="btn-inventario" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-inventory"></use></svg></span>
+              <span>
+                <strong>Inventario</strong>
+                <small>Stock y movimientos</small>
+              </span>
+            </button>
+
+            <button id="btn-compras" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-purchases"></use></svg></span>
+              <span>
+                <strong>Compras</strong>
+                <small>Proveedores y mercadería</small>
+              </span>
+            </button>
+
+            <div class="gestion-menu-divider-v23012"></div>
+            <div class="gestion-menu-section-v23012">Administración</div>
+            <button id="btn-equipo" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-team"></use></svg></span>
+              <span>
+                <strong>Equipo</strong>
+                <small>Usuarios y permisos</small>
+              </span>
+            </button>
+
+            <button id="btn-diagnostico-v23011" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-diagnostic"></use></svg></span>
+              <span>
+                <strong>Diagnóstico</strong>
+                <small>Estado, sincronización e integridad</small>
+              </span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="offline-sync-banner-v2311"
+             class="offline-sync-banner-v2311 hidden"
+             role="status"
+             aria-live="polite">
+      <div class="offline-sync-copy-v2311">
+        <svg class="vendify-icon" aria-hidden="true"><use href="#vi-wifi-off"></use></svg>
+        <span id="offline-sync-text-v2311">Ventas pendientes de sincronizar</span>
+      </div>
+      <button type="button"
+              class="btn btn-secondary btn-sm"
+              id="btn-sync-offline-sales-v2311">
+        Sincronizar
+      </button>
+    </section>
+
+    <section id="commercial-onboarding-v231" class="commercial-onboarding-v231 hidden">
+      <div class="commercial-onboarding-head-v231">
+        <div class="commercial-onboarding-title-v231">
+          <span class="commercial-onboarding-icon-v231"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-rocket"></use></svg></span>
+          <div>
+            <span class="commercial-eyebrow-v231">Primeros pasos</span>
+            <h2>Dejá Vendify listo para trabajar</h2>
+            <p id="commercial-onboarding-subtitle-v231">Completá la configuración inicial de tu negocio.</p>
+          </div>
+        </div>
+        <button type="button" id="btn-hide-commercial-onboarding-v231" class="btn-icon" aria-label="Ocultar">✕</button>
+      </div>
+      <div class="commercial-progress-v231"><div id="commercial-progress-bar-v231" class="commercial-progress-bar-v231"></div></div>
+      <div id="commercial-progress-label-v231" class="commercial-progress-label-v231">0% completo</div>
+      <div id="commercial-onboarding-steps-v231" class="commercial-onboarding-steps-v231"></div>
+    </section>
+
+<!-- Stats -->
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-box"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Productos</span>
+          <span class="stat-value" id="stat-productos">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-chart"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Unidades</span>
+          <span class="stat-value" id="stat-stock">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-money"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Costo inventario</span>
+          <span class="stat-value" id="stat-costo">$0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-money"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Valor venta</span>
+          <span class="stat-value" id="stat-venta">$0</span>
+        </div>
+      </div>
+      <div class="stat-card warning clickable stock-smart-card" id="stat-bajo-card"
+           title="Calculado según la velocidad de venta de cada producto">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-alert"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Stock bajo</span>
+          <span class="stat-value" id="stat-bajo">0</span>
+          <small class="stat-helper">Según ritmo de venta</small>
+        </div>
+      </div>
+
+      <div class="stat-card danger clickable stock-zero-card" id="stat-sin-card"
+           title="Productos sin unidades disponibles">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-x"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Sin stock</span>
+          <span class="stat-value" id="stat-sin">0</span>
+          <small class="stat-helper">0 unidades</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chip de filtro activo -->
+    <div id="filtro-activo" class="filtro-activo hidden">
+      <span id="filtro-activo-texto">Mostrando solo stock bajo</span>
+      <button type="button" id="btn-limpiar-filtro" class="btn-chip">✕ Quitar filtro</button>
+    </div>
+
+    <!-- Controles -->
+    <section class="controls">
+      <div class="search-box">
+        <input
+          type="search"
+          id="buscador"
+          placeholder="Buscar producto o categoría...  ( / )"
+          autocomplete="off"
+        />
+        <kbd class="shortcut-hint">/</kbd>
+      </div>
+      <select id="filtro-categoria" class="select">
+        <option value="">Todas las categorías</option>
+      </select>
+      <select id="filtro-stock-v29" class="select">
+        <option value="">Todo el stock</option>
+        <option value="bajo">Stock bajo</option>
+        <option value="sin">Sin stock</option>
+      </select>
+      <select id="orden" class="select">
+        <option value="nombre-asc">Nombre A-Z</option>
+        <option value="nombre-desc">Nombre Z-A</option>
+        <option value="stock-asc">Stock ↑</option>
+        <option value="stock-desc">Stock ↓</option>
+        <option value="precioVenta-asc">Precio venta ↑</option>
+        <option value="precioVenta-desc">Precio venta ↓</option>
+      </select>
+      <button type="button" class="btn btn-secondary" id="btn-catalogo-v29">📚 Catálogo inicial</button>
+</section>
+
+    <!-- Productos compactos -->
+    <section class="grid-section">
+      <div class="productos-list-shell">
+<div id="productos-grid" class="productos-grid productos-lista-v29"></div>
+      </div>
+
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-illustration">📦</div>
+        <h3>No hay productos todavía</h3>
+        <p>Agregá tu primer producto o cargá los de ejemplo.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="btn-empty-nuevo">+ Agregar producto</button>
+          <button class="btn btn-secondary" id="btn-cargar-ejemplos">Cargar ejemplos de kiosco</button>
+        </div>
+      </div>
+
+      <div id="no-results" class="empty-state hidden">
+        <div class="empty-illustration">🔍</div>
+        <h3>Sin resultados</h3>
+        <p>No encontramos productos con ese filtro.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Atajos: <kbd>N</kbd> nuevo · <kbd>V</kbd> vender · <kbd>/</kbd> buscar · <kbd>T</kbd> tema · <kbd>Esc</kbd> cerrar</span>
+    </footer>
+  </div>
+
+  <!-- Modal Producto -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-product-v29">
+      <div class="modal-header">
+        <h2 id="modal-titulo">Nuevo producto</h2>
+          <p class="hint" id="producto-branch-hint-v226">Stock de sucursal</p>
+        <button class="btn-icon" id="btn-cerrar-modal" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-producto" novalidate>
+        <input type="hidden" id="producto-id" />
+        <!-- IDs legacy ocultos para compatibilidad de la versión anterior -->
+        <input type="file" id="foto-input" accept="image/*" class="hidden" />
+        <input type="file" id="foto-camara" accept="image/*" capture="environment" class="hidden" />
+        <div id="foto-preview" class="hidden"><span id="foto-placeholder"></span><img id="foto-img" class="hidden" alt="" /></div>
+        <button type="button" id="btn-quitar-foto" class="hidden"></button>
+
+        <div class="form-group barcode-field-v225">
+          <label for="codigo-barras">Código de barras</label>
+          <input type="text" id="codigo-barras" inputmode="numeric" maxlength="32"
+                 placeholder="Escaneá o ingresá el código" autocomplete="off" />
+
+          <div class="barcode-actions-v225">
+            <button type="button" class="btn btn-primary" id="btn-scan-producto">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-scan"></use></svg>
+              <span>Escanear</span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-buscar-barcode">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-search"></use></svg>
+              <span>Buscar datos</span>
+            </button>
+          </div>
+
+          <p class="hint barcode-status-v225" id="barcode-status-v29"></p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="marca">Marca</label>
+            <input type="text" id="marca" maxlength="60" placeholder="Ej: Coca-Cola" />
+          </div>
+          <div class="form-group">
+            <label for="presentacion">Presentación</label>
+            <input type="text" id="presentacion" maxlength="50" placeholder="Ej: 500 ml" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre del producto *</label>
+          <input type="text" id="nombre" required maxlength="100" placeholder="Ej: Coca-Cola Original 500 ml" autocomplete="off" />
+          <span class="field-error" id="error-nombre"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" class="select select-full"><option value="">Sin categoría</option></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group"><label for="precio-compra">Costo ($)</label><input type="number" id="precio-compra" min="0" step="0.01" placeholder="0" /></div>
+          <div class="form-group"><label for="precio-venta">Precio venta ($)</label><input type="number" id="precio-venta" min="0" step="0.01" placeholder="0" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="stock">Stock actual</label><input type="number" id="stock" min="0" step="1" value="0" /></div>
+          <div class="form-group stock-smart-form">
+            <label>Stock bajo inteligente</label>
+            <div class="stock-smart-form-value" id="stock-smart-form-value">
+              Se calculará según las ventas
+            </div>
+            <small class="hint" id="stock-smart-form-hint">
+              Vendify ajusta este valor automáticamente.
+            </small>
+            <input type="hidden" id="stock-minimo" value="0" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Configuración -->
+  <div id="modal-config" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="config-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content config-modal-v224">
+      <div class="modal-header config-modal-header">
+        <div>
+          <h2 id="config-title">Configuración</h2>
+          <p class="hint">Administrá Vendify y los datos de tu negocio.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-config" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="config-layout-v224">
+        <nav class="config-tabs-v224" aria-label="Secciones de configuración">
+          <button type="button" class="config-tab-v224 active" data-config-tab="general">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-settings"></use></svg><span>General</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="sucursales">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-store"></use></svg><span>Sucursales</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="catalogo">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-inventory"></use></svg><span>Catálogo</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="datos">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-database"></use></svg><span>Datos</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="operacion">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-shield"></use></svg><span>Operación</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="apariencia">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-palette"></use></svg><span>Apariencia</span>
+          </button>
+        </nav>
+
+        <div class="config-content-v224">
+          <!-- General -->
+          <section class="config-panel-v224 active" data-config-panel="general">
+            <div class="config-welcome-v225">
+              <div class="config-welcome-icon-v225">V</div>
+              <div>
+                <span class="config-eyebrow-v225">Panel de administración</span>
+                <h3 id="config-welcome-business">Tu negocio</h3>
+                <p>Gestioná catálogo, datos, equipo y apariencia desde un solo lugar.</p>
+              </div>
+            </div>
+
+            <div class="config-section-head-v224 config-section-head-spaced-v225">
+              <h3>Resumen</h3>
+              <p>Información del contexto activo.</p>
+            </div>
+
+            <div class="config-info-grid-v224">
+              <div class="config-info-card-v224">
+                <span>Negocio</span>
+                <strong id="config-negocio">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Sucursal</span>
+                <strong id="config-sucursal">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Usuario</span>
+                <strong id="config-usuario">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Rol</span>
+                <strong id="config-rol">—</strong>
+              </div>
+            </div>
+
+            <div class="config-quick-grid-v225">
+              <button type="button" class="config-quick-card-v225" data-config-go="sucursales">
+                <span class="config-quick-icon-v225">⌂</span>
+                <span><strong>Sucursales</strong><small>Locales, cajas y transferencias</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="catalogo">
+                <span class="config-quick-icon-v225">▦</span>
+                <span><strong>Catálogo</strong><small>Categorías y productos iniciales</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="datos">
+                <span class="config-quick-icon-v225">⇩</span>
+                <span><strong>Datos</strong><small>Exportación y administración</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="apariencia">
+                <span class="config-quick-icon-v225">◐</span>
+                <span><strong>Apariencia</strong><small>Tema y preferencias visuales</small></span>
+              </button>
+            </div>
+
+            <div class="settings-card-v224 plan-card-v231">
+              <div class="plan-card-main-v231">
+                <span class="plan-icon-v231"><svg class="vendify-icon"><use href="#vi-crown"></use></svg></span>
+                <div><span class="config-eyebrow-v225">Plan actual</span><h4 id="config-plan-name-v231">Cargando...</h4><p class="hint" id="config-plan-detail-v231">Consultando estado.</p></div>
+              </div>
+              <div id="config-plan-usage-v231" class="plan-usage-v231"></div>
+            </div>
+
+            <div class="config-callout-v224">
+              <div>
+                <strong>Equipo y accesos</strong>
+                <p>Usuarios, roles y contraseñas se administran desde Equipo.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-config-equipo">Abrir Equipo</button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224 discount-pin-config"
+                 id="config-discount-pin-card">
+              <div>
+                <div class="settings-title-row">
+                  <h4>PIN para autorizar descuentos</h4>
+                  <span class="security-badge">Seguridad</span>
+                </div>
+                <p class="hint">
+                  Tu PIN personal puede autorizar descuentos realizados por cualquier usuario del negocio.
+                </p>
+                <div class="pin-config-status" id="pin-config-status">
+                  Consultando estado...
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-secondary" id="btn-configurar-pin-descuento">
+                Configurar PIN
+              </button>
+            </div>
+          </section>
+
+
+          <!-- Sucursales -->
+          <section class="config-panel-v224 branch-config-panel-v227" data-config-panel="sucursales" hidden>
+            <div class="branch-panel-head-v227">
+              <div><h3>Sucursales</h3><p>Administrá locales, cajas y stock independiente por sucursal.</p></div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-nueva-sucursal-v226">＋ Nueva sucursal</button>
+            </div>
+            <div class="branch-panel-scroll-v227">
+              <div class="branch-info-v226"><span>El stock se administra por sucursal.</span><strong>La sucursal activa determina qué stock ves y qué stock descuenta una venta.</strong></div>
+              <div id="sucursales-list-v226" class="sucursales-list-v226"></div>
+            </div>
+            <div class="branch-panel-footer-v227">
+              <div><strong>Transferencias</strong><small>Mové mercadería entre locales sin alterar el stock total.</small></div>
+              <button type="button" class="btn btn-secondary" id="btn-transferir-stock-v226">⇄ Transferir stock</button>
+            </div>
+          </section>
+
+          <!-- Catálogo -->
+          <section class="config-panel-v224" data-config-panel="catalogo">
+            <div class="config-section-head-v224">
+              <h3>Catálogo</h3>
+              <p>Organizá categorías y prepará productos iniciales.</p>
+            </div>
+
+            <div class="settings-card-v224">
+              <h4>Categorías</h4>
+              <p class="hint">Creá categorías para mantener ordenado el inventario.</p>
+              <div class="config-add-row">
+                <input type="text" id="nueva-categoria" placeholder="Nueva categoría..." maxlength="40" autocomplete="off" />
+                <button type="button" class="btn btn-primary btn-sm" id="btn-add-categoria">Agregar</button>
+              </div>
+              <ul id="lista-categorias-config" class="lista-categorias-config"></ul>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Catálogo inicial</h4>
+                <p class="hint">Elegí productos sugeridos de kiosco, almacén o minimercado.</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-config-catalogo">Abrir catálogo</button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Datos de prueba</h4>
+                <p class="hint">Carga productos de ejemplo para probar funciones.</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-cargar-ejemplos-config">
+                Cargar ejemplos
+              </button>
+            </div>
+          </section>
+
+          <!-- Datos -->
+          <section class="config-panel-v224" data-config-panel="datos">
+            <div class="config-section-head-v224">
+              <h3>Datos</h3>
+              <p>Exportación y acciones administrativas del catálogo.</p>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Exportar inventario</h4>
+                <p class="hint">Descargá productos, precios y stock en formato CSV.</p>
+              </div>
+              <button id="btn-export" type="button" class="btn btn-secondary">
+                ⇩ Exportar CSV
+              </button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div><h4>Importar productos desde CSV</h4><p class="hint">Migrá un catálogo completo sin cargarlo uno por uno.</p></div>
+              <div class="settings-inline-actions-v231">
+                <button type="button" class="btn btn-secondary" id="btn-template-csv-v231"><svg class="vendify-icon"><use href="#vi-download"></use></svg><span>Plantilla</span></button>
+                <button type="button" class="btn btn-primary" id="btn-import-csv-v231"><svg class="vendify-icon"><use href="#vi-upload"></use></svg><span>Importar CSV</span></button>
+                <input type="file" id="input-import-csv-v231" accept=".csv,text/csv" class="hidden" />
+              </div>
+            </div>
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div><h4>Respaldo operativo JSON</h4><p class="hint">Catálogo, stock, proveedores, ventas, compras y configuración.</p></div>
+              <button type="button" class="btn btn-secondary" id="btn-backup-json-v231"><svg class="vendify-icon"><use href="#vi-backup"></use></svg><span>Descargar respaldo</span></button>
+            </div>
+
+            <div class="settings-danger-v224">
+              <div>
+                <h4>Zona de peligro</h4>
+                <p>Elimina todos los productos actuales del negocio. Las ventas históricas se conservan.</p>
+              </div>
+              <button type="button" class="btn btn-danger" id="btn-eliminar-todos-productos">
+                Eliminar todos los productos
+              </button>
+            </div>
+          </section>
+
+          <!-- Operación -->
+          <section class="config-panel-v224" data-config-panel="operacion">
+            <div class="config-section-head-v224"><h3>Operación y seguridad</h3><p>Alertas, impresión y criterios de control.</p></div>
+            <form id="form-operacion-v231">
+              <div class="settings-card-v224">
+                <h4>Alertas del propietario</h4>
+                <div class="form-row">
+                  <div class="form-group"><label for="config-stock-days-v231">Cobertura crítica (días)</label><input type="number" id="config-stock-days-v231" min="1" max="30" value="3" /></div>
+                  <div class="form-group"><label for="config-adjust-threshold-v231">Ajuste grande (unidades)</label><input type="number" id="config-adjust-threshold-v231" min="1" max="10000" value="10" /></div>
+                </div>
+                <div class="form-group"><label for="config-cash-diff-v231">Diferencia de caja a alertar ($)</label><input type="number" id="config-cash-diff-v231" min="0" step="100" value="10000" /></div>
+                <label class="permission-switch-v23014" for="config-daily-summary-v231">
+                  <span class="permission-switch-copy-v23014"><strong>Preparar resumen diario</strong><small>Deja un resumen listo para copiar.</small></span>
+                  <span class="switch-control-v23014"><input type="checkbox" id="config-daily-summary-v231" checked /><span class="switch-track-v23014"></span></span>
+                </label>
+              </div>
+              <div class="settings-card-v224">
+                <h4>Tickets e impresión</h4>
+                <div class="form-row">
+                  <div class="form-group"><label for="config-ticket-width-v231">Ancho de ticket</label><select id="config-ticket-width-v231"><option value="80">80 mm</option><option value="58">58 mm</option></select></div>
+                  <div class="form-group">
+                    <label>Impresión</label>
+                    <label class="permission-switch-v23014" for="config-auto-print-v231">
+                      <span class="permission-switch-copy-v23014"><strong>Abrir impresión al finalizar</strong><small>Depende de la política de popups del navegador.</small></span>
+                      <span class="switch-control-v23014"><input type="checkbox" id="config-auto-print-v231" /><span class="switch-track-v23014"></span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-actions config-inline-footer-v231"><button type="submit" class="btn btn-primary" id="btn-save-operacion-v231">Guardar configuración</button></div>
+            </form>
+          </section>
+
+          <!-- Apariencia -->
+          <section class="config-panel-v224" data-config-panel="apariencia">
+            <div class="config-section-head-v224">
+              <h3>Apariencia</h3>
+              <p>Personalizá cómo se ve Vendify en este dispositivo.</p>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Tema de la aplicación</h4>
+                <p class="hint">Alterná entre modo claro y oscuro.</p>
+              </div>
+              <button id="btn-theme" type="button" class="btn btn-secondary">
+                <span id="theme-icon">☀️</span>
+                Cambiar tema
+              </button>
+            </div>
+
+            <div class="settings-card-v224">
+              <h4>Vista de productos</h4>
+              <p class="hint">La preferencia Lista/Cuadrícula se guarda automáticamente en cada dispositivo.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="modal-actions config-footer-v224">
+        <button type="button" class="btn btn-primary" id="btn-cerrar-config-ok">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor de foto / recorte -->
+  <div id="modal-crop-foto" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-crop-content">
+      <div class="modal-header">
+        <div>
+          <h2>Recortar foto</h2>
+          <p class="hint">Mové la imagen y ajustá el zoom para dejar solo el producto.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-crop" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="crop-stage" id="crop-stage">
+          <canvas id="crop-canvas" width="800" height="800"></canvas>
+          <div class="crop-guide" aria-hidden="true"></div>
+        </div>
+
+        <div class="crop-controls">
+          <div class="crop-control-row">
+            <label for="crop-zoom">Zoom</label>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-crop-reset">Restablecer</button>
+          </div>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" />
+        </div>
+
+        <p class="hint crop-help">Arrastrá con un dedo. La imagen final se guardará cuadrada y optimizada.</p>
+      </div>
+
+      <div class="modal-actions crop-actions">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-crop">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aplicar-crop">Usar esta foto</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Scanner Pro -->
+  <div id="modal-scanner-v29" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scanner-v29 scanner-pro-modal">
+      <div class="modal-header scanner-pro-header">
+        <div>
+          <div class="scanner-pro-title-row">
+            <h2>Scanner Pro</h2>
+            <span id="scanner-engine-vpro" class="scanner-engine-vpro">Auto</span>
+          </div>
+          <p class="hint" id="scanner-mode-label-v29">Apuntá la cámara al código de barras.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-scanner-v29" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body scanner-pro-body">
+        <div class="scanner-video-wrap-v29 scanner-pro-video">
+          <video id="scanner-video-v29" playsinline muted autoplay></video>
+
+          <div class="scanner-focus-frame-vpro" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="scanner-line-v29"></div>
+
+          <div class="scanner-camera-badges-vpro">
+            <span id="scanner-focus-badge-vpro" class="scanner-camera-badge-vpro">AF</span>
+            <span id="scanner-resolution-badge-vpro" class="scanner-camera-badge-vpro">HD</span>
+          </div>
+        </div>
+
+        <div class="scanner-status-v29 scanner-status-pro" id="scanner-status-v29">
+          Preparando cámara...
+        </div>
+
+        <div id="scanner-hint-vpro" class="scanner-hint-vpro hidden"></div>
+
+        <div class="scanner-tools-vpro">
+          <button type="button" class="scanner-tool-vpro hidden" id="btn-scanner-torch-vpro" title="Linterna">
+            <span>🔦</span><small>Linterna</small>
+          </button>
+
+          <div class="scanner-zoom-vpro hidden" id="scanner-zoom-wrap-vpro">
+            <button type="button" id="btn-scanner-zoom-out-vpro" aria-label="Alejar">−</button>
+            <span id="scanner-zoom-value-vpro">1.0×</span>
+            <button type="button" id="btn-scanner-zoom-in-vpro" aria-label="Acercar">＋</button>
+          </div>
+
+          <button type="button" class="scanner-tool-vpro scanner-capture-vpro" id="btn-scanner-capture-vpro" title="Capturar un frame nítido y analizarlo">
+            <span>◉</span><small>Capturar</small>
+          </button>
+        </div>
+
+        <div class="scanner-adaptive-vpro">
+          <span class="scanner-adaptive-dot-vpro"></span>
+          <span id="scanner-adaptive-text-vpro">Optimizando para este dispositivo</span>
+        </div>
+
+        <div id="scanner-not-found-actions-v214" class="scanner-not-found-actions-v214 hidden">
+          <p id="scanner-not-found-text-v214" class="hint"></p>
+          <div class="scanner-not-found-buttons-v214">
+            <button type="button" class="btn btn-primary" id="btn-register-scanned-v214">
+              Registrar producto
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-register-scanned-v214">
+              Seguir escaneando
+            </button>
+          </div>
+        </div>
+
+        <div class="scanner-manual-v29">
+          <input type="text" id="scanner-manual-code-v29" inputmode="numeric" placeholder="O ingresá el código manualmente" />
+          <button type="button" class="btn btn-secondary" id="btn-use-manual-code-v29">Usar código</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catálogo inicial -->
+  <div id="modal-catalogo-v29" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-catalogo-v29">
+      <div class="modal-header">
+        <div><h2>📚 Catálogo inicial</h2><p class="hint">Elegí una base y dejá marcados solo los productos que vendés.</p></div>
+        <button class="btn-icon" id="btn-close-catalogo-v29" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="catalog-tabs-v29">
+          <button type="button" class="catalog-tab-v29 active" data-catalog="kiosco">Kiosco</button>
+          <button type="button" class="catalog-tab-v29" data-catalog="almacen">Almacén</button>
+          <button type="button" class="catalog-tab-v29" data-catalog="minimercado">Minimercado</button>
+        </div>
+        <div class="catalog-tools-v29">
+          <input type="search" id="catalog-search-v29" placeholder="Buscar marca, producto o presentación..." />
+          <button type="button" class="btn btn-ghost btn-sm" id="catalog-select-all-v29">Seleccionar visibles</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="catalog-clear-v29">Quitar visibles</button>
+        </div>
+        <div class="catalog-summary-v29"><strong id="catalog-selected-count-v29">0</strong> seleccionados</div>
+        <div id="catalog-list-v29" class="catalog-list-v29"></div>
+      </div>
+      <div class="modal-actions catalog-actions-v29">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-catalogo-v29">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-import-catalogo-v29">Importar seleccionados</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal Confirmación -->
+  <div id="modal-confirm" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm modal-confirm-content">
+      <div class="modal-header">
+        <h2 id="confirm-titulo">Confirmar</h2>
+        <button class="btn-icon" id="btn-cerrar-confirm" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-mensaje"></p>
+      </div>
+      <div class="modal-actions modal-confirm-actions">
+        <button type="button" class="btn btn-secondary" id="btn-confirm-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-ok">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajuste de stock -->
+  <div id="modal-stock" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Ajustar stock</h2>
+        <button class="btn-icon" id="btn-cerrar-stock" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="stock-producto-nombre" id="stock-nombre"></p>
+        <div class="stock-adjust">
+          <button type="button" class="btn-stock-big" data-delta="-10">−10</button>
+          <button type="button" class="btn-stock-big" data-delta="-5">−5</button>
+          <button type="button" class="btn-stock-big" data-delta="-1">−1</button>
+          <span class="stock-actual" id="stock-actual">0</span>
+          <button type="button" class="btn-stock-big" data-delta="1">+1</button>
+          <button type="button" class="btn-stock-big" data-delta="5">+5</button>
+          <button type="button" class="btn-stock-big" data-delta="10">+10</button>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="stock-manual">O ingresá un valor exacto</label>
+          <input type="number" id="stock-manual" min="0" step="1" />
+        </div>
+
+        <div class="inventory-adjust-meta">
+          <div class="form-group">
+            <label for="stock-motivo">Motivo *</label>
+            <select id="stock-motivo" class="select select-full">
+              <option value="correccion">Corrección de stock</option>
+              <option value="reposicion">Reposición / ingreso</option>
+              <option value="rotura">Rotura</option>
+              <option value="vencimiento">Vencimiento</option>
+              <option value="perdida">Pérdida / merma</option>
+              <option value="inventario">Conteo físico</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-nota">Observación</label>
+            <input id="stock-nota" maxlength="180"
+                   placeholder="Ej: 2 botellas rotas en depósito" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-stock-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-stock-ok">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Inventario profesional -->
+  <div id="modal-inventario" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content inventory-modal">
+      <div class="modal-header inventory-modal-header">
+        <div>
+          <div class="inventory-title-row">
+            <h2>Inventario</h2>
+            <span class="inventory-branch-badge" id="inventory-branch-badge">Sucursal</span>
+          </div>
+          <p class="hint">Movimientos, ajustes, conteo físico y transferencias con trazabilidad.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-inventory" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="inventory-layout">
+        <nav class="inventory-tabs" aria-label="Secciones de inventario">
+          <button type="button" class="inventory-tab active" data-inventory-tab="resumen">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-chart"></use></svg><span>Resumen</span>
+          </button>
+          <button type="button" class="inventory-tab" data-inventory-tab="movimientos">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-history"></use></svg><span>Movimientos</span>
+          </button>
+          <button type="button" class="inventory-tab" data-inventory-tab="ajuste">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg><span>Ajustar</span>
+          </button>
+          <button type="button" class="inventory-tab" data-inventory-tab="conteo">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-count"></use></svg><span>Conteo físico</span>
+          </button>
+          <button type="button" class="inventory-tab" data-inventory-tab="transferencias">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-transfer"></use></svg><span>Transferencias</span>
+          </button>
+        </nav>
+
+        <div class="inventory-content">
+          <!-- Resumen -->
+          <section class="inventory-panel active" data-inventory-panel="resumen">
+            <div class="inventory-hero">
+              <div>
+                <span class="inventory-eyebrow">Estado actual</span>
+                <h3 id="inventory-summary-title">Inventario de la sucursal</h3>
+                <p>Una vista rápida de disponibilidad y movimientos.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-inventory">
+                ↻ Actualizar
+              </button>
+            </div>
+
+            <div class="inventory-summary-grid">
+              <div class="inventory-summary-card">
+                <span>Productos</span>
+                <strong id="inventory-stat-products">0</strong>
+                <small>SKUs cargados</small>
+              </div>
+              <div class="inventory-summary-card">
+                <span>Unidades</span>
+                <strong id="inventory-stat-units">0</strong>
+                <small>Stock físico total</small>
+              </div>
+              <div class="inventory-summary-card warning">
+                <span>Stock bajo</span>
+                <strong id="inventory-stat-low">0</strong>
+                <small>Según velocidad de venta</small>
+              </div>
+              <div class="inventory-summary-card danger">
+                <span>Sin stock</span>
+                <strong id="inventory-stat-zero">0</strong>
+                <small>Requieren atención</small>
+              </div>
+            </div>
+
+            <div class="inventory-dashboard-grid">
+              <div class="inventory-card">
+                <div class="inventory-card-head">
+                  <div>
+                    <h4>Necesitan atención</h4>
+                    <p>Productos con menor cobertura estimada.</p>
+                  </div>
+                </div>
+                <div id="inventory-attention-list" class="inventory-attention-list"></div>
+              </div>
+
+              <div class="inventory-card" id="inventory-recent-card-v23014">
+                <div class="inventory-card-head">
+                  <div>
+                    <h4>Actividad reciente</h4>
+                    <p>Últimos movimientos de stock.</p>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm" data-inventory-go="movimientos">
+                    Ver todos
+                  </button>
+                </div>
+                <div id="inventory-recent-list" class="inventory-recent-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Movimientos -->
+          <section class="inventory-panel" data-inventory-panel="movimientos" hidden>
+            <div class="inventory-section-head">
+              <div>
+                <h3>Historial de movimientos</h3>
+                <p>Cada entrada y salida queda asociada a producto, usuario, sucursal y motivo.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-movements">
+                ↻ Actualizar
+              </button>
+            </div>
+
+            <div class="inventory-filters">
+              <input id="inventory-movement-search" placeholder="Buscar producto..." autocomplete="off" />
+              <select id="inventory-movement-type" class="select">
+                <option value="">Todos los movimientos</option>
+                <option value="venta">Ventas</option>
+                <option value="compra">Compras</option>
+                <option value="stock_inicial">Carga inicial</option>
+                <option value="ingreso">Ingresos</option>
+                <option value="ajuste">Correcciones</option>
+                <option value="rotura">Roturas</option>
+                <option value="vencimiento">Vencimientos</option>
+                <option value="perdida">Pérdidas / mermas</option>
+                <option value="inventario">Conteos físicos</option>
+                <option value="transferencia_salida">Transferencias salientes</option>
+                <option value="transferencia_entrada">Transferencias entrantes</option>
+              </select>
+            </div>
+
+            <div class="inventory-movement-table-wrap">
+              <div class="inventory-movement-table">
+                <div class="inventory-movement-header">
+                  <span>Producto</span>
+                  <span>Movimiento</span>
+                  <span>Variación</span>
+                  <span>Stock</span>
+                  <span>Usuario / fecha</span>
+                </div>
+                <div id="inventory-movement-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Ajuste -->
+          <section class="inventory-panel" data-inventory-panel="ajuste" hidden>
+            <div class="inventory-section-head">
+              <div>
+                <h3>Ajuste manual</h3>
+                <p>Registrá reposiciones, roturas, vencimientos, pérdidas o correcciones.</p>
+              </div>
+            </div>
+
+            <form id="inventory-adjust-form" class="inventory-form-card">
+              <div class="form-group">
+                <label for="inventory-adjust-product">Producto</label>
+                <select id="inventory-adjust-product" class="select select-full" required></select>
+                <small class="hint" id="inventory-adjust-current">Stock actual: —</small>
+              </div>
+
+              <div class="inventory-adjust-grid">
+                <div class="form-group">
+                  <label for="inventory-adjust-mode">Operación</label>
+                  <select id="inventory-adjust-mode" class="select select-full">
+                    <option value="sumar">Sumar unidades</option>
+                    <option value="restar">Restar unidades</option>
+                    <option value="establecer">Establecer stock exacto</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="inventory-adjust-amount">Cantidad</label>
+                  <input type="number" id="inventory-adjust-amount" min="0" step="1" value="1" required />
+                </div>
+              </div>
+
+              <div class="inventory-adjust-grid">
+                <div class="form-group">
+                  <label for="inventory-adjust-reason">Motivo</label>
+                  <select id="inventory-adjust-reason" class="select select-full" required>
+                    <option value="reposicion">Reposición / ingreso</option>
+                    <option value="correccion">Corrección de stock</option>
+                    <option value="rotura">Rotura</option>
+                    <option value="vencimiento">Vencimiento</option>
+                    <option value="perdida">Pérdida / merma</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="inventory-adjust-note">Observación</label>
+                  <input id="inventory-adjust-note" maxlength="180"
+                         placeholder="Detalle opcional" />
+                </div>
+              </div>
+
+              <div class="inventory-preview" id="inventory-adjust-preview">
+                Stock resultante: —
+              </div>
+
+              <span class="field-error" id="inventory-adjust-error"></span>
+
+              <div class="inventory-form-actions">
+                <button type="submit" class="btn btn-primary">Aplicar ajuste</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Conteo físico -->
+          <section class="inventory-panel" data-inventory-panel="conteo" hidden>
+            <div class="inventory-section-head">
+              <div>
+                <h3>Conteo físico</h3>
+                <p>Ingresá lo que realmente encontraste. Vendify registra y aplica las diferencias.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-count">
+                Limpiar conteo
+              </button>
+            </div>
+
+            <div class="inventory-count-toolbar">
+              <input id="inventory-count-search" placeholder="Buscar producto..." autocomplete="off" />
+              <div class="inventory-count-progress">
+                <span id="inventory-count-progress">0 contados</span>
+              </div>
+            </div>
+
+            <div id="inventory-count-list" class="inventory-count-list"></div>
+
+            <div class="inventory-count-footer">
+              <div class="form-group inventory-count-note">
+                <label for="inventory-count-note">Observación del conteo</label>
+                <input id="inventory-count-note" maxlength="200"
+                       placeholder="Ej: Conteo de cierre mensual" />
+              </div>
+
+              <button type="button" class="btn btn-primary" id="btn-apply-count">
+                Aplicar diferencias
+              </button>
+            </div>
+          </section>
+
+          <!-- Transferencias -->
+          <section class="inventory-panel" data-inventory-panel="transferencias" hidden>
+            <div class="inventory-section-head">
+              <div>
+                <h3>Transferir mercadería</h3>
+                <p>Mové stock entre sucursales y conservá la trazabilidad de origen y destino.</p>
+              </div>
+            </div>
+
+            <form id="inventory-transfer-form" class="inventory-form-card">
+              <div class="inventory-transfer-grid">
+                <div class="form-group">
+                  <label for="inventory-transfer-origin">Origen</label>
+                  <select id="inventory-transfer-origin" class="select select-full" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="inventory-transfer-destination">Destino</label>
+                  <select id="inventory-transfer-destination" class="select select-full" required></select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inventory-transfer-product">Producto</label>
+                <select id="inventory-transfer-product" class="select select-full" required></select>
+                <small class="hint" id="inventory-transfer-available">Disponible: —</small>
+              </div>
+
+              <div class="inventory-transfer-grid">
+                <div class="form-group">
+                  <label for="inventory-transfer-amount">Cantidad</label>
+                  <input type="number" id="inventory-transfer-amount" min="1" step="1" value="1" required />
+                </div>
+                <div class="form-group">
+                  <label for="inventory-transfer-note">Motivo / referencia</label>
+                  <input id="inventory-transfer-note" maxlength="180"
+                         placeholder="Ej: Reposición sucursal centro" />
+                </div>
+              </div>
+
+              <span class="field-error" id="inventory-transfer-error"></span>
+
+              <div class="inventory-form-actions">
+                <button type="submit" class="btn btn-primary">Transferir stock</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Compras y proveedores -->
+  <div id="modal-compras" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content compras-modal-v230">
+      <div class="modal-header compras-header-v230">
+        <div>
+          <div class="compras-title-row-v230">
+            <h2>Compras y proveedores</h2>
+            <span class="inventory-branch-badge" id="compras-branch-badge-v230">Sucursal</span>
+          </div>
+          <p class="hint">Ingresá mercadería, actualizá costos y conservá el historial de proveedores.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-compras" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="compras-layout-v230">
+        <nav class="compras-tabs-v230">
+          <button type="button" class="compras-tab-v230 active" data-compras-tab="compras">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-purchases"></use></svg><span>Compras</span>
+          </button>
+          <button type="button" class="compras-tab-v230" data-compras-tab="proveedores">
+            <span>◇</span><span>Proveedores</span>
+          </button>
+        </nav>
+
+        <div class="compras-content-v230">
+          <section class="compras-panel-v230 active" data-compras-panel="compras">
+            <div class="compras-hero-v230">
+              <div>
+                <span class="inventory-eyebrow">Abastecimiento</span>
+                <h3>Compras de mercadería</h3>
+                <p>Al recibir una compra, Vendify incrementa el stock y actualiza el costo automáticamente.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-nueva-compra">
+                ＋ Nueva compra
+              </button>
+            </div>
+
+            <div class="compras-stats-v230">
+              <div class="compras-stat-v230">
+                <span>Compras del mes</span>
+                <strong id="compras-stat-count">0</strong>
+                <small>Recibidas</small>
+              </div>
+              <div class="compras-stat-v230">
+                <span>Comprado este mes</span>
+                <strong id="compras-stat-total">$0</strong>
+                <small>Costo de mercadería</small>
+              </div>
+              <div class="compras-stat-v230">
+                <span>Proveedores</span>
+                <strong id="compras-stat-providers">0</strong>
+                <small>Activos</small>
+              </div>
+            </div>
+
+            <div class="compras-toolbar-v230">
+              <input id="compras-search" placeholder="Buscar proveedor o comprobante..." autocomplete="off" />
+              <select id="compras-filter-state" class="select">
+                <option value="">Todos los estados</option>
+                <option value="borrador">Borradores</option>
+                <option value="recibida">Recibidas</option>
+                <option value="anulada">Anuladas</option>
+              </select>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-compras"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+            </div>
+
+            <div id="compras-list-v230" class="compras-list-v230"></div>
+          </section>
+
+          <section class="compras-panel-v230" data-compras-panel="proveedores" hidden>
+            <div class="compras-hero-v230">
+              <div>
+                <span class="inventory-eyebrow">Directorio</span>
+                <h3>Proveedores</h3>
+                <p>Contactos, historial de compra y gasto acumulado por proveedor.</p>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-nuevo-proveedor">
+                ＋ Proveedor
+              </button>
+            </div>
+
+            <div class="compras-toolbar-v230 proveedores-toolbar-v230">
+              <input id="proveedores-search" placeholder="Buscar proveedor..." autocomplete="off" />
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-proveedores"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+            </div>
+
+            <div id="proveedores-list-v230" class="proveedores-grid-v230"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor de compra -->
+  <div id="modal-compra-editor" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content compra-editor-v230">
+      <div class="modal-header">
+        <div>
+          <h2 id="compra-editor-title">Nueva compra</h2>
+          <p class="hint" id="compra-editor-subtitle">Guardala como borrador o recibí la mercadería ahora.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-compra-editor" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="compra-editor-body-v230">
+        <div class="compra-meta-grid-v230">
+          <div class="form-group">
+            <label for="compra-proveedor">Proveedor</label>
+            <select id="compra-proveedor" class="select select-full" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="compra-sucursal">Sucursal de ingreso</label>
+            <select id="compra-sucursal" class="select select-full" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="compra-comprobante">Factura / remito</label>
+            <input id="compra-comprobante" maxlength="80" placeholder="Ej: A-0012-000458" />
+          </div>
+
+          <div class="form-group">
+            <label for="compra-nota">Observación</label>
+            <input id="compra-nota" maxlength="180" placeholder="Opcional" />
+          </div>
+        </div>
+
+        <div class="compra-add-item-v230" id="compra-add-item-box-v230">
+          <div class="form-group">
+            <label for="compra-item-producto">Producto</label>
+            <select id="compra-item-producto" class="select select-full"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="compra-item-cantidad">Cantidad</label>
+            <input id="compra-item-cantidad" type="number" min="1" step="1" value="1" />
+          </div>
+
+          <div class="form-group">
+            <label for="compra-item-costo">Costo unitario</label>
+            <input id="compra-item-costo" type="number" min="0" step="0.01" value="0" />
+          </div>
+
+          <button type="button" class="btn btn-secondary" id="btn-add-compra-item">
+            ＋ Agregar
+          </button>
+        </div>
+
+        <div class="compra-items-table-v230">
+          <div class="compra-items-head-v230">
+            <span>Producto</span>
+            <span>Cantidad</span>
+            <span>Costo</span>
+            <span>Subtotal</span>
+            <span></span>
+          </div>
+          <div id="compra-items-list-v230"></div>
+        </div>
+
+        <div class="compra-total-v230">
+          <span>Total compra</span>
+          <strong id="compra-total-value-v230">$0</strong>
+        </div>
+
+        <span class="field-error" id="compra-editor-error"></span>
+      </div>
+
+      <div class="compra-editor-actions-v230">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-compra-editor">Cancelar</button>
+        <button type="button" class="btn btn-secondary" id="btn-save-compra-draft">Guardar borrador</button>
+        <button type="button" class="btn btn-primary" id="btn-receive-compra">Recibir mercadería</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor proveedor -->
+  <div id="modal-proveedor-editor" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="proveedor-editor-title">Nuevo proveedor</h2>
+          <p class="hint">Datos comerciales y de contacto.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-proveedor-editor" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-proveedor-v230">
+        <input type="hidden" id="proveedor-id-v230" />
+
+        <div class="form-group">
+          <label for="proveedor-nombre-v230">Nombre *</label>
+          <input id="proveedor-nombre-v230" maxlength="100" required placeholder="Ej: Distribuidora Sur" />
+        </div>
+
+        <div class="compra-meta-grid-v230">
+          <div class="form-group">
+            <label for="proveedor-cuit-v230">CUIT</label>
+            <input id="proveedor-cuit-v230" maxlength="20" placeholder="Opcional" />
+          </div>
+          <div class="form-group">
+            <label for="proveedor-contacto-v230">Contacto</label>
+            <input id="proveedor-contacto-v230" maxlength="80" placeholder="Nombre del vendedor" />
+          </div>
+          <div class="form-group">
+            <label for="proveedor-telefono-v230">Teléfono</label>
+            <input id="proveedor-telefono-v230" maxlength="40" />
+          </div>
+          <div class="form-group">
+            <label for="proveedor-email-v230">Email</label>
+            <input id="proveedor-email-v230" type="email" maxlength="120" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="proveedor-direccion-v230">Dirección</label>
+          <input id="proveedor-direccion-v230" maxlength="160" />
+        </div>
+
+        <div class="form-group">
+          <label for="proveedor-notas-v230">Notas</label>
+          <textarea id="proveedor-notas-v230" rows="3" maxlength="400"></textarea>
+        </div>
+
+        <span class="field-error" id="proveedor-editor-error"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-proveedor-editor">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar proveedor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Equipo -->
+  <div id="modal-equipo" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-equipo-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="title-with-icon-v23011"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-team"></use></svg><span>Equipo</span></h2>
+          <p class="hint">Creá usuarios internos. Los empleados no necesitan email.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-equipo" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="business-code-card">
+          <div>
+            <span class="hint">Código del negocio</span>
+            <strong id="equipo-business-code">—</strong>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-copy-business-code">Copiar</button>
+        </div>
+
+        <section class="equipo-invitar-card">
+          <h3 class="config-section-title">Crear empleado</h3>
+          <form id="form-crear-empleado" class="equipo-create-form">
+            <div class="form-group">
+              <label for="equipo-nombre">Nombre</label>
+              <input type="text" id="equipo-nombre" required maxlength="60" placeholder="Ej: Pedro Gómez" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="equipo-username">Usuario</label>
+              <input type="text" id="equipo-username" required maxlength="30" placeholder="Ej: pedro" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="equipo-rol">Rol</label>
+              <select id="equipo-rol" class="select select-full">
+                <option value="cashier">Cajero</option>
+                <option value="manager">Encargado</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="form-group equipo-permission-field-v23014">
+              <label>Permisos operativos</label>
+              <label class="permission-switch-v23014" for="equipo-permiso-stock">
+                <span class="permission-switch-copy-v23014">
+                  <strong>Modificar stock manualmente</strong>
+                  <small>Permite sumar/restar unidades, ajustes con motivo y conteos físicos. No habilita costos, compras ni transferencias.</small>
+                </span>
+                <span class="switch-control-v23014">
+                  <input type="checkbox" id="equipo-permiso-stock" />
+                  <span class="switch-track-v23014" aria-hidden="true"></span>
+                </span>
+              </label>
+              <small class="hint" id="equipo-permiso-stock-hint">Solo el propietario puede cambiar este permiso.</small>
+            </div>
+            <div class="form-group">
+              <label for="equipo-password">Contraseña temporal</label>
+              <div class="password-wrap">
+                <input type="text" id="equipo-password" required minlength="8" placeholder="Mínimo 8 caracteres" autocomplete="off" />
+                <button type="button" class="password-toggle" id="btn-generar-password" title="Generar contraseña"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-crear-empleado">Crear empleado</button>
+            <span class="field-error" id="equipo-error"></span>
+          </form>
+        </section>
+
+        <div class="config-divider"></div>
+
+        <div class="equipo-list-header">
+          <div>
+            <h3 class="config-section-title">Personas</h3>
+            <p class="hint">Cada venta queda asociada al usuario que la realizó.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-refrescar-equipo"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg><span>Actualizar</span></button>
+        </div>
+
+        <div id="equipo-lista" class="equipo-lista"></div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- Modal editar empleado -->
+  <div id="modal-editar-empleado" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Editar empleado</h2>
+        <button class="btn-icon" id="btn-cerrar-editar-empleado" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-editar-empleado">
+        <input type="hidden" id="editar-membership-id" />
+        <div class="form-group">
+          <label for="editar-empleado-nombre">Nombre</label>
+          <input type="text" id="editar-empleado-nombre" required maxlength="60" />
+        </div>
+        <div class="form-group">
+          <label for="editar-empleado-username">Usuario</label>
+          <input type="text" id="editar-empleado-username" required maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label for="editar-empleado-rol">Rol</label>
+          <select id="editar-empleado-rol" class="select select-full">
+            <option value="cashier">Cajero</option>
+            <option value="manager">Encargado</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Permisos operativos</label>
+          <label class="permission-switch-v23014" for="editar-empleado-permiso-stock">
+            <span class="permission-switch-copy-v23014">
+              <strong>Modificar stock manualmente</strong>
+              <small>Sumar/restar, realizar ajustes auditados y aplicar conteos físicos.</small>
+            </span>
+            <span class="switch-control-v23014">
+              <input type="checkbox" id="editar-empleado-permiso-stock" />
+              <span class="switch-track-v23014" aria-hidden="true"></span>
+            </span>
+          </label>
+          <small class="hint" id="editar-stock-owner-hint">Solo el propietario puede cambiar este permiso.</small>
+        </div>
+        <span class="field-error" id="editar-empleado-error"></span>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-editar-empleado">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-editar-empleado">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal reiniciar contraseña -->
+  <div id="modal-reset-empleado" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Reiniciar contraseña</h2>
+        <button class="btn-icon" id="btn-cerrar-reset-empleado" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-reset-empleado">
+        <input type="hidden" id="reset-membership-id" />
+        <p class="hint" id="reset-empleado-info" style="margin-bottom:1rem;"></p>
+        <div class="form-group">
+          <label for="reset-empleado-password">Nueva contraseña</label>
+          <div class="password-wrap">
+            <input type="text" id="reset-empleado-password" required minlength="8" />
+            <button type="button" class="password-toggle" id="btn-generar-reset-password" title="Generar contraseña"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+          </div>
+        </div>
+        <span class="field-error" id="reset-empleado-error"></span>
+        <p class="hint">Esta será la nueva contraseña del empleado.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-reset-empleado">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Reiniciar contraseña</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  
+  <!-- Modal sucursal -->
+  <div id="modal-sucursal-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="sucursal-modal-title-v226">Nueva sucursal</h2>
+          <p class="hint">Cada sucursal tiene stock y cajas independientes.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-sucursal-v226" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-sucursal-v226">
+        <input type="hidden" id="sucursal-id-v226" />
+
+        <div class="form-group">
+          <label for="sucursal-nombre-v226">Nombre</label>
+          <input id="sucursal-nombre-v226" required maxlength="60" placeholder="Ej: Bernal Centro" />
+        </div>
+
+        <div class="form-group">
+          <label for="sucursal-direccion-v226">Dirección</label>
+          <input id="sucursal-direccion-v226" maxlength="120" placeholder="Opcional" />
+        </div>
+
+        <div class="form-group">
+          <label for="sucursal-telefono-v226">Teléfono</label>
+          <input id="sucursal-telefono-v226" maxlength="40" placeholder="Opcional" />
+        </div>
+
+        <label class="switch-row-v226" id="sucursal-activa-row-v226">
+          <span>
+            <strong>Sucursal activa</strong>
+            <small>Las sucursales inactivas no aparecen en el selector.</small>
+          </span>
+          <input type="checkbox" id="sucursal-activa-v226" checked />
+        </label>
+
+        <span class="field-error" id="sucursal-error-v226"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-sucursal-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-sucursal-v226">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal nueva caja -->
+  <div id="modal-caja-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>Nueva caja</h2>
+          <p class="hint" id="caja-sucursal-label-v226"></p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-caja-v226" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-caja-v226">
+        <input type="hidden" id="caja-sucursal-id-v226" />
+        <div class="form-group">
+          <label for="caja-nombre-v226">Nombre de la caja</label>
+          <input id="caja-nombre-v226" required maxlength="50" placeholder="Ej: Caja 2" />
+        </div>
+        <span class="field-error" id="caja-error-v226"></span>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-caja-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear caja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal transferencia stock -->
+  <div id="modal-transferencia-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>Transferir stock</h2>
+          <p class="hint">El total del negocio no cambia; solo cambia la ubicación del stock.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-transferencia-v226" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-transferencia-v226">
+        <div class="form-group">
+          <label for="transfer-origen-v226">Origen</label>
+          <select id="transfer-origen-v226" class="select select-full" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-destino-v226">Destino</label>
+          <select id="transfer-destino-v226" class="select select-full" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-producto-v226">Producto</label>
+          <select id="transfer-producto-v226" class="select select-full" required></select>
+          <small class="hint" id="transfer-stock-disponible-v226"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-cantidad-v226">Cantidad</label>
+          <input type="number" id="transfer-cantidad-v226" min="1" step="1" required />
+        </div>
+
+        <span class="field-error" id="transfer-error-v226"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-transferencia-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Transferir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  
+  <!-- Autorización de descuento -->
+  <div id="modal-discount-auth" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm discount-auth-modal">
+      <div class="modal-header">
+        <div>
+          <h2>Autorizar descuento</h2>
+          <p class="hint">Ingresá el PIN de un Propietario o Administrador.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-discount-auth" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-discount-auth">
+        <div class="discount-auth-summary">
+          <div>
+            <span>Subtotal</span>
+            <strong id="discount-auth-subtotal">$0</strong>
+          </div>
+          <div>
+            <span>Descuento solicitado</span>
+            <strong id="discount-auth-request">—</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="discount-admin-pin">PIN de autorización</label>
+          <input id="discount-admin-pin"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="one-time-code"
+                 placeholder="••••"
+                 required />
+        </div>
+
+        <span class="field-error" id="discount-auth-error"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-discount-auth">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-discount-auth">
+            Autorizar descuento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Configurar PIN personal -->
+  <div id="modal-config-discount-pin" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>PIN de descuentos</h2>
+          <p class="hint">
+            Solo Propietarios y Administradores pueden crear un PIN de autorización.
+          </p>
+        </div>
+        <button class="btn-icon" id="btn-close-config-pin" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-config-discount-pin">
+        <div class="security-note">
+          <strong>PIN personal</strong>
+          <span>No se guarda en texto plano y nunca se muestra después de configurarlo.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="config-discount-pin">Nuevo PIN</label>
+          <input id="config-discount-pin"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="new-password"
+                 placeholder="4 a 8 números"
+                 required />
+        </div>
+
+        <div class="form-group">
+          <label for="config-discount-pin-confirm">Repetir PIN</label>
+          <input id="config-discount-pin-confirm"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="new-password"
+                 placeholder="Repetí el PIN"
+                 required />
+        </div>
+
+        <span class="field-error" id="config-discount-pin-error"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-config-pin">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-save-config-pin">
+            Guardar PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+
+  <div id="modal-dashboard-v231" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content dashboard-modal-v231">
+      <div class="modal-header dashboard-header-v231">
+        <div>
+          <div class="title-with-icon-v23011">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-dashboard"></use></svg><h2>Dashboard</h2>
+          </div>
+          <p class="hint">Una vista rápida de lo que necesita atención en tu negocio.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-dashboard-v231" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="dashboard-toolbar-v231">
+        <div class="dashboard-range-v231">
+          <button type="button" class="dashboard-range-btn-v231" data-dashboard-days="1">Hoy</button>
+          <button type="button" class="dashboard-range-btn-v231 active" data-dashboard-days="7">7 días</button>
+          <button type="button" class="dashboard-range-btn-v231" data-dashboard-days="30">30 días</button>
+          <button type="button" class="dashboard-range-btn-v231" data-dashboard-days="90">90 días</button>
+        </div>
+        <div class="dashboard-toolbar-actions-v231">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-summary-v231">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-copy"></use></svg><span>Copiar resumen</span>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-dashboard-v231">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg><span>Actualizar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="dashboard-scroll-v231">
+        <section class="dashboard-kpis-v231">
+          <article class="dashboard-kpi-v231 primary"><span>Vendido neto</span><strong id="dash-sales-v231">$0</strong><small id="dash-sales-change-v231">—</small></article>
+          <article class="dashboard-kpi-v231"><span>Tickets</span><strong id="dash-tickets-v231">0</strong><small id="dash-average-v231">Ticket promedio $0</small></article>
+          <article class="dashboard-kpi-v231"><span>Margen estimado</span><strong id="dash-margin-v231">$0</strong><small>Según costo actual</small></article>
+          <article class="dashboard-kpi-v231 warning"><span>Alertas activas</span><strong id="dash-alerts-v231">0</strong><small id="dash-stock-alert-v231">Stock y operación</small></article>
+          <article class="dashboard-kpi-v231"><span>Devoluciones</span><strong id="dash-refunds-v231">$0</strong><small id="dash-refund-count-v231">0 operaciones</small></article>
+          <article class="dashboard-kpi-v231"><span>Cajas abiertas</span><strong id="dash-open-cash-v231">0</strong><small>En el negocio</small></article>
+        </section>
+
+        <section class="dashboard-main-grid-v231">
+          <article class="dashboard-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Evolución de ventas</h3><p>Venta neta por día.</p></div><svg class="vendify-icon"><use href="#vi-trend-up"></use></svg></div>
+            <div id="dashboard-sales-chart-v231" class="dashboard-bars-v231"></div>
+          </article>
+          <article class="dashboard-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Productos destacados</h3><p>Los que más unidades movieron.</p></div></div>
+            <div id="dashboard-top-products-v231" class="dashboard-list-v231"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-main-grid-v231">
+          <article class="dashboard-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Medios de pago</h3><p>Distribución de cobros.</p></div></div>
+            <div id="dashboard-payments-v231" class="dashboard-list-v231"></div>
+          </article>
+          <article class="dashboard-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Reposición sugerida</h3><p>Basada en ritmo reciente.</p></div><svg class="vendify-icon"><use href="#vi-spark"></use></svg></div>
+            <div id="dashboard-restock-v231" class="dashboard-list-v231"></div>
+          </article>
+        </section>
+
+        <section class="dashboard-main-grid-v231">
+          <article class="dashboard-panel-v231" id="dashboard-alerts-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Alertas</h3><p>Situaciones que conviene revisar.</p></div><svg class="vendify-icon"><use href="#vi-bell"></use></svg></div>
+            <div id="dashboard-alerts-list-v231" class="dashboard-list-v231"></div>
+          </article>
+          <article class="dashboard-panel-v231">
+            <div class="dashboard-panel-head-v231"><div><h3>Actividad reciente</h3><p>Ventas, compras y stock.</p></div></div>
+            <div id="dashboard-activity-v231" class="dashboard-list-v231"></div>
+          </article>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-platform-admin-v231" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content platform-modal-v231">
+      <div class="modal-header">
+        <div><div class="title-with-icon-v23011"><svg class="vendify-icon"><use href="#vi-server"></use></svg><h2>Administración Vendify</h2></div><p class="hint">Backoffice interno.</p></div>
+        <button class="btn-icon" id="btn-close-platform-v231" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="platform-body-v231">
+        <div class="platform-kpis-v231">
+          <div><span>Negocios</span><strong id="platform-businesses-v231">—</strong></div>
+          <div><span>Trials</span><strong id="platform-trials-v231">—</strong></div>
+          <div><span>Ventas hoy</span><strong id="platform-sales-v231">—</strong></div>
+          <div><span>Errores 24h</span><strong id="platform-errors-v231">—</strong></div>
+        </div>
+        <div class="dashboard-panel-v231">
+          <div class="dashboard-panel-head-v231">
+            <div><h3>Negocios recientes</h3><p>Plan, uso y administración manual mientras billing no está conectado.</p></div>
+          </div>
+          <div id="platform-business-list-v231" class="dashboard-list-v231 platform-business-list-v231"></div>
+        </div>
+
+        <div class="dashboard-panel-v231 platform-errors-panel-v231">
+          <div class="dashboard-panel-head-v231">
+            <div><h3>Errores recientes</h3><p>Errores del frontend reportados automáticamente, sin credenciales.</p></div>
+          </div>
+          <div id="platform-error-list-v231" class="dashboard-list-v231"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diagnóstico de estabilidad -->
+  <div id="modal-diagnostico-v23011" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content diagnostic-modal-v23011">
+      <div class="modal-header">
+        <div>
+          <h2 class="title-with-icon-v23011"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-diagnostic"></use></svg><span>Diagnóstico</span></h2>
+          <p class="hint">Estado de esta terminal y controles de integridad del negocio.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-diagnostic-v23011" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="diagnostic-body-v23011">
+        <div class="diagnostic-local-grid-v23011">
+          <div class="diagnostic-local-card-v23011">
+            <span>Conexión</span><strong id="diag-connection-v23011">—</strong>
+          </div>
+          <div class="diagnostic-local-card-v23011">
+            <span>Sucursal</span><strong id="diag-branch-v23011">—</strong>
+          </div>
+          <div class="diagnostic-local-card-v23011">
+            <span>Caja</span><strong id="diag-cash-v23011">—</strong>
+          </div>
+          <div class="diagnostic-local-card-v23011">
+            <span>Versión</span><strong>v2.31.1</strong>
+          </div>
+        </div>
+
+        <div class="diagnostic-actions-v23011">
+          <button type="button" class="btn btn-secondary" id="btn-sync-now-v23011">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg><span>Sincronizar ahora</span>
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-run-diagnostic-v23011">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-diagnostic"></use></svg><span>Ejecutar diagnóstico</span>
+          </button>
+        </div>
+
+        <div id="diagnostic-summary-v23011" class="diagnostic-summary-v23011">
+          Ejecutá el diagnóstico para revisar la integridad.
+        </div>
+
+        <div id="diagnostic-issues-v23011" class="diagnostic-issues-v23011"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Caja profesional -->
+  <div id="modal-caja-operativa-v227" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div><div class="modal-content cash-modal-v227">
+      <div class="modal-header"><div><h2>Caja</h2><p class="hint" id="cash-context-v227">Sucursal · Caja</p></div><button class="btn-icon" id="btn-cerrar-caja-panel-v227" aria-label="Cerrar">✕</button></div>
+      <div class="cash-modal-body-v227"><div id="cash-current-v227"></div><div class="cash-history-section-v227"><div class="cash-section-head-v227"><div><h3>Últimos cierres</h3><p>Historial de esta sucursal.</p></div></div><div id="cash-history-v227" class="cash-history-v227"></div></div></div>
+    </div>
+  </div>
+  <div id="modal-caja-movimiento-v227" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div><div class="modal-content modal-sm"><div class="modal-header"><div><h2 id="cash-movement-title-v227">Movimiento</h2><p class="hint">Registrá una entrada o salida manual de efectivo.</p></div><button class="btn-icon" id="btn-close-cash-movement-v227">✕</button></div>
+      <form id="form-cash-movement-v227"><input type="hidden" id="cash-movement-type-v227"/><div class="form-group"><label for="cash-movement-amount-v227">Monto</label><input type="number" id="cash-movement-amount-v227" min="0.01" step="0.01" required/></div><div class="form-group"><label for="cash-movement-reason-v227">Motivo</label><input id="cash-movement-reason-v227" maxlength="120" required placeholder="Ej: cambio, proveedor, retiro..."/></div><span class="field-error" id="cash-movement-error-v227"></span><div class="modal-actions"><button type="button" class="btn btn-secondary" id="btn-cancel-cash-movement-v227">Cancelar</button><button type="submit" class="btn btn-primary">Registrar</button></div></form>
+    </div>
+  </div>
+  <div id="modal-cash-close-v227" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div><div class="modal-content modal-sm"><div class="modal-header"><div><h2>Cerrar caja</h2><p class="hint">Contá el efectivo físico y Vendify calculará la diferencia.</p></div><button class="btn-icon" id="btn-close-cash-close-v227">✕</button></div>
+      <form id="form-cash-close-v227"><div class="cash-expected-v227"><span>Efectivo esperado</span><strong id="cash-close-expected-v227">$0</strong></div><div class="form-group"><label for="cash-close-declared-v227">Efectivo contado</label><input type="number" id="cash-close-declared-v227" min="0" step="0.01" required/></div><div class="cash-difference-preview-v227 neutral" id="cash-difference-preview-v227">Diferencia: $0</div><div class="form-group"><label for="cash-close-note-v227">Observación</label><textarea id="cash-close-note-v227" rows="3" maxlength="300" placeholder="Opcional"></textarea></div><span class="field-error" id="cash-close-error-v227"></span><div class="modal-actions"><button type="button" class="btn btn-secondary" id="btn-cancel-cash-close-v227">Cancelar</button><button type="submit" class="btn btn-primary">Cerrar caja</button></div></form>
+    </div>
+  </div>
+
+  <!-- Modal Historial de ventas (tickets) -->
+  <div id="modal-historial" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-historial-content">
+      <div class="modal-header">
+        <h2>Historial de ventas</h2>
+        <button class="btn-icon" id="btn-cerrar-historial" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="historial-filtros">
+          <select id="historial-rango" class="select">
+            <option value="hoy">Hoy</option>
+            <option value="ayer">Ayer</option>
+            <option value="7dias">Últimos 7 días</option>
+            <option value="mes">Este mes</option>
+            <option value="todo">Todo</option>
+          </select>
+        </div>
+        <div class="historial-resumen" id="historial-resumen"></div>
+        <div id="historial-lista" class="historial-lista"></div>
+        <div id="historial-vacio" class="empty-state hidden" style="padding: 2rem 1rem;">
+          <div class="empty-illustration">🧾</div>
+          <h3>No hay ventas en este período</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Ticket / reimpresión -->
+  <div id="modal-ticket-v228" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content ticket-modal-v228">
+      <div class="modal-header">
+        <div>
+          <h2>Ticket</h2>
+          <p class="hint">Vista previa del comprobante.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-ticket-v228" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="ticket-preview-v228" class="ticket-preview-v228"></div>
+      <div class="modal-actions ticket-actions-v228">
+        <button type="button" class="btn btn-secondary" id="btn-close-ticket-bottom-v228">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="btn-print-ticket-v228">🖨 Imprimir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Devolución / anulación -->
+  <div id="modal-return-v228" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content return-modal-v228">
+      <div class="modal-header">
+        <div>
+          <h2 id="return-title-v228">Devolver artículos</h2>
+          <p class="hint" id="return-subtitle-v228">El stock volverá a la sucursal original.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-return-v228" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-return-v228">
+        <div id="return-warning-v228" class="return-warning-v228 hidden"></div>
+
+        <div id="return-items-section-v228">
+          <div class="return-section-title-v228">
+            <strong>Artículos</strong>
+            <span>Elegí qué cantidad vuelve al stock.</span>
+          </div>
+          <div id="return-items-v228" class="return-items-v228"></div>
+        </div>
+
+        <div class="return-form-grid-v228">
+          <div class="form-group">
+            <label for="return-method-v228">Medio del reintegro</label>
+            <select id="return-method-v228" class="select select-full">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Débito">Débito</option>
+              <option value="Crédito">Crédito</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Mercado Pago">Mercado Pago</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="return-reason-v228">Motivo</label>
+            <input id="return-reason-v228" maxlength="200" required
+                   placeholder="Ej: producto defectuoso, error de cobro..." />
+          </div>
+        </div>
+
+        <div class="return-total-v228">
+          <span id="return-total-label-v228">Reintegro estimado</span>
+          <strong id="return-total-v228">$0</strong>
+        </div>
+
+        <span class="field-error" id="return-error-v228"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-return-v228">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-return-v228">Confirmar devolución</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Venta (POS) -->
+  <div id="modal-venta" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-venta-content">
+      <div class="modal-header">
+        <h2>🧾 Nueva venta</h2>
+        <button class="btn-icon" id="btn-cerrar-venta" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="offline-sale-banner-v2311" class="offline-sale-banner-v2311 hidden">
+        <svg class="vendify-icon" aria-hidden="true"><use href="#vi-wifi-off"></use></svg>
+        <div>
+          <strong>Modo sin conexión</strong>
+          <span id="offline-sale-message-v2311">
+            La venta quedará guardada y se sincronizará al volver internet.
+          </span>
+        </div>
+      </div>
+
+      <div class="venta-body">
+        <div class="venta-productos-col">
+          <div class="venta-search-v29">
+            <div class="search-box">
+              <input type="search" id="venta-buscador" placeholder="Buscar nombre o código..." autocomplete="off" />
+            </div>
+            <button type="button" class="btn btn-primary btn-scan-venta-v210" id="btn-scan-venta">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-scan"></use></svg>
+              <span>Escanear</span>
+            </button>
+          </div>
+          <div id="venta-productos-lista" class="venta-productos-lista"></div>
+        </div>
+
+        <div class="venta-carrito-col">
+          <div class="venta-carrito-header-v210">
+            <h3 class="config-section-title">Carrito</h3>
+            <span id="carrito-count-v210" class="carrito-count-v210">0 artículos</span>
+          </div>
+          <div id="carrito-items" class="carrito-items">
+            <p class="carrito-vacio" id="carrito-vacio">Tocá un producto para agregarlo</p>
+          </div>
+
+          <div class="sale-tools-v228">
+            <div class="sale-discount-v228 sale-discount-secure">
+              <div class="sale-field-title-v228">
+                <span>Descuento</span>
+                <small id="discount-auth-caption">Requiere autorización</small>
+              </div>
+
+              <div class="sale-discount-row-v228">
+                <select id="venta-descuento-tipo-v228" class="select">
+                  <option value="">Sin descuento</option>
+                  <option value="porcentaje">Porcentaje %</option>
+                  <option value="monto">Monto $</option>
+                </select>
+
+                <input type="number" id="venta-descuento-valor-v228"
+                       min="0" step="0.01" value="0" disabled
+                       aria-label="Valor del descuento" />
+
+                <button type="button"
+                        class="btn btn-secondary discount-authorize-btn"
+                        id="btn-autorizar-descuento"
+                        disabled>
+                  🔒 Autorizar
+                </button>
+              </div>
+
+              <div class="discount-auth-status pending" id="discount-auth-status">
+                <span class="discount-auth-dot"></span>
+                <span>Sin descuento aplicado</span>
+              </div>
+            </div>
+
+            <div class="sale-note-v228">
+              <label for="venta-observacion-v228">Observación</label>
+              <input id="venta-observacion-v228" maxlength="250"
+                     placeholder="Opcional · Ej: cliente habitual, pedido especial..." />
+            </div>
+          </div>
+
+          <div class="sale-payment-card-v228">
+            <div class="sale-payment-head-v228">
+              <div>
+                <strong>Forma de pago</strong>
+                <small>Elegí pago único o dividí el total.</small>
+              </div>
+              <div class="sale-payment-mode-v228">
+                <button type="button" class="active" data-pay-mode-v228="single">Único</button>
+                <button type="button" data-pay-mode-v228="mixed">Mixto</button>
+              </div>
+            </div>
+
+            <div id="single-payment-v228">
+              <select id="medio-pago" class="select select-full">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito">Crédito</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Mercado Pago">Mercado Pago</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+            <div id="mixed-payment-v228" class="hidden">
+              <div id="mixed-payment-rows-v228" class="mixed-payment-rows-v228"></div>
+              <div class="mixed-payment-footer-v228">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-add-payment-v228">
+                  ＋ Agregar medio
+                </button>
+                <span id="mixed-payment-remaining-v228">Restante $0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sale-totals-v228">
+            <div>
+              <span>Subtotal</span>
+              <strong id="venta-subtotal-v228">$0</strong>
+            </div>
+            <div id="venta-descuento-row-v228" class="hidden">
+              <span>Descuento</span>
+              <strong id="venta-descuento-total-v228">−$0</strong>
+            </div>
+            <div class="sale-grand-total-v228">
+              <span>Total</span>
+              <strong id="carrito-total">$0</strong>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-lg btn-cobrar" id="btn-cobrar" disabled>
+            Cobrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
+  <script src="app.js?v=2311"></script>
+</body>
+</html>
