@@ -95,8 +95,8 @@ async function registrarVentaOfflineIndexedDbV2312(
     userId: requiredScopeId(sesionActual?.user?.id, "el usuario"),
     items,
     payments: pagos,
-    subtotal: Number(totales.subtotal),
-    total: Number(totales.total),
+    subtotal: totales.subtotal,
+    total: totales.total,
     observation: observacion
   });
 
@@ -105,7 +105,7 @@ async function registrarVentaOfflineIndexedDbV2312(
   // or weaken the stock reservation kept in IndexedDB.
   try {
     aplicarVentaAlStockLocalV2311(items);
-    aplicarVentaCajaLocalV2311(pagos, Number(totales.total));
+    aplicarVentaCajaLocalV2311(pagos, totales.total);
   } catch (error) {
     console.error("[Vendify v2.31.2] local POS mirror update failed", error);
   }
@@ -174,8 +174,9 @@ async function runIndexedDbSync(
         } else if (summary.retryable > 0) {
           mostrarToast("La sincronización se reintentará automáticamente.", "warning");
         } else if (summary.synced > 0) {
+          const syncedCount = String(summary.synced);
           mostrarToast(
-            `${summary.synced} venta${summary.synced === 1 ? "" : "s"} offline sincronizada${summary.synced === 1 ? "" : "s"}.`,
+            `${syncedCount} venta${summary.synced === 1 ? "" : "s"} offline sincronizada${summary.synced === 1 ? "" : "s"}.`,
             "success"
           );
         }
