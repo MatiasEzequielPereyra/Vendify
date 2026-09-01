@@ -14,6 +14,7 @@
     "build:offline-v2312": "vite build --config vite.offline-v2312.config.ts",
     "build:staging:v2312": "node scripts/build-staging-v2312.mjs",
     "verify:staging:v2312": "node scripts/verify-staging-v2312.mjs",
+    "preview:staging:v2312": "node scripts/serve-staging-v2312.mjs",
     "test": "npm run build:ts && node --test tests/unit/*.test.mjs",
     "qa:static": "node scripts/qa-baseline.mjs",
     "qa:rpc": "node scripts/check-rpc-contract.mjs",
