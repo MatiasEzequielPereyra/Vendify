@@ -98,11 +98,28 @@ if (!anonMatch) {
   }
 }
 
+const baselineTag = "v2.31.1-production-baseline";
 const manifest = JSON.parse(readFileSync(resolve(root, "contracts/baseline-sha256.json"), "utf8"));
-for (const [file, expected] of Object.entries(manifest.files)) {
-  const actual = createHash("sha256").update(readFileSync(resolve(root, file))).digest("hex");
-  if (actual !== expected) fail(`baseline file changed without contract update: ${file}`);
+try {
+  execFileSync("git", ["rev-parse", "--verify", `${baselineTag}^{commit}`], {
+    cwd: root,
+    stdio: "pipe"
+  });
+
+  for (const [file, expected] of Object.entries(manifest.files)) {
+    const taggedContent = execFileSync("git", ["show", `${baselineTag}:${file}`], {
+      cwd: root,
+      stdio: "pipe"
+    });
+    const actual = createHash("sha256").update(taggedContent).digest("hex");
+    if (actual !== expected) fail(`frozen baseline tag hash mismatch: ${file}`);
+  }
+
+  if (!process.exitCode) pass(`baseline SHA-256 contract matches tag ${baselineTag}`);
+} catch (error) {
+  fail(
+    `cannot verify ${baselineTag}; fetch tags/full history before QA (${error instanceof Error ? error.message : String(error)})`
+  );
 }
-if (!process.exitCode) pass("baseline SHA-256 contract");
 
 if (process.exitCode) process.exit(process.exitCode);
