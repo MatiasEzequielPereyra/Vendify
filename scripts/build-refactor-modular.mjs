@@ -32,7 +32,7 @@ execFileSync(process.execPath, [resolve(root, "scripts/build-staging-v2312.mjs")
 });
 
 await build({ configFile: resolve(root, "vite.modular-core.config.ts") });
-if (!existsSync(coreFile)) throw new Error("Modular core bridge bundle was not generated");
+if (!existsSync(coreFile)) throw new Error("Modular runtime bridge bundle was not generated");
 
 rmSync(out, { recursive: true, force: true });
 cpSync(stagingOut, out, { recursive: true });
@@ -75,6 +75,27 @@ app = replaceExactlyOnce(
   "HTML escaping"
 );
 
+app = replaceExactlyOnce(
+  app,
+  /function normalizarLoginInterno\(valor\) \{[\s\S]*?^\}/gm,
+  `function normalizarLoginInterno(valor) {\n  return window.VendifyAuthV232.normalizeInternalLogin(valor);\n}`,
+  "employee login normalization"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /function emailInternoEmpleado\(codigoNegocio, username\) \{[\s\S]*?^\}/gm,
+  `function emailInternoEmpleado(codigoNegocio, username) {\n  return window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username);\n}`,
+  "employee internal email"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /const map = \{\s*"auth-login-panel": "owner",\s*"auth-register-panel": "register",\s*"auth-reset-panel": "forgot",\s*"auth-new-password-panel": "new-password",?\s*\};\s*const target = map\[panel\] \|\| panel;/g,
+  `const target = window.VendifyAuthV232.resolveAuthPanel(panel);`,
+  "auth panel target"
+);
+
 const coreContent = readFileSync(coreFile, "utf8");
 const coreName = `vendify-core-v232-${fingerprint(coreContent)}.js`;
 const appName = `app-refactor-v232-${fingerprint(app)}.js`;
@@ -96,5 +117,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core helpers are loaded from TypeScript before the compatibility app runtime.");
+console.log("Core and first Auth rules are loaded from TypeScript before the compatibility app runtime.");
 console.log("Root production files remain untouched.");
