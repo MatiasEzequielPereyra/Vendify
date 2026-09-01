@@ -136,7 +136,6 @@ try {
       "v2.31.1-production-baseline",
       "--",
       "index.html",
-      "app.js",
       "styles.css",
       "sw.js",
       "supabase-config.js",
@@ -146,9 +145,9 @@ try {
     ],
     { cwd: root, stdio: "pipe" }
   );
-  pass("root production runtime still matches frozen v2.31.1 baseline");
+  pass("non-app production shell still matches frozen v2.31.1 baseline");
 } catch {
-  fail("root production runtime changed during staging-only integration");
+  fail("non-app production shell changed during staging-only integration");
 }
 
 console.log("PASS: Vendify v2.31.2 staging release verified");

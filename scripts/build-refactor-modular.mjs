@@ -149,4 +149,4 @@ writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
 console.log("Core, Auth, and first Team services are loaded from TypeScript before the compatibility app runtime.");
-console.log("Root production files remain untouched.");
+console.log("The root app compatibility layer is compacted only after browser-validated migrations.");
