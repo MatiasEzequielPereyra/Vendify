@@ -39,7 +39,7 @@ const NETWORK_PHRASES = [
 
 function asErrorLike(error: unknown): ErrorLike {
   if (typeof error === "object" && error !== null) {
-    return error as ErrorLike;
+    return error;
   }
   return {};
 }
