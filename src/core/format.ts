@@ -5,12 +5,14 @@ const ARS_FORMATTER = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 2
 });
 
+export type LegacyScalar = string | number | boolean | null | undefined;
+
 export interface ProductDisplayNameInput {
-  readonly nombre?: unknown;
-  readonly presentacion?: unknown;
+  readonly nombre?: LegacyScalar;
+  readonly presentacion?: LegacyScalar;
 }
 
-function normalizeComparableText(value: unknown): string {
+function normalizeComparableText(value: LegacyScalar): string {
   return String(value ?? "")
     .toLowerCase()
     .replace(/\s+/g, " ")
@@ -18,7 +20,7 @@ function normalizeComparableText(value: unknown): string {
     .trim();
 }
 
-export function formatArs(value: unknown): string {
+export function formatArs(value: LegacyScalar): string {
   const normalized = value ? Number(value) : 0;
   return ARS_FORMATTER.format(normalized);
 }
