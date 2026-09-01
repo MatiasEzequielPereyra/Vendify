@@ -41,6 +41,13 @@ test("maps offline sale to registrar_venta_v4 contract", () => {
   });
 });
 
+test("preserves offline sale observation", () => {
+  assert.equal(
+    buildRegistrarVentaV4Args({ ...sale, observation: "Cliente retira mañana" }).p_observacion,
+    "Cliente retira mañana"
+  );
+});
+
 test("returns transport error without throwing when Supabase returns error", async () => {
   const client = {
     async rpc() {
