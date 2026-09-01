@@ -50,34 +50,6 @@ let app = readFileSync(oldAppPath, "utf8");
 
 app = replaceExactlyOnce(
   app,
-  /const \$ = \(sel\) => document\.querySelector\(sel\);\s*const \$\$ = \(sel\) => document\.querySelectorAll\(sel\);/g,
-  `const $ = (sel) => window.VendifyCoreV232.queryOne(sel);\nconst $$ = (sel) => window.VendifyCoreV232.queryAll(sel);`,
-  "DOM helpers"
-);
-
-app = replaceExactlyOnce(
-  app,
-  /function formatearPrecio\(valor\) \{[\s\S]*?^\}/gm,
-  `function formatearPrecio(valor) {\n  return window.VendifyCoreV232.formatArs(valor);\n}`,
-  "currency formatter"
-);
-
-app = replaceExactlyOnce(
-  app,
-  /function nombreCompletoProducto\(p\) \{[\s\S]*?^\}/gm,
-  `function nombreCompletoProducto(p) {\n  return window.VendifyCoreV232.productDisplayName(p);\n}`,
-  "product display name"
-);
-
-app = replaceExactlyOnce(
-  app,
-  /function escapeHtml\(texto\) \{[\s\S]*?^\}/gm,
-  `function escapeHtml(texto) {\n  return window.VendifyCoreV232.escapeHtml(texto);\n}`,
-  "HTML escaping"
-);
-
-app = replaceExactlyOnce(
-  app,
   /function normalizarLoginInterno\(valor\) \{[\s\S]*?^\}/gm,
   `function normalizarLoginInterno(valor) {\n  return window.VendifyAuthV232.normalizeInternalLogin(valor);\n}`,
   "employee login normalization"

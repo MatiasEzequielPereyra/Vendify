@@ -378,8 +378,10 @@ let confirmCallback = null;
 let filtroStockBajo = false;
 let carrito = []; // [{id, nombre, precioVenta, stock, cantidad}]
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
+// Compatibility aliases while the remaining legacy runtime is compacted.
+// The implementation now lives in src/core and is loaded before app.js.
+const $ = (sel) => window.VendifyCoreV232.queryOne(sel);
+const $$ = (sel) => window.VendifyCoreV232.queryAll(sel);
 
 // ============================================================
 // V2 — CONTEXTO SAAS / MULTIEMPRESA
@@ -2040,38 +2042,16 @@ function toggleTema() {
 // Utilidades
 // =====================
 function formatearPrecio(valor) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency", currency: "ARS",
-    minimumFractionDigits: 0, maximumFractionDigits: 2,
-  }).format(valor || 0);
+  return window.VendifyCoreV232.formatArs(valor);
 }
 
 
 function nombreCompletoProducto(p) {
-  const nombre = String(p?.nombre || "").trim();
-  const presentacion = String(p?.presentacion || "").trim();
-
-  if (!presentacion) return nombre;
-
-  const normalizar = (s) =>
-    String(s || "")
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .replace(",", ".")
-      .trim();
-
-  // Si el nombre ya contiene la presentación/gramaje, no la repetimos.
-  if (normalizar(nombre).includes(normalizar(presentacion))) {
-    return nombre;
-  }
-
-  return `${nombre} ${presentacion}`.trim();
+  return window.VendifyCoreV232.productDisplayName(p);
 }
 
 function escapeHtml(texto) {
-  const div = document.createElement("div");
-  div.textContent = texto ?? "";
-  return div.innerHTML;
+  return window.VendifyCoreV232.escapeHtml(texto);
 }
 
 function mostrarToast(mensaje, tipo = "success") {

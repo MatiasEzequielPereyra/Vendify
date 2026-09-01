@@ -2,7 +2,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-const root = resolve(import.meta.dirname, "..", "dist-refactor-modular");
+const projectRoot = resolve(import.meta.dirname, "..");
+const root = resolve(projectRoot, "dist-refactor-modular");
 const fail = (message) => {
   console.error(`FAIL: ${message}`);
   process.exit(1);
@@ -31,6 +32,11 @@ const corePath = resolve(root, core[0]);
 const appPath = resolve(root, app[0]);
 const coreSource = readFileSync(corePath, "utf8");
 const appSource = readFileSync(appPath, "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const buildSource = readFileSync(
+  resolve(projectRoot, "scripts/build-refactor-modular.mjs"),
+  "utf8"
+);
 
 try {
   execFileSync(process.execPath, ["--check", appPath], { stdio: "pipe" });
@@ -55,6 +61,30 @@ for (const marker of [
   if (!appSource.includes(marker)) fail(`compatibility app missing modular delegation ${marker}`);
 }
 pass("legacy runtime delegates extracted helpers to modular core");
+
+for (const obsoleteCoreImplementation of [
+  "const $ = (sel) => document.querySelector(sel);",
+  "const $$ = (sel) => document.querySelectorAll(sel);",
+  'style: "currency", currency: "ARS"',
+  'const div = document.createElement("div");'
+]) {
+  if (sourceApp.includes(obsoleteCoreImplementation)) {
+    fail(`root app.js still contains migrated Core implementation ${obsoleteCoreImplementation}`);
+  }
+}
+pass("root app.js no longer duplicates migrated Core implementations");
+
+for (const obsoleteBuildPatch of [
+  '"DOM helpers"',
+  '"currency formatter"',
+  '"product display name"',
+  '"HTML escaping"'
+]) {
+  if (buildSource.includes(obsoleteBuildPatch)) {
+    fail(`build still patches compacted Core block ${obsoleteBuildPatch}`);
+  }
+}
+pass("modular build no longer regex-patches compacted Core helpers");
 
 const singleDollarDeclarations = [...appSource.matchAll(/^const \$ =/gm)].length;
 const doubleDollarDeclarations = [...appSource.matchAll(/^const \$\$ =/gm)].length;
