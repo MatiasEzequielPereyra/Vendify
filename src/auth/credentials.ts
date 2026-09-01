@@ -1,14 +1,13 @@
 export const EMPLOYEE_DOMAIN = "employees.vendify.internal";
 
-export type AuthPanelTarget =
+export type KnownAuthPanelTarget =
   | "owner"
   | "employee"
   | "register"
   | "forgot"
-  | "new-password"
-  | string;
+  | "new-password";
 
-const AUTH_PANEL_ALIASES: Readonly<Record<string, AuthPanelTarget>> = Object.freeze({
+const AUTH_PANEL_ALIASES: Readonly<Record<string, KnownAuthPanelTarget>> = Object.freeze({
   "auth-login-panel": "owner",
   "auth-register-panel": "register",
   "auth-reset-panel": "forgot",
@@ -31,7 +30,7 @@ export function buildEmployeeInternalEmail(
   return `${code}.${user}@${EMPLOYEE_DOMAIN}`;
 }
 
-export function resolveAuthPanel(panel: string): AuthPanelTarget {
+export function resolveAuthPanel(panel: string): string {
   return AUTH_PANEL_ALIASES[panel] ?? panel;
 }
 
