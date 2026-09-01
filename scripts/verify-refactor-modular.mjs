@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -26,8 +27,18 @@ if (corePosition < 0 || appPosition < 0 || corePosition >= appPosition) {
 }
 pass("modular core loads before compatibility app");
 
-const coreSource = readFileSync(resolve(root, core[0]), "utf8");
-const appSource = readFileSync(resolve(root, app[0]), "utf8");
+const corePath = resolve(root, core[0]);
+const appPath = resolve(root, app[0]);
+const coreSource = readFileSync(corePath, "utf8");
+const appSource = readFileSync(appPath, "utf8");
+
+try {
+  execFileSync(process.execPath, ["--check", appPath], { stdio: "pipe" });
+} catch (error) {
+  const stderr = error?.stderr?.toString?.() || String(error);
+  fail(`generated compatibility app has invalid JavaScript syntax: ${stderr}`);
+}
+pass("generated compatibility app parses without redeclarations");
 
 for (const marker of ["VendifyCoreV232", "formatArs", "productDisplayName", "escapeHtml", "queryOne", "queryAll"]) {
   if (!coreSource.includes(marker)) fail(`core bundle missing ${marker}`);
@@ -35,8 +46,8 @@ for (const marker of ["VendifyCoreV232", "formatArs", "productDisplayName", "esc
 pass("core bundle exposes extracted helpers");
 
 for (const marker of [
-  "window.VendifyCoreV232.queryOne(sel)",
-  "window.VendifyCoreV232.queryAll(sel)",
+  "const $ = (sel) => window.VendifyCoreV232.queryOne(sel);",
+  "const $$ = (sel) => window.VendifyCoreV232.queryAll(sel);",
   "window.VendifyCoreV232.formatArs(valor)",
   "window.VendifyCoreV232.productDisplayName(p)",
   "window.VendifyCoreV232.escapeHtml(texto)"
@@ -44,6 +55,15 @@ for (const marker of [
   if (!appSource.includes(marker)) fail(`compatibility app missing modular delegation ${marker}`);
 }
 pass("legacy runtime delegates extracted helpers to modular core");
+
+const singleDollarDeclarations = [...appSource.matchAll(/^const \$ =/gm)].length;
+const doubleDollarDeclarations = [...appSource.matchAll(/^const \$\$ =/gm)].length;
+if (singleDollarDeclarations !== 1 || doubleDollarDeclarations !== 1) {
+  fail(
+    `expected exactly one $ and one $$ declaration, found $=${singleDollarDeclarations}, $$=${doubleDollarDeclarations}`
+  );
+}
+pass("DOM helper declarations are collision-free");
 
 if (!files.some((file) => /^vendify-offline-v2312-[0-9a-f]{12}\.js$/.test(file))) {
   fail("offline v2.31.2 runtime missing from refactor preview");
