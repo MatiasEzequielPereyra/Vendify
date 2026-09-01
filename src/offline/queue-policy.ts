@@ -61,6 +61,17 @@ function assertValidItem(item: OfflineSaleItem): void {
   assertFiniteMoney(item.unitPrice, `unitPrice:${item.productId}`);
 }
 
+function assertOfflinePaymentMethod(
+  method: unknown
+): asserts method is "Efectivo" | "Transferencia" {
+  if (method !== "Efectivo" && method !== "Transferencia") {
+    const printable = typeof method === "string" ? method : JSON.stringify(method);
+    throw new OfflineSaleValidationError(
+      `Unsupported offline payment method: ${printable ?? "unknown"}`
+    );
+  }
+}
+
 export function validateOfflineSale(sale: OfflineSale): void {
   if (!sale.requestId) {
     throw new OfflineSaleValidationError("Offline sale requires requestId");
@@ -80,10 +91,8 @@ export function validateOfflineSale(sale: OfflineSale): void {
 
   sale.items.forEach(assertValidItem);
   sale.payments.forEach((payment) => {
-    const method = String(payment.method);
-    if (method !== "Efectivo" && method !== "Transferencia") {
-      throw new OfflineSaleValidationError(`Unsupported offline payment method: ${method}`);
-    }
+    const method: unknown = payment.method;
+    assertOfflinePaymentMethod(method);
     assertFiniteMoney(payment.amount, `payment:${method}`);
   });
 
