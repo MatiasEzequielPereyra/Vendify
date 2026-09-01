@@ -99,7 +99,7 @@ export async function updateStockPermission(
     "actualizar_permiso_stock_miembro_v1",
     {
       p_membership_id: membershipId,
-      p_permitir: allow === true
+      p_permitir: allow
     }
   );
 
@@ -138,7 +138,7 @@ export async function setMemberActive(
 ): Promise<TeamActionResult> {
   const { data, error } = await authenticatedClient.rpc("cambiar_estado_miembro_v3", {
     p_membership_id: membershipId,
-    p_activo: active === true
+    p_activo: active
   });
 
   return error
