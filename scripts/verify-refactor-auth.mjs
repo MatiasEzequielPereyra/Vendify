@@ -15,7 +15,12 @@ for (const marker of [
   "VendifyAuthV232",
   "normalizeInternalLogin",
   "buildEmployeeInternalEmail",
-  "resolveAuthPanel"
+  "resolveAuthPanel",
+  "validateRegistrationInput",
+  "validateNewPasswordInput",
+  "getAuthPanelState",
+  "showAuthPanel",
+  "showAuthMessage"
 ]) {
   if (!runtime.includes(marker)) throw new Error(`Modular runtime missing Auth marker: ${marker}`);
 }
@@ -23,9 +28,22 @@ for (const marker of [
 for (const marker of [
   "window.VendifyAuthV232.normalizeInternalLogin(valor)",
   "window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username)",
-  "window.VendifyAuthV232.resolveAuthPanel(panel)"
+  "window.VendifyAuthV232.showAuthPanel(panel)",
+  "window.VendifyAuthV232.showAuthMessage(mensaje, tipo)",
+  "window.VendifyAuthV232.validateRegistrationInput(businessName, password)",
+  "window.VendifyAuthV232.validateNewPasswordInput(password, confirm)"
 ]) {
   if (!app.includes(marker)) throw new Error(`Compatibility app missing Auth delegation: ${marker}`);
 }
 
-console.log("PASS: generated refactor runtime exposes and delegates first Auth slice");
+for (const obsoleteMarker of [
+  "const map = {\n    \"auth-login-panel\"",
+  "if (!businessName) { err.textContent = \"Ingresá el nombre del negocio.\"; return; }",
+  "if (password !== confirm) { err.textContent = \"Las contraseñas no coinciden.\"; return; }"
+]) {
+  if (app.includes(obsoleteMarker)) {
+    throw new Error(`Compatibility app still contains migrated Auth logic: ${obsoleteMarker}`);
+  }
+}
+
+console.log("PASS: generated refactor runtime exposes and delegates Auth UI and validation slices");
