@@ -8,6 +8,7 @@ on:
       - "feature/**"
       - "fix/**"
       - "security/**"
+      - "refactor/**"
   pull_request:
     branches: [main, develop]
 
@@ -35,3 +36,6 @@ jobs:
 
       - name: Run quality gate
         run: npm run ci
+
+      - name: Map legacy architecture
+        run: npm run analyze:legacy
