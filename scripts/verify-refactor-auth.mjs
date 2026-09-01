@@ -20,7 +20,13 @@ for (const marker of [
   "validateNewPasswordInput",
   "getAuthPanelState",
   "showAuthPanel",
-  "showAuthMessage"
+  "showAuthMessage",
+  "signInOwner",
+  "signInEmployee",
+  "registerOwner",
+  "requestPasswordReset",
+  "updatePassword",
+  "signOut"
 ]) {
   if (!runtime.includes(marker)) throw new Error(`Modular runtime missing Auth marker: ${marker}`);
 }
@@ -30,20 +36,27 @@ for (const marker of [
   "window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username)",
   "window.VendifyAuthV232.showAuthPanel(panel)",
   "window.VendifyAuthV232.showAuthMessage(mensaje, tipo)",
-  "window.VendifyAuthV232.validateRegistrationInput(businessName, password)",
-  "window.VendifyAuthV232.validateNewPasswordInput(password, confirm)"
+  "window.VendifyAuthV232.signInOwner(",
+  "window.VendifyAuthV232.signInEmployee(",
+  "window.VendifyAuthV232.registerOwner(",
+  "window.VendifyAuthV232.requestPasswordReset(",
+  "window.VendifyAuthV232.updatePassword(",
+  "window.VendifyAuthV232.signOut(supabaseClient.auth)"
 ]) {
   if (!app.includes(marker)) throw new Error(`Compatibility app missing Auth delegation: ${marker}`);
 }
 
 for (const obsoleteMarker of [
   "const map = {\n    \"auth-login-panel\"",
-  "if (!businessName) { err.textContent = \"Ingresá el nombre del negocio.\"; return; }",
-  "if (password !== confirm) { err.textContent = \"Las contraseñas no coinciden.\"; return; }"
+  "supabaseClient.auth.signInWithPassword(",
+  "supabaseClient.auth.signUp(",
+  "supabaseClient.auth.resetPasswordForEmail(",
+  "supabaseClient.auth.updateUser(",
+  "supabaseClient.auth.signOut("
 ]) {
   if (app.includes(obsoleteMarker)) {
     throw new Error(`Compatibility app still contains migrated Auth logic: ${obsoleteMarker}`);
   }
 }
 
-console.log("PASS: generated refactor runtime exposes and delegates Auth UI and validation slices");
+console.log("PASS: generated refactor runtime delegates Auth UI and Supabase Auth service calls");
