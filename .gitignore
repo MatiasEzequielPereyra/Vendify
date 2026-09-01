@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 dist-ts/
+dist-staging-v2312/
+dist-vite/
+.vendify-build/
 coverage/
 
 # Environment / local settings
