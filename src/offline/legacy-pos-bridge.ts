@@ -2,6 +2,10 @@ import type { LegacyPosPaymentInput, LegacyPosSaleItemInput } from "./legacy-ada
 import { offlineSaleToLegacyTicketShape } from "./legacy-adapter.js";
 import type { SupabaseRpcClientLike } from "./supabase-transport.js";
 import type { OfflineSyncSummary } from "./sync-engine.js";
+import {
+  VENDIFY_PRODUCTION_SUPABASE_REF,
+  resolveOfflineSyncSafety
+} from "./sync-safety.js";
 
 interface LegacyTotals {
   readonly subtotal: number;
@@ -55,6 +59,14 @@ declare global {
   }
 }
 
+const EMPTY_SYNC_SUMMARY: OfflineSyncSummary = {
+  attempted: 0,
+  synced: 0,
+  retryable: 0,
+  review: 0,
+  recovered: 0
+};
+
 function requiredScopeId(value: string | null | undefined, label: string): string {
   const normalized = value?.trim() ?? "";
   if (!normalized) throw new Error(`No se pudo determinar ${label} para la venta offline.`);
@@ -63,6 +75,14 @@ function requiredScopeId(value: string | null | undefined, label: string): strin
 
 function runtimeEnabled(): boolean {
   return window.VendifyOfflineV2312?.enabled === true;
+}
+
+function currentSyncSafety() {
+  const fallbackProductionUrl = `https://${VENDIFY_PRODUCTION_SUPABASE_REF}.supabase.co`;
+  return resolveOfflineSyncSafety(
+    supabaseClient.supabaseUrl ?? fallbackProductionUrl,
+    window.location.search
+  );
 }
 
 async function registrarVentaOfflineIndexedDbV2312(
@@ -100,9 +120,6 @@ async function registrarVentaOfflineIndexedDbV2312(
     observation: observacion
   });
 
-  // The durable IndexedDB reservation already exists at this point. These
-  // legacy local updates are best-effort UI mirrors; a failure cannot remove
-  // or weaken the stock reservation kept in IndexedDB.
   try {
     aplicarVentaAlStockLocalV2311(items);
     aplicarVentaCajaLocalV2311(pagos, totales.total);
@@ -131,24 +148,22 @@ async function runIndexedDbSync(
   options: LegacySyncOptions = {}
 ): Promise<OfflineSyncSummary> {
   const runtime = window.VendifyOfflineV2312;
-  if (!runtime?.enabled) {
-    return {
-      attempted: 0,
-      synced: 0,
-      retryable: 0,
-      review: 0,
-      recovered: 0
-    };
+  if (!runtime?.enabled || !navigator.onLine) {
+    return EMPTY_SYNC_SUMMARY;
   }
 
-  if (!navigator.onLine) {
-    return {
-      attempted: 0,
-      synced: 0,
-      retryable: 0,
-      review: 0,
-      recovered: 0
-    };
+  const safety = currentSyncSafety();
+  if (!safety.allowed) {
+    if (options.mostrarResumen) {
+      mostrarToast(
+        "Staging seguro: la sincronización offline hacia producción está bloqueada.",
+        "warning"
+      );
+    }
+    console.warn(
+      "[Vendify v2.31.2] offline sync blocked because staging is using the production Supabase backend"
+    );
+    return EMPTY_SYNC_SUMMARY;
   }
 
   if (syncInFlight) return syncInFlight;
@@ -218,6 +233,7 @@ window.setTimeout(() => {
   scheduleSync(false);
 }, 800);
 
+const startupSafety = currentSyncSafety();
 console.info(
-  `[Vendify v2.31.2] legacy POS bridge ${runtimeEnabled() ? "active" : "standby"}`
+  `[Vendify v2.31.2] legacy POS bridge ${runtimeEnabled() ? "active" : "standby"}; sync ${startupSafety.allowed ? "enabled" : "blocked for production backend"}`
 );
