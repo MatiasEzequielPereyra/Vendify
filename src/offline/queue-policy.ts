@@ -61,13 +61,21 @@ function assertValidItem(item: OfflineSaleItem): void {
   assertFiniteMoney(item.unitPrice, `unitPrice:${item.productId}`);
 }
 
+function printableUnknown(value: unknown): string {
+  if (typeof value === "string") return value;
+
+  const serialized = JSON.stringify(value);
+  if (typeof serialized === "string") return serialized;
+
+  return "unknown";
+}
+
 function assertOfflinePaymentMethod(
   method: unknown
 ): asserts method is "Efectivo" | "Transferencia" {
   if (method !== "Efectivo" && method !== "Transferencia") {
-    const printable = typeof method === "string" ? method : JSON.stringify(method);
     throw new OfflineSaleValidationError(
-      `Unsupported offline payment method: ${printable ?? "unknown"}`
+      `Unsupported offline payment method: ${printableUnknown(method)}`
     );
   }
 }
