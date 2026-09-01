@@ -104,6 +104,10 @@ export function validateOfflineSale(sale: OfflineSale): void {
     assertFiniteMoney(payment.amount, `payment:${method}`);
   });
 
+  if (sale.observation !== undefined && sale.observation.length > 500) {
+    throw new OfflineSaleValidationError("Offline sale observation is too long");
+  }
+
   assertFiniteMoney(sale.subtotal, "subtotal");
   assertFiniteMoney(sale.total, "total");
 
@@ -155,7 +159,8 @@ export function offlineSalePayloadFingerprint(sale: OfflineSale): string {
     items: normalizedItems(sale),
     payments: normalizedPayments(sale),
     subtotal: sale.subtotal,
-    total: sale.total
+    total: sale.total,
+    observation: sale.observation ?? null
   });
 }
 
