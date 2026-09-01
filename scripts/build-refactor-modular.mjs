@@ -91,9 +91,30 @@ app = replaceExactlyOnce(
 
 app = replaceExactlyOnce(
   app,
-  /const map = \{\s*"auth-login-panel": "owner",\s*"auth-register-panel": "register",\s*"auth-reset-panel": "forgot",\s*"auth-new-password-panel": "new-password",?\s*\};\s*const target = map\[panel\] \|\| panel;/g,
-  `const target = window.VendifyAuthV232.resolveAuthPanel(panel);`,
-  "auth panel target"
+  /function mostrarPanelAuth\(panel\) \{[\s\S]*?^\}/gm,
+  `function mostrarPanelAuth(panel) {\n  return window.VendifyAuthV232.showAuthPanel(panel);\n}`,
+  "auth panel UI"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /function mostrarMensajeAuth\(mensaje, tipo = "info"\) \{[\s\S]*?^\}/gm,
+  `function mostrarMensajeAuth(mensaje, tipo = "info") {\n  return window.VendifyAuthV232.showAuthMessage(mensaje, tipo);\n}`,
+  "auth message UI"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /err\.textContent = "";\s*if \(!businessName\) \{ err\.textContent = "Ingresá el nombre del negocio\."; return; \}\s*if \(password\.length < 8\) \{ err\.textContent = "La contraseña debe tener al menos 8 caracteres\."; return; \}/g,
+  `err.textContent = "";\n  const validationError = window.VendifyAuthV232.validateRegistrationInput(businessName, password);\n  if (validationError) { err.textContent = validationError; return; }`,
+  "registration validation"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /err\.textContent = "";\s*if \(password\.length < 8\) \{ err\.textContent = "La contraseña debe tener al menos 8 caracteres\."; return; \}\s*if \(password !== confirm\) \{ err\.textContent = "Las contraseñas no coinciden\."; return; \}/g,
+  `err.textContent = "";\n  const validationError = window.VendifyAuthV232.validateNewPasswordInput(password, confirm);\n  if (validationError) { err.textContent = validationError; return; }`,
+  "new password validation"
 );
 
 const coreContent = readFileSync(coreFile, "utf8");
@@ -117,5 +138,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core and first Auth rules are loaded from TypeScript before the compatibility app runtime.");
+console.log("Core and Auth helpers are loaded from TypeScript before the compatibility app runtime.");
 console.log("Root production files remain untouched.");
