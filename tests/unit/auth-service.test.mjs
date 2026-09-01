@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  REGISTERED_EMAIL_MESSAGE,
   registerOwner,
   requestPasswordReset,
   signInEmployee,
@@ -99,6 +100,53 @@ test("registration preserves redirect metadata and confirmation state", async ()
     }),
     { ok: true, errorMessage: null, requiresConfirmation: true }
   );
+});
+
+test("registration detects Supabase obfuscated response for an existing email", async () => {
+  const auth = authMock({
+    async signUp() {
+      return {
+        data: { session: null, user: { identities: [] } },
+        error: null
+      };
+    }
+  });
+
+  assert.deepEqual(
+    await registerOwner(auth, {
+      businessName: "Mi Kiosco",
+      email: "owner@test.com",
+      password: "12345678",
+      redirectTo: "https://vendify.test/app"
+    }),
+    {
+      ok: false,
+      errorMessage: REGISTERED_EMAIL_MESSAGE,
+      requiresConfirmation: false
+    }
+  );
+});
+
+test("registration maps explicit existing-user errors to the business message", async () => {
+  const auth = authMock({
+    async signUp() {
+      return {
+        data: { session: null },
+        error: { code: "user_already_exists", message: "User already registered" }
+      };
+    }
+  });
+
+  const result = await registerOwner(auth, {
+    businessName: "Mi Kiosco",
+    email: "owner@test.com",
+    password: "12345678",
+    redirectTo: "https://vendify.test/app"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errorMessage, REGISTERED_EMAIL_MESSAGE);
+  assert.equal(result.requiresConfirmation, false);
 });
 
 test("password reset preserves redirect URL", async () => {

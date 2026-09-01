@@ -5,6 +5,7 @@ import {
 } from "./credentials.js";
 
 export interface AuthErrorLike {
+  code?: string;
   message?: string;
 }
 
@@ -26,7 +27,10 @@ export interface AuthClientPort {
       emailRedirectTo: string;
       data: { business_name: string };
     };
-  }): Promise<AuthResult<{ session?: object | null }>>;
+  }): Promise<AuthResult<{
+    session?: object | null;
+    user?: { identities?: unknown[] | null } | null;
+  }>>;
 
   resetPasswordForEmail(
     email: string,
@@ -46,9 +50,19 @@ export interface RegistrationActionResult extends AuthActionResult {
   requiresConfirmation: boolean;
 }
 
+export const REGISTERED_EMAIL_MESSAGE =
+  "Ya existe un negocio asociado a este email. Iniciá sesión o recuperá tu contraseña.";
+
 function errorMessage(error: AuthErrorLike | null | undefined): string {
   if (error?.message) return error.message;
   return "Error de autenticación";
+}
+
+function isAlreadyRegisteredError(error: AuthErrorLike | null | undefined): boolean {
+  return (
+    error?.code === "user_already_exists" ||
+    /user already registered/i.test(error?.message ?? "")
+  );
 }
 
 export async function signInOwner(
@@ -115,7 +129,19 @@ export async function registerOwner(
   if (error) {
     return {
       ok: false,
-      errorMessage: errorMessage(error),
+      errorMessage: isAlreadyRegisteredError(error)
+        ? REGISTERED_EMAIL_MESSAGE
+        : errorMessage(error),
+      requiresConfirmation: false
+    };
+  }
+
+  // With email confirmation enabled, Supabase can hide account existence by
+  // returning an obfuscated user with no identities instead of an error.
+  if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
+    return {
+      ok: false,
+      errorMessage: REGISTERED_EMAIL_MESSAGE,
       requiresConfirmation: false
     };
   }
