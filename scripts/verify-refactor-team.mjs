@@ -19,7 +19,11 @@ for (const marker of [
   "listTeam",
   "updateStockPermission",
   "updateMemberRole",
-  "setMemberActive"
+  "setMemberActive",
+  "createEmployee",
+  "updateEmployee",
+  "deleteEmployee",
+  "resetEmployeePassword"
 ]) {
   if (!runtime.includes(marker)) {
     throw new Error(`Modular runtime missing Team marker: ${marker}`);
@@ -31,7 +35,11 @@ for (const marker of [
   "window.VendifyTeamV232.listTeam(supabaseClient)",
   "window.VendifyTeamV232.updateStockPermission(",
   "window.VendifyTeamV232.updateMemberRole(",
-  "window.VendifyTeamV232.setMemberActive("
+  "window.VendifyTeamV232.setMemberActive(",
+  "window.VendifyTeamV232.createEmployee(",
+  "window.VendifyTeamV232.updateEmployee(",
+  "window.VendifyTeamV232.deleteEmployee(",
+  "window.VendifyTeamV232.resetEmployeePassword("
 ]) {
   if (!app.includes(marker)) {
     throw new Error(`Compatibility app missing Team delegation: ${marker}`);
@@ -44,11 +52,13 @@ for (const obsoleteMarker of [
   'supabaseClient.rpc("listar_permisos_stock_equipo_v1")',
   '"actualizar_permiso_stock_miembro_v1"',
   'supabaseClient.rpc("actualizar_rol_miembro_v2"',
-  'supabaseClient.rpc("cambiar_estado_miembro_v3"'
+  'supabaseClient.rpc("cambiar_estado_miembro_v3"',
+  'supabaseClient.functions.invoke("crear-empleado"',
+  'supabaseClient.functions.invoke("gestionar-empleado"'
 ]) {
   if (app.includes(obsoleteMarker)) {
     throw new Error(`Compatibility app still contains migrated Team data access: ${obsoleteMarker}`);
   }
 }
 
-console.log("PASS: generated refactor runtime delegates first Team data slice");
+console.log("PASS: generated refactor runtime delegates Team data and employee Edge operations");
