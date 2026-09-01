@@ -105,6 +105,13 @@ app = replaceExactlyOnce(
 
 app = replaceExactlyOnce(
   app,
+  /async function initAuth\(\) \{[\s\S]*?^\}/gm,
+  `async function initAuth() {\n  return window.VendifyAuthV232.initializeAuthLifecycle(\n    supabaseClient.auth,\n    {\n      setSession(session) {\n        sesionActual = session;\n      },\n      isRecoveryActive() {\n        return flujoRecuperacionActivo;\n      },\n      setRecoveryActive(active) {\n        flujoRecuperacionActivo = active;\n      },\n      showLogin,\n      showNewPasswordPanel() {\n        mostrarPanelAuth("auth-new-password-panel");\n      },\n      showApp(session) {\n        return mostrarAppSeguroVQA(session);\n      },\n      async handleSignedOut() {\n        appBootUserIdVQA = null;\n        appBootPromiseVQA = null;\n        limpiarContextoApp();\n        productos = [];\n        carrito = [];\n        mostrarLogin();\n        if (realtimeChannel) {\n          supabaseClient.removeChannel(realtimeChannel);\n          realtimeChannel = null;\n        }\n      }\n    }\n  );\n}`,
+  "auth session lifecycle"
+);
+
+app = replaceExactlyOnce(
+  app,
   /async function iniciarSesionPassword\(e\) \{[\s\S]*?^\}/gm,
   `async function iniciarSesionPassword(e) {\n  e.preventDefault();\n  const email = $("#login-email")?.value.trim();\n  const password = $("#login-password")?.value || "";\n  const btn = $("#btn-login");\n  const err = $("#login-error");\n  if (!btn || !err) return;\n\n  err.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Ingresando...";\n\n  const result = await window.VendifyAuthV232.signInOwner(\n    supabaseClient.auth,\n    email,\n    password\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Iniciar sesión";\n\n  if (!result.ok) err.textContent = result.errorMessage || "";\n}`,
   "owner auth handler"
@@ -166,5 +173,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core and Auth helpers/services are loaded from TypeScript before the compatibility app runtime.");
+console.log("Core and Auth helpers/services/session lifecycle are loaded from TypeScript before the compatibility app runtime.");
 console.log("Root production files remain untouched.");
