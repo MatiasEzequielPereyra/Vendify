@@ -1,18 +1,20 @@
-export function queryOne<E extends Element = HTMLElement>(
+export type HtmlEscapable = string | number | boolean | null | undefined;
+
+export function queryOne(
   selector: string,
   root: ParentNode = document
-): E | null {
-  return root.querySelector<E>(selector);
+): Element | null {
+  return root.querySelector(selector);
 }
 
-export function queryAll<E extends Element = HTMLElement>(
+export function queryAll(
   selector: string,
   root: ParentNode = document
-): NodeListOf<E> {
-  return root.querySelectorAll<E>(selector);
+): NodeListOf<Element> {
+  return root.querySelectorAll(selector);
 }
 
-export function escapeHtml(value: unknown): string {
+export function escapeHtml(value: HtmlEscapable): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
