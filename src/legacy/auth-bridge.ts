@@ -6,6 +6,14 @@ import {
   validateRegistrationInput
 } from "../auth/credentials.js";
 import {
+  registerOwner,
+  requestPasswordReset,
+  signInEmployee,
+  signInOwner,
+  signOut,
+  updatePassword
+} from "../auth/auth-service.js";
+import {
   getAuthPanelState,
   showAuthMessage,
   showAuthPanel
@@ -20,6 +28,12 @@ export interface VendifyAuthV232Api {
   readonly getAuthPanelState: typeof getAuthPanelState;
   readonly showAuthPanel: typeof showAuthPanel;
   readonly showAuthMessage: typeof showAuthMessage;
+  readonly signInOwner: typeof signInOwner;
+  readonly signInEmployee: typeof signInEmployee;
+  readonly registerOwner: typeof registerOwner;
+  readonly requestPasswordReset: typeof requestPasswordReset;
+  readonly updatePassword: typeof updatePassword;
+  readonly signOut: typeof signOut;
 }
 
 declare global {
@@ -36,5 +50,11 @@ window.VendifyAuthV232 = Object.freeze({
   validateNewPasswordInput,
   getAuthPanelState,
   showAuthPanel,
-  showAuthMessage
+  showAuthMessage,
+  signInOwner,
+  signInEmployee,
+  registerOwner,
+  requestPasswordReset,
+  updatePassword,
+  signOut
 });
