@@ -24,7 +24,7 @@
     "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312",
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
-    "lint": "eslint src vite.config.ts vite.offline-v2312.config.ts",
+    "lint": "eslint src",
     "ci": "npm run qa && npm run lint && npm run build && npm run verify:release && npm run qa:staging:v2312"
   },
   "devDependencies": {
