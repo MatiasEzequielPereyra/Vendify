@@ -1,5 +1,5 @@
 {
-  "generatedFrom": "app.js",
+  "generatedFrom": "app.js + src/**/*.ts",
   "baselineVersion": "2.31.1",
   "rpcCount": 71,
   "critical": [

@@ -1,11 +1,12 @@
-import { writeFileSync, readFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  findRuntimeRpcNames,
+  RPC_RUNTIME_SOURCE_PATTERN
+} from "./rpc-runtime-sources.mjs";
 
 const root = resolve(import.meta.dirname, "..");
-const app = readFileSync(resolve(root, "app.js"), "utf8");
-const rpcs = [...new Set(
-  [...app.matchAll(/\.rpc\(\s*["']([^"']+)["']/g)].map((match) => match[1])
-)].sort();
+const rpcs = findRuntimeRpcNames(root);
 
 const criticalCandidates = new Set([
   "registrar_venta_v4",
@@ -21,7 +22,7 @@ const criticalCandidates = new Set([
 ]);
 
 const contract = {
-  generatedFrom: "app.js",
+  generatedFrom: RPC_RUNTIME_SOURCE_PATTERN,
   baselineVersion: "2.31.1",
   rpcCount: rpcs.length,
   critical: rpcs.filter((rpc) => criticalCandidates.has(rpc)),
