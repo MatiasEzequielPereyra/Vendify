@@ -80,10 +80,11 @@ export function validateOfflineSale(sale: OfflineSale): void {
 
   sale.items.forEach(assertValidItem);
   sale.payments.forEach((payment) => {
-    if (payment.method !== "Efectivo" && payment.method !== "Transferencia") {
-      throw new OfflineSaleValidationError(`Unsupported offline payment method: ${payment.method}`);
+    const method = String(payment.method);
+    if (method !== "Efectivo" && method !== "Transferencia") {
+      throw new OfflineSaleValidationError(`Unsupported offline payment method: ${method}`);
     }
-    assertFiniteMoney(payment.amount, `payment:${payment.method}`);
+    assertFiniteMoney(payment.amount, `payment:${method}`);
   });
 
   assertFiniteMoney(sale.subtotal, "subtotal");
