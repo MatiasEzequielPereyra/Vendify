@@ -135,7 +135,7 @@ async function captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<v
 
   const snapshots: StockSnapshot[] = input.products.map((product) => ({
     productId: product.productId.trim() as ProductId,
-    serverStock: Number(product.serverStock)
+    serverStock: product.serverStock
   }));
 
   for (const snapshot of snapshots) {
