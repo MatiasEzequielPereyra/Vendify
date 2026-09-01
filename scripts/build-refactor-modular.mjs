@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { build } from "vite";
+import { patchTeamRefactor } from "./patch-refactor-team.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const stagingOut = resolve(root, "dist-staging-v2312");
@@ -152,6 +153,8 @@ app = replaceExactlyOnce(
   "sign out auth handler"
 );
 
+app = patchTeamRefactor(app, replaceExactlyOnce);
+
 const coreContent = readFileSync(coreFile, "utf8");
 const coreName = `vendify-core-v232-${fingerprint(coreContent)}.js`;
 const appName = `app-refactor-v232-${fingerprint(app)}.js`;
@@ -173,5 +176,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core and Auth helpers/services/session lifecycle are loaded from TypeScript before the compatibility app runtime.");
+console.log("Core, Auth, and first Team services are loaded from TypeScript before the compatibility app runtime.");
 console.log("Root production files remain untouched.");
