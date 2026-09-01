@@ -26,7 +26,8 @@ for (const marker of [
   "registerOwner",
   "requestPasswordReset",
   "updatePassword",
-  "signOut"
+  "signOut",
+  "initializeAuthLifecycle"
 ]) {
   if (!runtime.includes(marker)) throw new Error(`Modular runtime missing Auth marker: ${marker}`);
 }
@@ -36,6 +37,7 @@ for (const marker of [
   "window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username)",
   "window.VendifyAuthV232.showAuthPanel(panel)",
   "window.VendifyAuthV232.showAuthMessage(mensaje, tipo)",
+  "window.VendifyAuthV232.initializeAuthLifecycle(",
   "window.VendifyAuthV232.signInOwner(",
   "window.VendifyAuthV232.signInEmployee(",
   "window.VendifyAuthV232.registerOwner(",
@@ -48,6 +50,8 @@ for (const marker of [
 
 for (const obsoleteMarker of [
   "const map = {\n    \"auth-login-panel\"",
+  "supabaseClient.auth.getSession(",
+  "supabaseClient.auth.onAuthStateChange(",
   "supabaseClient.auth.signInWithPassword(",
   "supabaseClient.auth.signUp(",
   "supabaseClient.auth.resetPasswordForEmail(",
@@ -59,4 +63,4 @@ for (const obsoleteMarker of [
   }
 }
 
-console.log("PASS: generated refactor runtime delegates Auth UI and Supabase Auth service calls");
+console.log("PASS: generated refactor runtime delegates Auth UI, service calls, and session lifecycle");
