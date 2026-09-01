@@ -40,6 +40,7 @@ export interface OfflineSale {
   readonly payments: readonly OfflinePayment[];
   readonly subtotal: Money;
   readonly total: Money;
+  readonly observation?: string;
   readonly status: OfflineSaleStatus;
   readonly attempts: number;
   readonly lastError?: string;
