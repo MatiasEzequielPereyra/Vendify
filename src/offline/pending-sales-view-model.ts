@@ -1,5 +1,9 @@
 import type { OfflineSale, OfflineSaleStatus } from "../types/offline.js";
 
+type UnsyncedOfflineSale = OfflineSale & {
+  readonly status: Exclude<OfflineSaleStatus, "synced">;
+};
+
 export interface PendingSalesSummary {
   readonly total: number;
   readonly pending: number;
@@ -20,10 +24,8 @@ export interface PendingSaleRow {
   readonly lastError: string | null;
 }
 
-function isUnsyncedStatus(
-  status: OfflineSaleStatus
-): status is Exclude<OfflineSaleStatus, "synced"> {
-  return status !== "synced";
+function isUnsyncedSale(sale: OfflineSale): sale is UnsyncedOfflineSale {
+  return sale.status !== "synced";
 }
 
 export function summarizePendingSales(
@@ -66,7 +68,7 @@ export function pendingSaleRows(
   sales: readonly OfflineSale[]
 ): readonly PendingSaleRow[] {
   return sales
-    .filter((sale) => isUnsyncedStatus(sale.status))
+    .filter(isUnsyncedSale)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .map((sale) => {
       const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
