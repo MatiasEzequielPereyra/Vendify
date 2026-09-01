@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
@@ -18,8 +18,6 @@ const required = [
   "supabase-config.js",
   "manifest.json",
   "vercel.json",
-  "vendify-offline-v2312.js",
-  "vendify-offline-v2312-bridge.js",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/apple-touch-icon.png"
@@ -28,23 +26,49 @@ const required = [
 for (const file of required) {
   if (!existsSync(resolve(target, file))) fail(`staging release missing ${file}`);
 }
-pass("staging release files exist");
+pass("staging release base files exist");
+
+const filenames = readdirSync(target);
+function oneFingerprintMatch(pattern, label) {
+  const matches = filenames.filter((file) => pattern.test(file));
+  if (matches.length !== 1) {
+    fail(`${label} expected exactly one fingerprinted file, found ${matches.length}`);
+  }
+  return matches[0];
+}
+
+const runtimeName = oneFingerprintMatch(
+  /^vendify-offline-v2312-[0-9a-f]{12}\.js$/,
+  "runtime"
+);
+const bridgeName = oneFingerprintMatch(
+  /^vendify-offline-v2312-bridge-[0-9a-f]{12}\.js$/,
+  "POS bridge"
+);
+const stagedAppName = oneFingerprintMatch(
+  /^app-staging-v2312-[0-9a-f]{12}\.js$/,
+  "staging app"
+);
+pass("staging browser bundles use content-fingerprinted filenames");
 
 const html = readFileSync(resolve(target, "index.html"), "utf8");
-const runtimeMarker = 'src="vendify-offline-v2312.js?v=2312"';
-const appMarker = 'src="app.js?v=2311"';
-const bridgeMarker = 'src="vendify-offline-v2312-bridge.js?v=2312"';
+const runtimeMarker = `src="${runtimeName}"`;
+const appMarker = `src="${stagedAppName}"`;
+const bridgeMarker = `src="${bridgeName}"`;
 const runtimePosition = html.indexOf(runtimeMarker);
 const appPosition = html.indexOf(appMarker);
 const bridgePosition = html.indexOf(bridgeMarker);
 
 if (runtimePosition < 0) fail("v2.31.2 runtime script is not referenced");
-if (appPosition < 0) fail("legacy app.js script is not referenced");
+if (appPosition < 0) fail("fingerprinted staging app script is not referenced");
 if (bridgePosition < 0) fail("v2.31.2 POS bridge script is not referenced");
 if (!(runtimePosition < appPosition && appPosition < bridgePosition)) {
-  fail("staging scripts must load runtime -> app.js -> POS bridge");
+  fail("staging scripts must load runtime -> staging app -> POS bridge");
 }
-pass("staging scripts load runtime -> legacy app -> POS bridge");
+if (html.includes('src="app.js?v=2311"')) {
+  fail("staging index still references cache-prone legacy app.js path");
+}
+pass("staging scripts load runtime -> fingerprinted app -> POS bridge");
 
 for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
   const ref = match[1];
@@ -55,32 +79,32 @@ for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
 }
 pass("staging local references resolve");
 
-const stagedApp = readFileSync(resolve(target, "app.js"), "utf8");
+const stagedApp = readFileSync(resolve(target, stagedAppName), "utf8");
 const appMarkers = [
   "registrarVentaOfflineIndexedDbV2312",
   "captureStockSnapshot",
   "sincronizarVentasOfflineIndexedDbV2312"
 ];
 for (const marker of appMarkers) {
-  if (!stagedApp.includes(marker)) fail(`staging app.js missing integration marker ${marker}`);
+  if (!stagedApp.includes(marker)) fail(`staging app missing integration marker ${marker}`);
 }
 pass("staging app routes checkout, stock snapshot and sync to v2.31.2");
 
-const runtime = readFileSync(resolve(target, "vendify-offline-v2312.js"), "utf8");
-const bridge = readFileSync(resolve(target, "vendify-offline-v2312-bridge.js"), "utf8");
+const runtime = readFileSync(resolve(target, runtimeName), "utf8");
+const bridge = readFileSync(resolve(target, bridgeName), "utf8");
 if (!runtime.includes("vendify-offline-v2312")) {
   fail("staging runtime does not contain IndexedDB database identifier");
 }
 if (!runtime.includes("vendify_offline_engine_v2312")) {
   fail("staging runtime does not contain v2.31.2 feature flag");
 }
-if (!runtime.includes("enqueueLegacySale") || !runtime.includes("syncNow")) {
-  fail("staging runtime does not expose the POS queue/sync API");
+if (!runtime.includes("enqueueLegacySale") || !runtime.includes("syncNow") || !runtime.includes("listSales")) {
+  fail("staging runtime does not expose the current POS queue/sync diagnostics API");
 }
 if (!bridge.includes("registrarVentaOfflineIndexedDbV2312")) {
   fail("staging bridge does not contain IndexedDB checkout integration");
 }
-pass("staging bundles contain IndexedDB runtime and POS bridge");
+pass("staging bundles contain current IndexedDB runtime and POS bridge");
 
 const config = readFileSync(resolve(target, "supabase-config.js"), "utf8");
 if (!config.includes("puhkmblnptntorwptvld.supabase.co")) {
