@@ -83,7 +83,7 @@ export function pendingSaleRows(
         attempts: sale.attempts,
         total: sale.total,
         itemCount,
-        itemLabel: extraItems > 0 ? `${firstItem} +${extraItems}` : firstItem,
+        itemLabel: extraItems > 0 ? `${firstItem} +${String(extraItems)}` : firstItem,
         paymentLabel,
         lastError: sale.lastError ?? null
       };
