@@ -19,7 +19,11 @@ function replaceExactlyOnce(source, pattern, replacement, label) {
   if (matches.length !== 1) {
     throw new Error(`Refactor patch ${label} expected 1 match, found ${matches.length}`);
   }
-  return source.replace(pattern, replacement);
+
+  // Use a replacer callback so replacement text is inserted literally.
+  // This is required for helpers such as `$$`: in a normal replacement string,
+  // JavaScript interprets `$$` as a single literal `$`.
+  return source.replace(pattern, () => replacement);
 }
 
 execFileSync(process.execPath, [resolve(root, "scripts/build-staging-v2312.mjs")], {
