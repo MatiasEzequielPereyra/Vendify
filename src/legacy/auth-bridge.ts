@@ -5,6 +5,11 @@ import {
   validateNewPasswordInput,
   validateRegistrationInput
 } from "../auth/credentials.js";
+import {
+  getAuthPanelState,
+  showAuthMessage,
+  showAuthPanel
+} from "../auth/ui.js";
 
 export interface VendifyAuthV232Api {
   readonly normalizeInternalLogin: typeof normalizeInternalLogin;
@@ -12,6 +17,9 @@ export interface VendifyAuthV232Api {
   readonly resolveAuthPanel: typeof resolveAuthPanel;
   readonly validateRegistrationInput: typeof validateRegistrationInput;
   readonly validateNewPasswordInput: typeof validateNewPasswordInput;
+  readonly getAuthPanelState: typeof getAuthPanelState;
+  readonly showAuthPanel: typeof showAuthPanel;
+  readonly showAuthMessage: typeof showAuthMessage;
 }
 
 declare global {
@@ -25,5 +33,8 @@ window.VendifyAuthV232 = Object.freeze({
   buildEmployeeInternalEmail,
   resolveAuthPanel,
   validateRegistrationInput,
-  validateNewPasswordInput
+  validateNewPasswordInput,
+  getAuthPanelState,
+  showAuthPanel,
+  showAuthMessage
 });
