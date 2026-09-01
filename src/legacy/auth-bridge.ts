@@ -13,6 +13,7 @@ import {
   signOut,
   updatePassword
 } from "../auth/auth-service.js";
+import { initializeAuthLifecycle } from "../auth/session-lifecycle.js";
 import {
   getAuthPanelState,
   showAuthMessage,
@@ -34,6 +35,7 @@ export interface VendifyAuthV232Api {
   readonly requestPasswordReset: typeof requestPasswordReset;
   readonly updatePassword: typeof updatePassword;
   readonly signOut: typeof signOut;
+  readonly initializeAuthLifecycle: typeof initializeAuthLifecycle;
 }
 
 declare global {
@@ -56,5 +58,6 @@ window.VendifyAuthV232 = Object.freeze({
   registerOwner,
   requestPasswordReset,
   updatePassword,
-  signOut
+  signOut,
+  initializeAuthLifecycle
 });
