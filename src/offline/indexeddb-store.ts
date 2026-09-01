@@ -19,6 +19,12 @@ interface StoredStockSnapshot extends StockSnapshot {
   readonly key: string;
 }
 
+interface TransitionOptions {
+  readonly lastError?: string;
+  readonly incrementAttempts?: boolean;
+  readonly clearLastError?: boolean;
+}
+
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -36,6 +42,12 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
 
 function snapshotKey(businessId: string, branchId: string, productId: ProductId): string {
   return `${businessId}:${branchId}:${productId}`;
+}
+
+function clearSaleLastError(sale: OfflineSale): OfflineSale {
+  const clone = { ...sale };
+  delete clone.lastError;
+  return clone;
 }
 
 export class VendifyOfflineDb {
@@ -182,7 +194,7 @@ export class VendifyOfflineDb {
   async transitionSale(
     requestId: RequestId,
     nextStatus: OfflineSale["status"],
-    options: { readonly lastError?: string; readonly incrementAttempts?: boolean } = {}
+    options: TransitionOptions = {}
   ): Promise<OfflineSale> {
     const transaction = this.db.transaction(SALES_STORE, "readwrite");
     const store = transaction.objectStore(SALES_STORE);
@@ -199,8 +211,9 @@ export class VendifyOfflineDb {
 
     assertOfflineSaleTransition(existing.status, nextStatus);
 
+    const base = options.clearLastError ? clearSaleLastError(existing) : existing;
     const next: OfflineSale = {
-      ...existing,
+      ...base,
       status: nextStatus,
       attempts: existing.attempts + (options.incrementAttempts ? 1 : 0),
       ...(options.lastError === undefined ? {} : { lastError: options.lastError })
