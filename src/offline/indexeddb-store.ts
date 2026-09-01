@@ -148,7 +148,7 @@ export class VendifyOfflineDb {
 
       if (existing) {
         assertSameOfflineRequest(existing, sale);
-        transaction.abort();
+        await transactionDone(transaction);
         return existing;
       }
 
@@ -170,12 +170,10 @@ export class VendifyOfflineDb {
       await transactionDone(transaction);
       return sale;
     } catch (error) {
-      if (transaction.readyState !== "done") {
-        try {
-          transaction.abort();
-        } catch {
-          // Transaction may already be closing.
-        }
+      try {
+        transaction.abort();
+      } catch {
+        // Transaction may already be completed or aborted.
       }
       throw error;
     }
@@ -191,7 +189,11 @@ export class VendifyOfflineDb {
     const existing = (await requestToPromise(store.get(requestId))) as OfflineSale | undefined;
 
     if (!existing) {
-      transaction.abort();
+      try {
+        transaction.abort();
+      } catch {
+        // Transaction may already be closing.
+      }
       throw new Error(`Offline sale not found: ${requestId}`);
     }
 
