@@ -15,6 +15,10 @@
     "build:staging:v2312": "node scripts/build-staging-v2312.mjs",
     "verify:staging:v2312": "node scripts/verify-staging-v2312.mjs",
     "preview:staging:v2312": "node scripts/serve-staging-v2312.mjs",
+    "build:refactor:modular": "node scripts/build-refactor-modular.mjs",
+    "verify:refactor:modular": "node scripts/verify-refactor-modular.mjs",
+    "qa:refactor:modular": "npm run build:refactor:modular && npm run verify:refactor:modular",
+    "preview:refactor:modular": "node scripts/serve-refactor-modular.mjs",
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",
     "test": "npm run build:ts && node --test tests/unit/*.test.mjs",
     "qa:static": "node scripts/qa-baseline.mjs",
@@ -26,7 +30,7 @@
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run lint && npm run build && npm run verify:release && npm run qa:staging:v2312"
+    "ci": "npm run qa && npm run lint && npm run build && npm run verify:release && npm run qa:staging:v2312 && npm run qa:refactor:modular"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
