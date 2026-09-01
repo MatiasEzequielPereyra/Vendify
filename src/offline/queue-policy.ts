@@ -110,13 +110,17 @@ export function validateOfflineSale(sale: OfflineSale): void {
   }
 }
 
-function normalizedItems(sale: OfflineSale): readonly [string, number, number][] {
+function normalizedItems(
+  sale: OfflineSale
+): readonly (readonly [string, number, number])[] {
   return [...sale.items]
     .map((item) => [String(item.productId), item.quantity, item.unitPrice] as const)
     .sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-function normalizedPayments(sale: OfflineSale): readonly [string, number][] {
+function normalizedPayments(
+  sale: OfflineSale
+): readonly (readonly [string, number])[] {
   return [...sale.payments]
     .map((payment) => [payment.method, payment.amount] as const)
     .sort((a, b) => a[0].localeCompare(b[0]));
