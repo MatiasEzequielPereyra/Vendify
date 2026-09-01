@@ -7,6 +7,7 @@ interface SupabaseRpcResponse {
 }
 
 export interface SupabaseRpcClientLike {
+  readonly supabaseUrl?: string;
   rpc(name: string, args: Record<string, unknown>): Promise<SupabaseRpcResponse>;
 }
 
