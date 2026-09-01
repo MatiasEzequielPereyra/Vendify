@@ -19,6 +19,7 @@ const required = [
   "manifest.json",
   "vercel.json",
   "vendify-offline-v2312.js",
+  "vendify-offline-v2312-bridge.js",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/apple-touch-icon.png"
@@ -32,13 +33,18 @@ pass("staging release files exist");
 const html = readFileSync(resolve(target, "index.html"), "utf8");
 const runtimeMarker = 'src="vendify-offline-v2312.js?v=2312"';
 const appMarker = 'src="app.js?v=2311"';
+const bridgeMarker = 'src="vendify-offline-v2312-bridge.js?v=2312"';
 const runtimePosition = html.indexOf(runtimeMarker);
 const appPosition = html.indexOf(appMarker);
+const bridgePosition = html.indexOf(bridgeMarker);
 
 if (runtimePosition < 0) fail("v2.31.2 runtime script is not referenced");
 if (appPosition < 0) fail("legacy app.js script is not referenced");
-if (runtimePosition > appPosition) fail("v2.31.2 runtime must load before app.js");
-pass("v2.31.2 runtime loads before legacy app.js");
+if (bridgePosition < 0) fail("v2.31.2 POS bridge script is not referenced");
+if (!(runtimePosition < appPosition && appPosition < bridgePosition)) {
+  fail("staging scripts must load runtime -> app.js -> POS bridge");
+}
+pass("staging scripts load runtime -> legacy app -> POS bridge");
 
 for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
   const ref = match[1];
@@ -49,21 +55,39 @@ for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
 }
 pass("staging local references resolve");
 
+const stagedApp = readFileSync(resolve(target, "app.js"), "utf8");
+const appMarkers = [
+  "registrarVentaOfflineIndexedDbV2312",
+  "captureStockSnapshot",
+  "sincronizarVentasOfflineIndexedDbV2312"
+];
+for (const marker of appMarkers) {
+  if (!stagedApp.includes(marker)) fail(`staging app.js missing integration marker ${marker}`);
+}
+pass("staging app routes checkout, stock snapshot and sync to v2.31.2");
+
 const runtime = readFileSync(resolve(target, "vendify-offline-v2312.js"), "utf8");
+const bridge = readFileSync(resolve(target, "vendify-offline-v2312-bridge.js"), "utf8");
 if (!runtime.includes("vendify-offline-v2312")) {
   fail("staging runtime does not contain IndexedDB database identifier");
 }
 if (!runtime.includes("vendify_offline_engine_v2312")) {
   fail("staging runtime does not contain v2.31.2 feature flag");
 }
-pass("staging bundle contains IndexedDB runtime and feature flag");
+if (!runtime.includes("enqueueLegacySale") || !runtime.includes("syncNow")) {
+  fail("staging runtime does not expose the POS queue/sync API");
+}
+if (!bridge.includes("registrarVentaOfflineIndexedDbV2312")) {
+  fail("staging bridge does not contain IndexedDB checkout integration");
+}
+pass("staging bundles contain IndexedDB runtime and POS bridge");
 
 const config = readFileSync(resolve(target, "supabase-config.js"), "utf8");
 if (!config.includes("puhkmblnptntorwptvld.supabase.co")) {
   fail("staging release points to unexpected Supabase project");
 }
 if (/vebqlbcfjxnpryjdgfvq/.test(config)) fail("obsolete Supabase project detected");
-if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + config)) {
+if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + bridge + config)) {
   fail("service role assignment detected in staging browser files");
 }
 pass("staging browser security markers pass");
