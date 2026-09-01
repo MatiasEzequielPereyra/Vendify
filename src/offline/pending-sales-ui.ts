@@ -1,4 +1,3 @@
-import type { OfflineSale } from "../types/offline.js";
 import {
   pendingSaleRows,
   summarizePendingSales,
@@ -6,12 +5,12 @@ import {
   type PendingSalesSummary
 } from "./pending-sales-view-model.js";
 
-interface LegacySyncOptions {
+interface SyncOptions {
   readonly mostrarResumen?: boolean;
   readonly incluirRevision?: boolean;
 }
 
-interface OfflineSyncSummary {
+interface SyncSummary {
   readonly attempted: number;
   readonly synced: number;
   readonly retryable: number;
@@ -19,13 +18,11 @@ interface OfflineSyncSummary {
   readonly recovered: number;
 }
 
-declare global {
-  interface Window {
-    sincronizarVentasOfflineIndexedDbV2312?: (
-      options?: LegacySyncOptions
-    ) => Promise<OfflineSyncSummary>;
-  }
-}
+type SyncFunction = (options?: SyncOptions) => Promise<SyncSummary>;
+
+type WindowWithOfflineSync = Window & {
+  readonly sincronizarVentasOfflineIndexedDbV2312?: SyncFunction;
+};
 
 const STYLE_ID = "vendify-pending-sales-v2312-style";
 const BUTTON_ID = "vendify-pending-sales-v2312-button";
@@ -44,6 +41,10 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   minute: "2-digit"
 });
 
+function syncFunction(): SyncFunction | undefined {
+  return (window as WindowWithOfflineSync).sincronizarVentasOfflineIndexedDbV2312;
+}
+
 function statusLabel(status: PendingSaleRow["status"]): string {
   switch (status) {
     case "pending":
@@ -57,19 +58,15 @@ function statusLabel(status: PendingSaleRow["status"]): string {
   }
 }
 
-function statusClass(status: PendingSaleRow["status"]): string {
-  return `vendify-pending-sales-v2312-status-${status}`;
-}
-
-function el<K extends keyof HTMLElementTagNameMap>(
+function node<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
   text?: string
 ): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
 }
 
 function installStyles(): void {
@@ -78,261 +75,62 @@ function installStyles(): void {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    #${BUTTON_ID} {
-      position: fixed;
-      right: 18px;
-      bottom: 18px;
-      z-index: 9400;
-      border: 0;
-      border-radius: 999px;
-      padding: 10px 14px;
-      font: inherit;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .22);
-      background: #111827;
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    #${BUTTON_ID}[hidden] { display: none !important; }
-
-    #${BUTTON_ID} .vendify-pending-sales-v2312-badge {
-      min-width: 24px;
-      height: 24px;
-      padding: 0 7px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: #fff;
-      color: #111827;
-      font-size: 12px;
-      font-weight: 900;
-    }
-
-    #${PANEL_ID} {
-      position: fixed;
-      inset: 0;
-      z-index: 9500;
-      display: grid;
-      place-items: end;
-      background: rgba(15, 23, 42, .42);
-    }
-
-    #${PANEL_ID}[hidden] { display: none !important; }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-sheet {
-      width: min(520px, 100%);
-      max-height: 88vh;
-      overflow: auto;
-      background: #fff;
-      color: #111827;
-      border-radius: 20px 20px 0 0;
-      box-shadow: 0 -16px 50px rgba(15, 23, 42, .24);
-      padding: 18px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-      margin-bottom: 14px;
-    }
-
-    #${PANEL_ID} h3 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-subtitle {
-      margin: 4px 0 0;
-      color: #64748b;
-      font-size: 13px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-close,
-    #${PANEL_ID} .vendify-pending-sales-v2312-retry {
-      border: 1px solid #dbe3ee;
-      border-radius: 10px;
-      background: #fff;
-      padding: 9px 11px;
-      font: inherit;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-retry {
-      width: 100%;
-      margin: 12px 0 4px;
-      background: #111827;
-      color: #fff;
-      border-color: #111827;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-retry:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-summary-card {
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 10px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-summary-card strong {
-      display: block;
-      font-size: 18px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-summary-card span {
-      color: #64748b;
-      font-size: 11px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-row {
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-row-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-status {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 999px;
-      padding: 5px 8px;
-      font-size: 11px;
-      font-weight: 800;
-      background: #eef2ff;
-      color: #3730a3;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-status-review {
-      background: #fff7ed;
-      color: #9a3412;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-status-failed_retryable {
-      background: #fef2f2;
-      color: #991b1b;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-status-syncing {
-      background: #ecfeff;
-      color: #155e75;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      color: #64748b;
-      font-size: 12px;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-error {
-      margin-top: 8px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: #f8fafc;
-      color: #475569;
-      font-size: 12px;
-      word-break: break-word;
-    }
-
-    #${PANEL_ID} .vendify-pending-sales-v2312-empty {
-      padding: 26px 12px;
-      text-align: center;
-      color: #64748b;
-    }
-
-    @media (min-width: 720px) {
-      #${PANEL_ID} {
-        place-items: center;
-        padding: 24px;
-      }
-      #${PANEL_ID} .vendify-pending-sales-v2312-sheet {
-        border-radius: 20px;
-      }
-    }
-  `;
+#${BUTTON_ID}{position:fixed;right:18px;bottom:18px;z-index:9400;border:0;border-radius:999px;padding:10px 14px;background:#111827;color:#fff;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(15,23,42,.22);display:flex;gap:8px;align-items:center}
+#${BUTTON_ID}[hidden],#${PANEL_ID}[hidden]{display:none!important}
+#${BUTTON_ID} .v2312-count{min-width:24px;height:24px;padding:0 7px;border-radius:999px;background:#fff;color:#111827;display:flex;align-items:center;justify-content:center;font-size:12px}
+#${PANEL_ID}{position:fixed;inset:0;z-index:9500;background:rgba(15,23,42,.42);display:grid;place-items:end}
+#${PANEL_ID} .v2312-sheet{width:min(520px,100%);max-height:88vh;overflow:auto;background:#fff;color:#111827;border-radius:20px 20px 0 0;padding:18px;box-shadow:0 -16px 50px rgba(15,23,42,.24)}
+#${PANEL_ID} .v2312-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+#${PANEL_ID} h3{margin:0;font-size:20px}#${PANEL_ID} .v2312-sub{margin:4px 0 0;color:#64748b;font-size:13px}
+#${PANEL_ID} button{border:1px solid #dbe3ee;border-radius:10px;background:#fff;padding:9px 11px;font:inherit;font-weight:700;cursor:pointer}
+#${PANEL_ID} .v2312-retry{width:100%;margin-top:12px;background:#111827;color:#fff;border-color:#111827}#${PANEL_ID} .v2312-retry:disabled{opacity:.55;cursor:not-allowed}
+#${PANEL_ID} .v2312-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.v2312-summary-card{border:1px solid #e2e8f0;border-radius:12px;padding:10px}.v2312-summary-card strong{display:block;font-size:18px}.v2312-summary-card span{color:#64748b;font-size:11px}
+#${PANEL_ID} .v2312-list{display:grid;gap:10px}.v2312-row{border:1px solid #e2e8f0;border-radius:14px;padding:12px}.v2312-row-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.v2312-status{border-radius:999px;padding:5px 8px;font-size:11px;font-weight:800;background:#eef2ff;color:#3730a3}.v2312-status-review{background:#fff7ed;color:#9a3412}.v2312-status-failed_retryable{background:#fef2f2;color:#991b1b}.v2312-status-syncing{background:#ecfeff;color:#155e75}.v2312-meta{display:flex;flex-wrap:wrap;gap:8px 12px;color:#64748b;font-size:12px}.v2312-error{margin-top:8px;padding:8px 10px;border-radius:10px;background:#f8fafc;color:#475569;font-size:12px;word-break:break-word}.v2312-empty{padding:26px 12px;text-align:center;color:#64748b}
+@media(min-width:720px){#${PANEL_ID}{place-items:center;padding:24px}#${PANEL_ID} .v2312-sheet{border-radius:20px}}
+`;
   document.head.appendChild(style);
 }
 
 function createButton(): HTMLButtonElement {
-  const button = el("button");
+  const button = document.createElement("button");
   button.id = BUTTON_ID;
   button.type = "button";
-  button.setAttribute("aria-haspopup", "dialog");
   button.hidden = true;
-
-  const label = el("span", undefined, "Ventas pendientes");
-  const badge = el("span", "vendify-pending-sales-v2312-badge", "0");
-  badge.dataset.role = "count";
-
-  button.append(label, badge);
+  button.setAttribute("aria-haspopup", "dialog");
+  button.append(node("span", undefined, "Ventas pendientes"), node("span", "v2312-count", "0"));
   document.body.appendChild(button);
   return button;
 }
 
 function createPanel(): HTMLDivElement {
-  const panel = el("div");
+  const panel = document.createElement("div");
   panel.id = PANEL_ID;
   panel.hidden = true;
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-modal", "true");
   panel.setAttribute("aria-label", "Ventas pendientes");
 
-  const sheet = el("section", "vendify-pending-sales-v2312-sheet");
-  const head = el("div", "vendify-pending-sales-v2312-head");
-  const titleWrap = el("div");
-  titleWrap.append(
-    el("h3", undefined, "Ventas pendientes"),
-    el(
-      "p",
-      "vendify-pending-sales-v2312-subtitle",
-      "Cola durable en IndexedDB · orden FIFO"
-    )
-  );
+  const sheet = node("section", "v2312-sheet");
+  const head = node("div", "v2312-head");
+  const titles = node("div");
+  titles.append(node("h3", undefined, "Ventas pendientes"), node("p", "v2312-sub", "Cola durable en IndexedDB · orden FIFO"));
 
-  const close = el("button", "vendify-pending-sales-v2312-close", "Cerrar");
+  const close = document.createElement("button");
   close.type = "button";
   close.dataset.action = "close";
-  head.append(titleWrap, close);
+  close.textContent = "Cerrar";
+  head.append(titles, close);
 
-  const summary = el("div", "vendify-pending-sales-v2312-summary");
+  const summary = node("div", "v2312-summary");
   summary.dataset.role = "summary";
-
-  const list = el("div", "vendify-pending-sales-v2312-list");
+  const list = node("div", "v2312-list");
   list.dataset.role = "list";
 
-  const retry = el("button", "vendify-pending-sales-v2312-retry", "Reintentar sincronización");
+  const retry = document.createElement("button");
   retry.type = "button";
+  retry.className = "v2312-retry";
   retry.dataset.action = "retry";
+  retry.textContent = "Reintentar sincronización";
 
   sheet.append(head, summary, list, retry);
   panel.appendChild(sheet);
@@ -341,8 +139,9 @@ function createPanel(): HTMLDivElement {
 }
 
 function summaryCard(value: number, label: string): HTMLDivElement {
-  const card = el("div", "vendify-pending-sales-v2312-summary-card");
-  card.append(el("strong", undefined, String(value)), el("span", undefined, label));
+  const card = document.createElement("div");
+  card.className = "v2312-summary-card";
+  card.append(node("strong", undefined, String(value)), node("span", undefined, label));
   return card;
 }
 
@@ -354,41 +153,35 @@ function renderSummary(container: HTMLElement, summary: PendingSalesSummary): vo
   );
 }
 
-function renderRow(row: PendingSaleRow): HTMLDivElement {
-  const card = el("article", "vendify-pending-sales-v2312-row");
-  const head = el("div", "vendify-pending-sales-v2312-row-head");
-  const left = el("div");
-  const saleId = el("strong", undefined, `#${row.requestId.slice(0, 8)}`);
-  left.append(saleId, el("div", undefined, row.itemLabel));
+function renderRow(row: PendingSaleRow): HTMLElement {
+  const card = node("article", "v2312-row");
+  const head = node("div", "v2312-row-head");
+  const left = node("div");
+  left.append(node("strong", undefined, `#${row.requestId.slice(0, 8)}`), node("div", undefined, row.itemLabel));
 
-  const status = el(
-    "span",
-    `vendify-pending-sales-v2312-status ${statusClass(row.status)}`,
-    statusLabel(row.status)
+  head.append(
+    left,
+    node("span", `v2312-status v2312-status-${row.status}`, statusLabel(row.status))
   );
-  head.append(left, status);
 
-  const meta = el("div", "vendify-pending-sales-v2312-meta");
   const created = new Date(row.createdAt);
+  const meta = node("div", "v2312-meta");
   meta.append(
-    el("span", undefined, Number.isFinite(created.getTime()) ? dateFormatter.format(created) : row.createdAt),
-    el("span", undefined, `${row.itemCount} un.`),
-    el("span", undefined, row.paymentLabel || "Pago N/D"),
-    el("strong", undefined, moneyFormatter.format(row.total)),
-    el("span", undefined, `Intentos: ${row.attempts}`)
+    node("span", undefined, Number.isFinite(created.getTime()) ? dateFormatter.format(created) : row.createdAt),
+    node("span", undefined, `${row.itemCount} un.`),
+    node("span", undefined, row.paymentLabel || "Pago N/D"),
+    node("strong", undefined, moneyFormatter.format(row.total)),
+    node("span", undefined, `Intentos: ${row.attempts}`)
   );
 
   card.append(head, meta);
-  if (row.lastError) {
-    card.append(el("div", "vendify-pending-sales-v2312-error", row.lastError));
-  }
+  if (row.lastError) card.append(node("div", "v2312-error", row.lastError));
   return card;
 }
 
 function syncLegacyBanner(summary: PendingSalesSummary): void {
   const banner = document.querySelector<HTMLElement>("#offline-sync-banner-v2311");
   const text = document.querySelector<HTMLElement>("#offline-sync-text-v2311");
-
   if (!banner || !text) return;
 
   banner.classList.toggle("hidden", summary.total === 0);
@@ -403,19 +196,19 @@ function syncLegacyBanner(summary: PendingSalesSummary): void {
   }
 }
 
-let button: HTMLButtonElement;
-let panel: HTMLDivElement;
+let button: HTMLButtonElement | null = null;
+let panel: HTMLDivElement | null = null;
 let refreshInFlight: Promise<void> | null = null;
 
 async function refresh(): Promise<void> {
   const runtime = window.VendifyOfflineV2312;
-  if (!runtime?.enabled) return;
+  if (!runtime?.enabled || !button || !panel) return;
 
   const sales = await runtime.listSales();
   const summary = summarizePendingSales(sales);
   const rows = pendingSaleRows(sales);
 
-  const count = button.querySelector<HTMLElement>('[data-role="count"]');
+  const count = button.querySelector<HTMLElement>(".v2312-count");
   if (count) count.textContent = String(summary.total);
   button.hidden = summary.total === 0;
   syncLegacyBanner(summary);
@@ -426,13 +219,11 @@ async function refresh(): Promise<void> {
 
   if (summaryContainer) renderSummary(summaryContainer, summary);
   if (list) {
-    if (rows.length === 0) {
-      list.replaceChildren(
-        el("div", "vendify-pending-sales-v2312-empty", "No hay ventas pendientes.")
-      );
-    } else {
-      list.replaceChildren(...rows.map(renderRow));
-    }
+    list.replaceChildren(
+      ...(rows.length > 0
+        ? rows.map(renderRow)
+        : [node("div", "v2312-empty", "No hay ventas pendientes.")])
+    );
   }
 
   if (retry) {
@@ -455,31 +246,32 @@ function scheduleRefresh(): void {
 }
 
 async function retryQueue(): Promise<void> {
-  const retry = panel.querySelector<HTMLButtonElement>('[data-action="retry"]');
-  if (!navigator.onLine || !window.sincronizarVentasOfflineIndexedDbV2312) return;
+  if (!panel || !navigator.onLine) return;
+  const sync = syncFunction();
+  if (!sync) return;
 
+  const retry = panel.querySelector<HTMLButtonElement>('[data-action="retry"]');
   if (retry) {
     retry.disabled = true;
     retry.textContent = "Sincronizando…";
   }
 
   try {
-    await window.sincronizarVentasOfflineIndexedDbV2312({
-      mostrarResumen: true,
-      incluirRevision: true
-    });
+    await sync({ mostrarResumen: true, incluirRevision: true });
   } finally {
     scheduleRefresh();
   }
 }
 
 function openPanel(): void {
+  if (!panel) return;
   panel.hidden = false;
   document.body.style.overflow = "hidden";
   scheduleRefresh();
 }
 
 function closePanel(): void {
+  if (!panel) return;
   panel.hidden = true;
   document.body.style.overflow = "";
 }
@@ -499,16 +291,13 @@ function init(): void {
 
     if (target === panel || target.dataset.action === "close") {
       closePanel();
-      return;
-    }
-
-    if (target.dataset.action === "retry") {
+    } else if (target.dataset.action === "retry") {
       void retryQueue();
     }
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !panel.hidden) closePanel();
+    if (event.key === "Escape" && panel && !panel.hidden) closePanel();
   });
   window.addEventListener("online", scheduleRefresh);
   window.addEventListener("offline", scheduleRefresh);
