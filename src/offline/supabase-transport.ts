@@ -22,7 +22,7 @@ function buildRegistrarVentaV4Args(sale: OfflineSale): Record<string, unknown> {
     })),
     p_descuento_tipo: null,
     p_descuento_valor: 0,
-    p_observacion: null,
+    p_observacion: sale.observation ?? null,
     p_sucursal_id: sale.branchId,
     p_caja_id: sale.cashRegisterId,
     p_request_id: sale.requestId
