@@ -105,16 +105,44 @@ app = replaceExactlyOnce(
 
 app = replaceExactlyOnce(
   app,
-  /err\.textContent = "";\s*if \(!businessName\) \{ err\.textContent = "Ingresá el nombre del negocio\."; return; \}\s*if \(password\.length < 8\) \{ err\.textContent = "La contraseña debe tener al menos 8 caracteres\."; return; \}/g,
-  `err.textContent = "";\n  const validationError = window.VendifyAuthV232.validateRegistrationInput(businessName, password);\n  if (validationError) { err.textContent = validationError; return; }`,
-  "registration validation"
+  /async function iniciarSesionPassword\(e\) \{[\s\S]*?^\}/gm,
+  `async function iniciarSesionPassword(e) {\n  e.preventDefault();\n  const email = $("#login-email")?.value.trim();\n  const password = $("#login-password")?.value || "";\n  const btn = $("#btn-login");\n  const err = $("#login-error");\n  if (!btn || !err) return;\n\n  err.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Ingresando...";\n\n  const result = await window.VendifyAuthV232.signInOwner(\n    supabaseClient.auth,\n    email,\n    password\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Iniciar sesión";\n\n  if (!result.ok) err.textContent = result.errorMessage || "";\n}`,
+  "owner auth handler"
 );
 
 app = replaceExactlyOnce(
   app,
-  /err\.textContent = "";\s*if \(password\.length < 8\) \{ err\.textContent = "La contraseña debe tener al menos 8 caracteres\."; return; \}\s*if \(password !== confirm\) \{ err\.textContent = "Las contraseñas no coinciden\."; return; \}/g,
-  `err.textContent = "";\n  const validationError = window.VendifyAuthV232.validateNewPasswordInput(password, confirm);\n  if (validationError) { err.textContent = validationError; return; }`,
-  "new password validation"
+  /async function loginEmpleado\(e\) \{[\s\S]*?^\}/gm,
+  `async function loginEmpleado(e) {\n  e.preventDefault();\n\n  const code = $("#employee-business-code")?.value.trim() || "";\n  const username = $("#employee-username")?.value.trim() || "";\n  const password = $("#employee-password")?.value || "";\n  const errorEl = $("#employee-login-error");\n  const btn = $("#btn-employee-login");\n  if (!errorEl || !btn) return;\n\n  errorEl.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Ingresando...";\n\n  const result = await window.VendifyAuthV232.signInEmployee(\n    supabaseClient.auth,\n    code,\n    username,\n    password\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Entrar a Vendify";\n\n  if (!result.ok) errorEl.textContent = result.errorMessage || "";\n}`,
+  "employee auth handler"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /async function registrarCuenta\(e\) \{[\s\S]*?^\}/gm,
+  `async function registrarCuenta(e) {\n  e.preventDefault();\n  const businessName = $("#register-business")?.value.trim();\n  const email = $("#register-email")?.value.trim();\n  const password = $("#register-password")?.value || "";\n  const err = $("#register-error");\n  const btn = $("#btn-register");\n  if (!err || !btn) return;\n\n  err.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Creando cuenta...";\n\n  const result = await window.VendifyAuthV232.registerOwner(\n    supabaseClient.auth,\n    {\n      businessName,\n      email,\n      password,\n      redirectTo: window.location.origin + window.location.pathname\n    }\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Crear cuenta";\n\n  if (!result.ok) {\n    err.textContent = result.errorMessage || "";\n    return;\n  }\n\n  if (result.requiresConfirmation) {\n    mostrarPanelAuth("owner");\n    mostrarMensajeAuth(\n      "Cuenta creada. Revisá tu email una sola vez para confirmarla y después ingresá con tu contraseña.",\n      "success"\n    );\n  }\n}`,
+  "registration auth handler"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /async function solicitarResetPassword\(e\) \{[\s\S]*?^\}/gm,
+  `async function solicitarResetPassword(e) {\n  e.preventDefault();\n  const email = $("#forgot-email")?.value.trim();\n  const btn = $("#btn-forgot-send");\n  const err = $("#forgot-error");\n  if (!btn || !err) return;\n\n  err.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Enviando...";\n\n  const result = await window.VendifyAuthV232.requestPasswordReset(\n    supabaseClient.auth,\n    email,\n    window.location.origin + window.location.pathname\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Enviar recuperación";\n\n  if (!result.ok) {\n    err.textContent = result.errorMessage || "";\n    return;\n  }\n\n  mostrarPanelAuth("owner");\n  mostrarMensajeAuth("Te enviamos un enlace para cambiar tu contraseña.", "success");\n}`,
+  "password reset auth handler"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /async function guardarNuevaPassword\(e\) \{[\s\S]*?^\}/gm,
+  `async function guardarNuevaPassword(e) {\n  e.preventDefault();\n  const password = $("#new-password")?.value || "";\n  const confirm = $("#new-password-confirm")?.value || "";\n  const err = $("#new-password-error");\n  const btn = $("#btn-new-password");\n  if (!err || !btn) return;\n\n  err.textContent = "";\n  btn.disabled = true;\n  btn.textContent = "Guardando...";\n\n  const result = await window.VendifyAuthV232.updatePassword(\n    supabaseClient.auth,\n    password,\n    confirm\n  );\n\n  btn.disabled = false;\n  btn.textContent = "Guardar contraseña";\n\n  if (!result.ok) {\n    err.textContent = result.errorMessage || "";\n    return;\n  }\n\n  flujoRecuperacionActivo = false;\n  mostrarToast("Contraseña actualizada", "success");\n  await mostrarApp();\n}`,
+  "password update auth handler"
+);
+
+app = replaceExactlyOnce(
+  app,
+  /async function cerrarSesion\(\) \{[\s\S]*?^\}/gm,
+  `async function cerrarSesion() {\n  flujoRecuperacionActivo = false;\n  limpiarContextoApp();\n  await window.VendifyAuthV232.signOut(supabaseClient.auth);\n}`,
+  "sign out auth handler"
 );
 
 const coreContent = readFileSync(coreFile, "utf8");
@@ -138,5 +166,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core and Auth helpers are loaded from TypeScript before the compatibility app runtime.");
+console.log("Core and Auth helpers/services are loaded from TypeScript before the compatibility app runtime.");
 console.log("Root production files remain untouched.");
