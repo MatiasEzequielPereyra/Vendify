@@ -14,6 +14,10 @@ function fingerprint(content) {
   return createHash("sha256").update(content).digest("hex").slice(0, 12);
 }
 
+function stripSourceMapReference(content) {
+  return content.replace(/\n?\/\/# sourceMappingURL=.*(?:\r?\n)?$/u, "\n");
+}
+
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
@@ -76,8 +80,8 @@ stagedApp = replaceExactlyOnce(
   "offline sync routing"
 );
 
-const runtimeContent = readFileSync(runtimeFile, "utf8");
-const bridgeContent = readFileSync(bridgeFile, "utf8");
+const runtimeContent = stripSourceMapReference(readFileSync(runtimeFile, "utf8"));
+const bridgeContent = stripSourceMapReference(readFileSync(bridgeFile, "utf8"));
 const appHash = fingerprint(stagedApp);
 const runtimeHash = fingerprint(runtimeContent);
 const bridgeHash = fingerprint(bridgeContent);
@@ -89,23 +93,6 @@ const bridgeName = `vendify-offline-v2312-bridge-${bridgeHash}.js`;
 writeFileSync(resolve(out, stagedAppName), stagedApp, "utf8");
 writeFileSync(resolve(out, runtimeName), runtimeContent, "utf8");
 writeFileSync(resolve(out, bridgeName), bridgeContent, "utf8");
-
-// Keep source maps available for local debugging. Their original names match
-// the sourceMappingURL emitted by Vite inside the fingerprinted bundles.
-for (const file of [runtimeFile, bridgeFile]) {
-  const sourceMap = `${file}.map`;
-  if (existsSync(sourceMap)) {
-    cpSync(
-      sourceMap,
-      resolve(
-        out,
-        sourceMap.endsWith("bridge.js.map")
-          ? "vendify-offline-v2312-bridge.js.map"
-          : "vendify-offline-v2312.js.map"
-      )
-    );
-  }
-}
 
 const indexPath = resolve(out, "index.html");
 const index = readFileSync(indexPath, "utf8");
@@ -127,4 +114,5 @@ writeFileSync(indexPath, stagedIndex, "utf8");
 console.log("Vendify v2.31.2 staging release created in dist-staging-v2312/");
 console.log("IndexedDB checkout, snapshot capture and sync routing are staging-only.");
 console.log("Staging JS uses content-fingerprinted filenames to bypass stale PWA caches.");
+console.log("Source-map references are stripped from staging bundles to avoid stale-map warnings.");
 console.log("Enable only with ?offlineEngine=v2312 or the runtime helper.");
