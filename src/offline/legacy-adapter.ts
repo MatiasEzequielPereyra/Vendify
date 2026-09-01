@@ -39,10 +39,10 @@ export interface LegacyPosOfflineSaleInput {
   readonly observation?: string | null;
 }
 
-function requiredId<T extends string>(value: string, label: string): T {
+function requiredId(value: string, label: string): string {
   const normalized = value.trim();
   if (!normalized) throw new Error(`${label} is required`);
-  return normalized as T;
+  return normalized;
 }
 
 function paymentMethod(value: string): OfflinePaymentMethod {
@@ -57,10 +57,10 @@ function normalizeObservation(value: string | null | undefined): string | undefi
 
 function mapItem(item: LegacyPosSaleItemInput): OfflineSaleItem {
   return {
-    productId: requiredId<ProductId>(item.id, "productId"),
+    productId: requiredId(item.id, "productId") as ProductId,
     productName: item.nombre.trim(),
-    quantity: Number(item.cantidad),
-    unitPrice: Number(item.precioVenta)
+    quantity: item.cantidad,
+    unitPrice: item.precioVenta
   };
 }
 
@@ -69,19 +69,19 @@ export function legacyPosSaleToOfflineSale(
 ): OfflineSale {
   const observation = normalizeObservation(input.observation);
   const sale: OfflineSale = {
-    requestId: requiredId<RequestId>(input.requestId, "requestId"),
-    businessId: requiredId<BusinessId>(input.businessId, "businessId"),
-    branchId: requiredId<BranchId>(input.branchId, "branchId"),
-    cashRegisterId: requiredId<CashRegisterId>(input.cashRegisterId, "cashRegisterId"),
-    userId: requiredId<UserId>(input.userId, "userId"),
+    requestId: requiredId(input.requestId, "requestId") as RequestId,
+    businessId: requiredId(input.businessId, "businessId") as BusinessId,
+    branchId: requiredId(input.branchId, "branchId") as BranchId,
+    cashRegisterId: requiredId(input.cashRegisterId, "cashRegisterId") as CashRegisterId,
+    userId: requiredId(input.userId, "userId") as UserId,
     createdAt: input.createdAt ?? new Date().toISOString(),
     items: input.items.map(mapItem),
     payments: input.payments.map((payment) => ({
       method: paymentMethod(payment.medio_pago),
-      amount: Number(payment.monto)
+      amount: payment.monto
     })),
-    subtotal: Number(input.subtotal),
-    total: Number(input.total),
+    subtotal: input.subtotal,
+    total: input.total,
     ...(observation === undefined ? {} : { observation }),
     status: "pending",
     attempts: 0
