@@ -168,10 +168,10 @@ function renderRow(row: PendingSaleRow): HTMLElement {
   const meta = node("div", "v2312-meta");
   meta.append(
     node("span", undefined, Number.isFinite(created.getTime()) ? dateFormatter.format(created) : row.createdAt),
-    node("span", undefined, `${row.itemCount} un.`),
+    node("span", undefined, `${String(row.itemCount)} un.`),
     node("span", undefined, row.paymentLabel || "Pago N/D"),
     node("strong", undefined, moneyFormatter.format(row.total)),
-    node("span", undefined, `Intentos: ${row.attempts}`)
+    node("span", undefined, `Intentos: ${String(row.attempts)}`)
   );
 
   card.append(head, meta);
@@ -187,12 +187,15 @@ function syncLegacyBanner(summary: PendingSalesSummary): void {
   banner.classList.toggle("hidden", summary.total === 0);
   if (summary.total === 0) return;
 
+  const total = String(summary.total);
+  const review = String(summary.review);
+
   if (summary.review > 0) {
-    text.textContent = `${summary.total} venta${summary.total === 1 ? "" : "s"} pendiente${summary.total === 1 ? "" : "s"} · ${summary.review} en revisión`;
+    text.textContent = `${total} venta${summary.total === 1 ? "" : "s"} pendiente${summary.total === 1 ? "" : "s"} · ${review} en revisión`;
   } else if (!navigator.onLine) {
-    text.textContent = `${summary.total} venta${summary.total === 1 ? "" : "s"} guardada${summary.total === 1 ? "" : "s"} sin conexión`;
+    text.textContent = `${total} venta${summary.total === 1 ? "" : "s"} guardada${summary.total === 1 ? "" : "s"} sin conexión`;
   } else {
-    text.textContent = `${summary.total} venta${summary.total === 1 ? "" : "s"} esperando sincronización`;
+    text.textContent = `${total} venta${summary.total === 1 ? "" : "s"} esperando sincronización`;
   }
 }
 
