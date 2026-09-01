@@ -93,19 +93,12 @@ async function mostrarAppSeguroVQA(session) {
 // VENDIFY V2.3 - HELPERS LOGIN DUAL / EMPLEADOS
 // ============================================================
 
-const EMPLOYEE_DOMAIN = "employees.vendify.internal";
-
 function normalizarLoginInterno(valor) {
-  return String(valor || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]/g, "");
+  return window.VendifyAuthV232.normalizeInternalLogin(valor);
 }
 
 function emailInternoEmpleado(codigoNegocio, username) {
-  const code = normalizarLoginInterno(codigoNegocio);
-  const user = normalizarLoginInterno(username);
-  return `${code}.${user}@${EMPLOYEE_DOMAIN}`;
+  return window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username);
 }
 
 function generarPasswordTemporal() {
@@ -750,79 +743,47 @@ async function ajustarStockV2(productoId, delta, tipo = "ajuste") {
 let flujoRecuperacionActivo = false;
 
 function mostrarPanelAuth(panel) {
-  const map = {
-    "auth-login-panel": "owner",
-    "auth-register-panel": "register",
-    "auth-reset-panel": "forgot",
-    "auth-new-password-panel": "new-password",
-  };
-
-  const target = map[panel] || panel;
-
-  $("#auth-owner-panel")?.classList.toggle("hidden", target !== "owner");
-  $("#auth-employee-panel")?.classList.toggle("hidden", target !== "employee");
-  $("#register-form")?.classList.toggle("hidden", target !== "register");
-  $("#forgot-form")?.classList.toggle("hidden", target !== "forgot");
-  $("#new-password-form")?.classList.toggle("hidden", target !== "new-password");
-
-  $("#tab-owner")?.classList.toggle("active", target === "owner");
-  $("#tab-employee")?.classList.toggle("active", target === "employee");
-  $("#auth-tabs-wrap")?.classList.toggle("hidden", !["owner", "employee"].includes(target));
-  $("#auth-message")?.classList.add("hidden");
-
-  ["#login-error", "#employee-login-error", "#register-error", "#forgot-error", "#new-password-error"].forEach((sel) => {
-    const el = $(sel);
-    if (el) el.textContent = "";
-  });
+  return window.VendifyAuthV232.showAuthPanel(panel);
 }
 
 function mostrarMensajeAuth(mensaje, tipo = "info") {
-  const el = $("#auth-message");
-  if (!el) return;
-  el.className = `auth-message ${tipo}`;
-  el.textContent = mensaje;
-  el.classList.remove("hidden");
+  return window.VendifyAuthV232.showAuthMessage(mensaje, tipo);
 }
 
 async function initAuth() {
-  const { data } = await supabaseClient.auth.getSession();
-  sesionActual = data.session;
-
-  supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    sesionActual = session;
-
-    if (event === "PASSWORD_RECOVERY") {
-      flujoRecuperacionActivo = true;
-      mostrarLogin();
-      mostrarPanelAuth("auth-new-password-panel");
-      return;
-    }
-
-    // getSession() ya resuelve la sesión inicial. Evita una segunda carga
-    // completa cuando Supabase emite INITIAL_SESSION.
-    if (event === "INITIAL_SESSION") return;
-
-    if (session && !flujoRecuperacionActivo) {
-      await mostrarAppSeguroVQA(session);
-    } else if (!session) {
-      appBootUserIdVQA = null;
-      appBootPromiseVQA = null;
-      limpiarContextoApp();
-      productos = [];
-      carrito = [];
-      mostrarLogin();
-      if (realtimeChannel) {
-        supabaseClient.removeChannel(realtimeChannel);
-        realtimeChannel = null;
+  return window.VendifyAuthV232.initializeAuthLifecycle(
+    supabaseClient.auth,
+    {
+      setSession(session) {
+        sesionActual = session;
+      },
+      isRecoveryActive() {
+        return flujoRecuperacionActivo;
+      },
+      setRecoveryActive(active) {
+        flujoRecuperacionActivo = active;
+      },
+      showLogin: mostrarLogin,
+      showNewPasswordPanel() {
+        mostrarPanelAuth("auth-new-password-panel");
+      },
+      showApp(session) {
+        return mostrarAppSeguroVQA(session);
+      },
+      async handleSignedOut() {
+        appBootUserIdVQA = null;
+        appBootPromiseVQA = null;
+        limpiarContextoApp();
+        productos = [];
+        carrito = [];
+        mostrarLogin();
+        if (realtimeChannel) {
+          supabaseClient.removeChannel(realtimeChannel);
+          realtimeChannel = null;
+        }
       }
     }
-  });
-
-  if (sesionActual && !flujoRecuperacionActivo) {
-    await mostrarAppSeguroVQA(sesionActual);
-  } else {
-    mostrarLogin();
-  }
+  );
 }
 
 function mostrarLogin() {
@@ -888,46 +849,44 @@ async function iniciarSesionPassword(e) {
   btn.disabled = true;
   btn.textContent = "Ingresando...";
 
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const result = await window.VendifyAuthV232.signInOwner(
+    supabaseClient.auth,
+    email,
+    password
+  );
 
   btn.disabled = false;
   btn.textContent = "Iniciar sesión";
 
-  if (error) {
-    err.textContent = error.message === "Invalid login credentials"
-      ? "Email o contraseña incorrectos."
-      : error.message;
-  }
+  if (!result.ok) err.textContent = result.errorMessage || "";
 }
 
 
 async function loginEmpleado(e) {
   e.preventDefault();
 
-  const code = $("#employee-business-code").value.trim();
-  const username = $("#employee-username").value.trim();
-  const password = $("#employee-password").value;
+  const code = $("#employee-business-code")?.value.trim() || "";
+  const username = $("#employee-username")?.value.trim() || "";
+  const password = $("#employee-password")?.value || "";
   const errorEl = $("#employee-login-error");
   const btn = $("#btn-employee-login");
+  if (!errorEl || !btn) return;
 
   errorEl.textContent = "";
-
-  const email = emailInternoEmpleado(code, username);
-
   btn.disabled = true;
   btn.textContent = "Ingresando...";
 
-  const { error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const result = await window.VendifyAuthV232.signInEmployee(
+    supabaseClient.auth,
+    code,
+    username,
+    password
+  );
 
   btn.disabled = false;
   btn.textContent = "Entrar a Vendify";
 
-  if (error) {
-    errorEl.textContent = "Código, usuario o contraseña incorrectos.";
-  }
+  if (!result.ok) errorEl.textContent = result.errorMessage || "";
 }
 
 async function registrarCuenta(e) {
@@ -940,29 +899,33 @@ async function registrarCuenta(e) {
   if (!err || !btn) return;
 
   err.textContent = "";
-  if (!businessName) { err.textContent = "Ingresá el nombre del negocio."; return; }
-  if (password.length < 8) { err.textContent = "La contraseña debe tener al menos 8 caracteres."; return; }
-
   btn.disabled = true;
   btn.textContent = "Creando cuenta...";
 
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: window.location.origin + window.location.pathname,
-      data: { business_name: businessName },
-    },
-  });
+  const result = await window.VendifyAuthV232.registerOwner(
+    supabaseClient.auth,
+    {
+      businessName,
+      email,
+      password,
+      redirectTo: window.location.origin + window.location.pathname
+    }
+  );
 
   btn.disabled = false;
   btn.textContent = "Crear cuenta";
 
-  if (error) { err.textContent = error.message; return; }
+  if (!result.ok) {
+    err.textContent = result.errorMessage || "";
+    return;
+  }
 
-  if (!data.session) {
+  if (result.requiresConfirmation) {
     mostrarPanelAuth("owner");
-    mostrarMensajeAuth("Cuenta creada. Revisá tu email una sola vez para confirmarla y después ingresá con tu contraseña.", "success");
+    mostrarMensajeAuth(
+      "Cuenta creada. Revisá tu email una sola vez para confirmarla y después ingresá con tu contraseña.",
+      "success"
+    );
   }
 }
 
@@ -977,14 +940,20 @@ async function solicitarResetPassword(e) {
   btn.disabled = true;
   btn.textContent = "Enviando...";
 
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname,
-  });
+  const result = await window.VendifyAuthV232.requestPasswordReset(
+    supabaseClient.auth,
+    email,
+    window.location.origin + window.location.pathname
+  );
 
   btn.disabled = false;
   btn.textContent = "Enviar recuperación";
 
-  if (error) { err.textContent = error.message; return; }
+  if (!result.ok) {
+    err.textContent = result.errorMessage || "";
+    return;
+  }
+
   mostrarPanelAuth("owner");
   mostrarMensajeAuth("Te enviamos un enlace para cambiar tu contraseña.", "success");
 }
@@ -998,16 +967,22 @@ async function guardarNuevaPassword(e) {
   if (!err || !btn) return;
 
   err.textContent = "";
-  if (password.length < 8) { err.textContent = "La contraseña debe tener al menos 8 caracteres."; return; }
-  if (password !== confirm) { err.textContent = "Las contraseñas no coinciden."; return; }
-
   btn.disabled = true;
   btn.textContent = "Guardando...";
-  const { error } = await supabaseClient.auth.updateUser({ password });
+
+  const result = await window.VendifyAuthV232.updatePassword(
+    supabaseClient.auth,
+    password,
+    confirm
+  );
+
   btn.disabled = false;
   btn.textContent = "Guardar contraseña";
 
-  if (error) { err.textContent = error.message; return; }
+  if (!result.ok) {
+    err.textContent = result.errorMessage || "";
+    return;
+  }
 
   flujoRecuperacionActivo = false;
   mostrarToast("Contraseña actualizada", "success");
@@ -1120,7 +1095,7 @@ function abrirCerrarMenuUsuarioV224(force) {
 async function cerrarSesion() {
   flujoRecuperacionActivo = false;
   limpiarContextoApp();
-  await supabaseClient.auth.signOut();
+  await window.VendifyAuthV232.signOut(supabaseClient.auth);
 }
 
 
