@@ -26,7 +26,7 @@ export interface AuthClientPort {
       emailRedirectTo: string;
       data: { business_name: string };
     };
-  }): Promise<AuthResult<{ session?: unknown | null }>>;
+  }): Promise<AuthResult<{ session?: object | null }>>;
 
   resetPasswordForEmail(
     email: string,
@@ -47,7 +47,8 @@ export interface RegistrationActionResult extends AuthActionResult {
 }
 
 function errorMessage(error: AuthErrorLike | null | undefined): string {
-  return error?.message || "Error de autenticación";
+  if (error?.message) return error.message;
+  return "Error de autenticación";
 }
 
 export async function signInOwner(
@@ -122,7 +123,7 @@ export async function registerOwner(
   return {
     ok: true,
     errorMessage: null,
-    requiresConfirmation: !data?.session
+    requiresConfirmation: !data.session
   };
 }
 
