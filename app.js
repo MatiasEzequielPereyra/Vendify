@@ -1105,58 +1105,27 @@ async function cerrarSesion() {
 // ============================================================
 
 async function obtenerNegocioAdminV3() {
-  const { data, error } = await supabaseClient.rpc("obtener_negocio_admin_actual");
-  if (error) throw new Error(error.message);
-  return data;
+  return window.VendifyTeamV232.getAdminBusiness(supabaseClient);
 }
 
 async function listarEquipoV3() {
-  const [{ data, error }, permissionResult] = await Promise.all([
-    supabaseClient.rpc("listar_equipo_v3"),
-    supabaseClient.rpc("listar_permisos_stock_equipo_v1"),
-  ]);
-
-  if (error) throw new Error(error.message || "No se pudo cargar el equipo");
-
-  const people = data || [];
-  const permissionMap = new Map(
-    (permissionResult?.data || []).map((row) => [
-      row.membership_id,
-      row.puede_gestionar_stock === true,
-    ])
-  );
-
-  if (permissionResult?.error) {
-    console.warn("[Equipo] permisos stock no disponibles:", permissionResult.error);
+  const result = await window.VendifyTeamV232.listTeam(supabaseClient);
+  if (result.stockPermissionWarning) {
+    console.warn("[Equipo] permisos stock no disponibles:", result.stockPermissionWarning);
   }
-
-  return people.map((item) => ({
-    ...item,
-    puede_gestionar_stock:
-      permissionMap.has(item.membership_id)
-        ? permissionMap.get(item.membership_id)
-        : ["owner", "admin", "manager"].includes(item.rol),
-  }));
+  return result.members;
 }
 
 async function actualizarPermisoStockMiembroV23014(membershipId, permitir) {
-  const { data, error } = await supabaseClient.rpc(
-    "actualizar_permiso_stock_miembro_v1",
-    {
-      p_membership_id: membershipId,
-      p_permitir: permitir === true,
-    }
+  const result = await window.VendifyTeamV232.updateStockPermission(
+    supabaseClient,
+    membershipId,
+    permitir
   );
-
-  if (error || data?.ok === false) {
-    throw new Error(
-      error?.message ||
-      data?.message ||
-      "No se pudo actualizar el permiso de stock"
-    );
+  if (!result.ok) {
+    throw new Error(result.errorMessage || "No se pudo actualizar el permiso de stock");
   }
-
-  return data;
+  return result.data;
 }
 
 async function abrirEquipo() {
@@ -1282,19 +1251,19 @@ async function crearEmpleadoV3(e) {
   const btn = $("#btn-crear-empleado");
 
   errorEl.textContent = "";
-
   btn.disabled = true;
   btn.textContent = "Creando...";
 
-  const { data, error } = await supabaseClient.functions.invoke("crear-empleado", {
-    body: { nombre, username, rol, password },
-  });
+  const result = await window.VendifyTeamV232.createEmployee(
+    supabaseClient.functions,
+    { nombre, username, rol, password }
+  );
 
   btn.disabled = false;
   btn.textContent = "Crear empleado";
 
-  if (error || data?.error) {
-    errorEl.textContent = data?.error || error?.message || "No se pudo crear el empleado";
+  if (!result.ok) {
+    errorEl.textContent = result.errorMessage || "No se pudo crear el empleado";
     return;
   }
 
@@ -1332,14 +1301,15 @@ async function crearEmpleadoV3(e) {
 
 async function cambiarRolEquipo(membershipId, rol, selectEl) {
   selectEl.disabled = true;
-  const { error } = await supabaseClient.rpc("actualizar_rol_miembro_v2", {
-    p_membership_id: membershipId,
-    p_rol: rol,
-  });
+  const result = await window.VendifyTeamV232.updateMemberRole(
+    supabaseClient,
+    membershipId,
+    rol
+  );
   selectEl.disabled = false;
 
-  if (error) {
-    mostrarToast(error.message, "error");
+  if (!result.ok) {
+    mostrarToast(result.errorMessage || "No se pudo actualizar el rol", "error");
     await renderEquipo();
     return;
   }
@@ -1347,12 +1317,13 @@ async function cambiarRolEquipo(membershipId, rol, selectEl) {
 }
 
 async function cambiarEstadoEquipo(membershipId, activo) {
-  const { error } = await supabaseClient.rpc("cambiar_estado_miembro_v3", {
-    p_membership_id: membershipId,
-    p_activo: activo,
-  });
-  if (error) {
-    mostrarToast(error.message, "error");
+  const result = await window.VendifyTeamV232.setMemberActive(
+    supabaseClient,
+    membershipId,
+    activo
+  );
+  if (!result.ok) {
+    mostrarToast(result.errorMessage || "No se pudo actualizar el usuario", "error");
     return;
   }
   mostrarToast(activo ? "Usuario activado" : "Usuario desactivado", "success");
@@ -1376,15 +1347,13 @@ async function eliminarEmpleadoDefinitivo(btn) {
 
   if (!ok) return;
 
-  const { data, error } = await supabaseClient.functions.invoke("gestionar-empleado", {
-    body: {
-      action: "delete",
-      membership_id: btn.dataset.id,
-    },
-  });
+  const result = await window.VendifyTeamV232.deleteEmployee(
+    supabaseClient.functions,
+    btn.dataset.id
+  );
 
-  if (error || data?.error) {
-    mostrarToast(data?.error || error?.message || "No se pudo eliminar el usuario", "error");
+  if (!result.ok) {
+    mostrarToast(result.errorMessage || "No se pudo eliminar el usuario", "error");
     return;
   }
 
@@ -1432,21 +1401,16 @@ async function guardarEdicionEmpleado(e) {
   btn.disabled = true;
   btn.textContent = "Guardando...";
 
-  const { data, error } = await supabaseClient.functions.invoke("gestionar-empleado", {
-    body: {
-      action: "update",
-      membership_id: membershipId,
-      nombre,
-      username,
-      rol,
-    },
-  });
+  const result = await window.VendifyTeamV232.updateEmployee(
+    supabaseClient.functions,
+    { membershipId, nombre, username, rol }
+  );
 
   btn.disabled = false;
   btn.textContent = "Guardar cambios";
 
-  if (error || data?.error) {
-    errorEl.textContent = data?.error || error?.message || "No se pudo actualizar";
+  if (!result.ok) {
+    errorEl.textContent = result.errorMessage || "No se pudo actualizar";
     return;
   }
 
@@ -1489,16 +1453,14 @@ async function reiniciarPasswordEmpleado(e) {
 
   errorEl.textContent = "";
 
-  const { data, error } = await supabaseClient.functions.invoke("gestionar-empleado", {
-    body: {
-      action: "reset_password",
-      membership_id: membershipId,
-      password,
-    },
-  });
+  const result = await window.VendifyTeamV232.resetEmployeePassword(
+    supabaseClient.functions,
+    membershipId,
+    password
+  );
 
-  if (error || data?.error) {
-    errorEl.textContent = data?.error || error?.message || "No se pudo reiniciar la contraseña";
+  if (!result.ok) {
+    errorEl.textContent = result.errorMessage || "No se pudo reiniciar la contraseña";
     return;
   }
 
