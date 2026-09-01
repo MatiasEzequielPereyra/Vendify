@@ -45,6 +45,10 @@ const bridgeName = oneFingerprintMatch(
   /^vendify-offline-v2312-bridge-[0-9a-f]{12}\.js$/,
   "POS bridge"
 );
+const pendingUiName = oneFingerprintMatch(
+  /^vendify-offline-v2312-pending-ui-[0-9a-f]{12}\.js$/,
+  "pending sales UI"
+);
 const stagedAppName = oneFingerprintMatch(
   /^app-staging-v2312-[0-9a-f]{12}\.js$/,
   "staging app"
@@ -55,20 +59,23 @@ const html = readFileSync(resolve(target, "index.html"), "utf8");
 const runtimeMarker = `src="${runtimeName}"`;
 const appMarker = `src="${stagedAppName}"`;
 const bridgeMarker = `src="${bridgeName}"`;
+const pendingUiMarker = `src="${pendingUiName}"`;
 const runtimePosition = html.indexOf(runtimeMarker);
 const appPosition = html.indexOf(appMarker);
 const bridgePosition = html.indexOf(bridgeMarker);
+const pendingUiPosition = html.indexOf(pendingUiMarker);
 
 if (runtimePosition < 0) fail("v2.31.2 runtime script is not referenced");
 if (appPosition < 0) fail("fingerprinted staging app script is not referenced");
 if (bridgePosition < 0) fail("v2.31.2 POS bridge script is not referenced");
-if (!(runtimePosition < appPosition && appPosition < bridgePosition)) {
-  fail("staging scripts must load runtime -> staging app -> POS bridge");
+if (pendingUiPosition < 0) fail("v2.31.2 pending sales UI script is not referenced");
+if (!(runtimePosition < appPosition && appPosition < bridgePosition && bridgePosition < pendingUiPosition)) {
+  fail("staging scripts must load runtime -> staging app -> POS bridge -> pending UI");
 }
 if (html.includes('src="app.js?v=2311"')) {
   fail("staging index still references cache-prone legacy app.js path");
 }
-pass("staging scripts load runtime -> fingerprinted app -> POS bridge");
+pass("staging scripts load runtime -> fingerprinted app -> POS bridge -> pending UI");
 
 for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
   const ref = match[1];
@@ -92,6 +99,7 @@ pass("staging app routes checkout, stock snapshot and sync to v2.31.2");
 
 const runtime = readFileSync(resolve(target, runtimeName), "utf8");
 const bridge = readFileSync(resolve(target, bridgeName), "utf8");
+const pendingUi = readFileSync(resolve(target, pendingUiName), "utf8");
 if (!runtime.includes("vendify-offline-v2312")) {
   fail("staging runtime does not contain IndexedDB database identifier");
 }
@@ -104,14 +112,17 @@ if (!runtime.includes("enqueueLegacySale") || !runtime.includes("syncNow") || !r
 if (!bridge.includes("registrarVentaOfflineIndexedDbV2312")) {
   fail("staging bridge does not contain IndexedDB checkout integration");
 }
-pass("staging bundles contain current IndexedDB runtime and POS bridge");
+if (!pendingUi.includes("Ventas pendientes") || !pendingUi.includes("Reintentar sincronización")) {
+  fail("staging pending sales UI does not contain required controls");
+}
+pass("staging bundles contain current IndexedDB runtime, POS bridge and pending-sales UI");
 
 const config = readFileSync(resolve(target, "supabase-config.js"), "utf8");
 if (!config.includes("puhkmblnptntorwptvld.supabase.co")) {
   fail("staging release points to unexpected Supabase project");
 }
 if (/vebqlbcfjxnpryjdgfvq/.test(config)) fail("obsolete Supabase project detected");
-if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + bridge + config)) {
+if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + bridge + pendingUi + config)) {
   fail("service role assignment detected in staging browser files");
 }
 pass("staging browser security markers pass");
