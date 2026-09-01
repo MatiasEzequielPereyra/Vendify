@@ -6,7 +6,7 @@ import {
   deleteEmployee,
   resetEmployeePassword,
   updateEmployee
-} from "../../.vendify-ts/team/team-edge-service.js";
+} from "../../dist-ts/team/team-edge-service.js";
 
 function functionsClient(resultFactory) {
   const calls = [];
