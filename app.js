@@ -2351,7 +2351,6 @@ function setupSecuritySessionGuardV2301() {
 const VENDIFY_VERSION_V23011 = "2.31.0";
 let ventaRequestIdV23011 = null;
 let ventaConfirmandoV23011 = false;
-let cajaOperacionEnCursoV23011 = false;
 let syncInFlightV23011 = null;
 
 function nuevaRequestIdV23011() {
@@ -2783,42 +2782,7 @@ function renderBranchOptionsV23013() {
 }
 
 function renderCashOptionsV23013() {
-  const cont = $("#cash-options-v23013");
-  if (!cont) return;
-
-  if (!cajasSucursalV227.length) {
-    cont.innerHTML = `
-      <div class="context-picker-empty-v23013">
-        Esta sucursal no tiene cajas disponibles.
-      </div>`;
-    actualizarContextSelectorLabelsV23013();
-    return;
-  }
-
-  cont.innerHTML = cajasSucursalV227
-    .map((c) => {
-      const active = c.id === appContext.cashRegister?.id;
-      return `
-        <button type="button"
-                class="context-picker-option-v23013 ${active ? "active" : ""}"
-                role="option"
-                aria-selected="${active ? "true" : "false"}"
-                data-context-cash="${c.id}">
-          <span class="context-option-icon-v23013">
-            ${iconV23011("register")}
-          </span>
-          <span class="context-option-copy-v23013">
-            <strong>${escapeHtml(c.nombre)}</strong>
-            <small>${active ? "Caja actual" : "Cambiar a esta caja"}</small>
-          </span>
-          <span class="context-option-check-v23013">
-            ${active ? iconV23011("check") : ""}
-          </span>
-        </button>`;
-    })
-    .join("");
-
-  actualizarContextSelectorLabelsV23013();
+  cashControllerV232.renderOptions();
 }
 
 async function seleccionarSucursalV23013(id) {
@@ -3488,7 +3452,7 @@ function guardarPruebaCajaOfflineV2311() {
         businessId: appContext.business.id,
         branchId: appContext.branch.id,
         cashId: appContext.cashRegister.id,
-        estado: cajaEstadoV227,
+        estado: cashControllerV232.getState(),
       })
     );
   } catch {}
@@ -3529,8 +3493,7 @@ function restaurarPruebaCajaOfflineV2311() {
 
     if (!valid) return false;
 
-    cajaEstadoV227 = proof.estado;
-    renderEstadoCajaHeaderV227();
+    cashControllerV232.setState(proof.estado);
     return true;
   } catch {
     return false;
@@ -3729,7 +3692,8 @@ function aplicarVentaAlStockLocalV2311(items) {
 }
 
 function aplicarVentaCajaLocalV2311(pagos, total) {
-  if (!cajaEstadoV227?.sesion || !cajaEstadoV227?.es_mia) {
+  const cashState = cashControllerV232.getState();
+  if (!cashState?.sesion || !cashState?.es_mia) {
     return;
   }
 
@@ -3743,7 +3707,7 @@ function aplicarVentaCajaLocalV2311(pagos, total) {
       0
     );
 
-  const session = cajaEstadoV227.sesion;
+  const session = cashState.sesion;
 
   session.ventas_total =
     Number(session.ventas_total || 0) +
@@ -6232,7 +6196,7 @@ function abrirVenta() {
     mostrarToast(
       !navigator.onLine
         ? "Para vender offline, esta caja debe haber sido abierta previamente con internet"
-        : cajaEstadoV227?.sesion
+        : cashControllerV232.getState()?.sesion
           ? "Esta caja está abierta por otro usuario"
           : "Abrí la caja antes de comenzar a vender",
       "info"
@@ -7278,249 +7242,44 @@ function setupV29() {
 // ============================================================
 // Vendify v2.28 — Caja profesional
 // ============================================================
-let cajasSucursalV227=[]; let cajaEstadoV227=null; let cajaMovimientosV227=[]; let cashMovementTypeV227=null;
+const cashControllerV232 = window.VendifyCashV232.createController({
+  client: supabaseClient,
+  getContext: () => ({
+    businessId: appContext?.business?.id || null,
+    branch: { id: appContext?.branch?.id || null, name: appContext?.branch?.nombre || "Sucursal" },
+    cashRegister: { id: appContext?.cashRegister?.id || null, name: appContext?.cashRegister?.nombre || "Caja" },
+  }),
+  setCashRegister: (cashRegister) => { appContext.cashRegister = cashRegister; },
+  getCartSize: () => carrito.length,
+  clearCart: () => { carrito = []; renderCarrito(); },
+  confirm: confirmar,
+  showToast: mostrarToast,
+  formatCurrency: formatearPrecio,
+  icon: iconV23011,
+  updateContextLabels: actualizarContextSelectorLabelsV23013,
+  persistOfflineContext: () => guardarContextoOfflineV231?.(),
+  restoreOfflineState: () => restaurarPruebaCajaOfflineV2311?.() === true,
+  persistOfflineState: () => guardarPruebaCajaOfflineV2311?.(),
+  isOnline: () => navigator.onLine,
+});
 async function cargarCajasSucursalV227({ mantener = true } = {}) {
-  const selector = $("#cash-selector-v227");
-
-  if (!appContext?.branch?.id) {
-    cajasSucursalV227 = [];
-    if (selector) selector.innerHTML = `<option value="">Sin sucursal</option>`;
-    appContext.cashRegister = null;
-    renderCashOptionsV23013();
-    actualizarContextSelectorLabelsV23013();
-    await cargarEstadoCajaV227();
-    return;
-  }
-
-  const { data, error } = await supabaseClient.rpc(
-    "listar_cajas_sucursal_v1",
-    { p_sucursal_id: appContext.branch.id }
-  );
-
-  if (error) {
-    console.error("[V2.27] cajas", error);
-    cajasSucursalV227 = [];
-    if (selector) selector.innerHTML = `<option value="">Sin cajas</option>`;
-    appContext.cashRegister = null;
-    renderCashOptionsV23013();
-    actualizarContextSelectorLabelsV23013();
-    await cargarEstadoCajaV227();
-    return;
-  }
-
-  cajasSucursalV227 = data || [];
-
-  if (selector) {
-    selector.innerHTML = cajasSucursalV227
-      .map((c) => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`)
-      .join("");
-  }
-
-  const key =
-    appContext.business?.id && appContext.branch?.id
-      ? `vendify_cash_${appContext.business.id}_${appContext.branch.id}`
-      : null;
-
-  const saved = mantener && key ? localStorage.getItem(key) : null;
-  const current = appContext.cashRegister?.id;
-
-  const chosen =
-    cajasSucursalV227.find((c) => c.id === saved) ||
-    cajasSucursalV227.find((c) => c.id === current) ||
-    cajasSucursalV227[0] ||
-    null;
-
-  appContext.cashRegister = chosen
-    ? { id: chosen.id, nombre: chosen.nombre }
-    : null;
-
-  if (selector && chosen) selector.value = chosen.id;
-  if (key && chosen) localStorage.setItem(key, chosen.id);
-
-  renderCashOptionsV23013();
-  actualizarContextSelectorLabelsV23013();
-  await cargarEstadoCajaV227();
+  await cashControllerV232.loadRegisters({ keep: mantener });
 }
 
 async function cambiarCajaDesdeSelectorV227(e) {
-  const id = e.target.value;
-  const c = cajasSucursalV227.find((x) => x.id === id);
-
-  if (!c) {
-    e.target.value = appContext.cashRegister?.id || "";
-    return;
-  }
-
-  if (carrito.length) {
-    const ok = await confirmar(
-      "Cambiar de caja",
-      "El carrito actual se vaciará al cambiar de caja."
-    );
-
-    if (!ok) {
-      e.target.value = appContext.cashRegister?.id || "";
-      renderCashOptionsV23013();
-      return;
-    }
-
-    carrito = [];
-    renderCarrito();
-  }
-
-  appContext.cashRegister = { id: c.id, nombre: c.nombre };
-
-  localStorage.setItem(
-    `vendify_cash_${appContext.business.id}_${appContext.branch.id}`,
-    c.id
-  );
-
-  actualizarContextSelectorLabelsV23013();
-  renderCashOptionsV23013();
-  guardarContextoOfflineV231?.();
-  await cargarEstadoCajaV227();
+  await cashControllerV232.selectRegister(e.target.value);
 }
 
 async function cargarEstadoCajaV227() {
-  if (!appContext?.cashRegister?.id) {
-    cajaEstadoV227 = null;
-    renderEstadoCajaHeaderV227();
-    return;
-  }
-
-  if (!navigator.onLine) {
-    if (restaurarPruebaCajaOfflineV2311?.()) {
-      return;
-    }
-
-    cajaEstadoV227 = null;
-    renderEstadoCajaHeaderV227();
-    return;
-  }
-
-  const { data, error } = await supabaseClient.rpc(
-    "obtener_estado_caja_v1",
-    {
-      p_caja_id: appContext.cashRegister.id,
-    }
-  );
-
-  if (error) {
-    console.error("[V2.27] estado", error);
-
-    if (
-      !navigator.onLine &&
-      restaurarPruebaCajaOfflineV2311?.()
-    ) {
-      return;
-    }
-
-    cajaEstadoV227 = null;
-    renderEstadoCajaHeaderV227();
-    return;
-  }
-
-  cajaEstadoV227 = data;
-  guardarPruebaCajaOfflineV2311?.();
-  renderEstadoCajaHeaderV227();
+  await cashControllerV232.loadState();
 }
-function cajaAbiertaMiaV227(){return Boolean(cajaEstadoV227?.sesion&&cajaEstadoV227?.es_mia);}
-function renderEstadoCajaHeaderV227(){const btn=$("#btn-caja-v227"),dot=$("#cash-status-dot-v227"),label=$("#cash-status-label-v227");if(!btn||!dot||!label)return;dot.classList.remove("open","closed","busy");if(!appContext?.cashRegister?.id){dot.classList.add("closed");label.textContent="Sin caja";return;}if(!cajaEstadoV227?.sesion){dot.classList.add("closed");label.textContent="Caja cerrada";return;}if(cajaEstadoV227.es_mia){dot.classList.add("open");label.textContent="Caja abierta";}else{dot.classList.add("busy");label.textContent="Caja ocupada";}}
-async function abrirPanelCajaV227(){if(!appContext?.cashRegister?.id){mostrarToast("Esta sucursal no tiene una caja activa","error");return;}await cargarEstadoCajaV227();await renderPanelCajaV227();await renderHistorialCajaV227();$("#cash-context-v227").textContent=`${appContext.branch?.nombre||"Sucursal"} · ${appContext.cashRegister?.nombre||"Caja"}`;$("#modal-caja-operativa-v227").classList.remove("hidden");}
-function cerrarPanelCajaV227(){$("#modal-caja-operativa-v227")?.classList.add("hidden");}
-async function renderPanelCajaV227(){const cont=$("#cash-current-v227");if(!cont)return;if(!appContext?.cashRegister?.id){cont.innerHTML=`<div class="cash-empty-v227">No hay una caja activa.</div>`;return;}if(!cajaEstadoV227?.sesion){cont.innerHTML=`<section class="cash-status-card-v227 closed"><div class="cash-status-title-v227"><span class="cash-big-dot-v227 closed"></span><div><strong>Caja cerrada</strong><small>${escapeHtml(appContext.cashRegister.nombre)}</small></div></div><form id="form-open-cash-v227" class="cash-open-form-v227"><div class="form-group"><label for="cash-opening-fund-v227">Fondo inicial</label><input type="number" id="cash-opening-fund-v227" value="0" min="0" step="0.01" required/><small class="hint">Efectivo físico antes de empezar.</small></div><div class="form-group"><label for="cash-opening-note-v227">Nota</label><input id="cash-opening-note-v227" maxlength="200" placeholder="Opcional"/></div><span class="field-error" id="cash-opening-error-v227"></span><button type="submit" class="btn btn-primary btn-lg">Abrir caja</button></form></section>`;$("#form-open-cash-v227")?.addEventListener("submit",abrirCajaV227);return;}const s=cajaEstadoV227.sesion;if(!cajaEstadoV227.es_mia){cont.innerHTML=`<section class="cash-status-card-v227 busy"><div class="cash-status-title-v227"><span class="cash-big-dot-v227 busy"></span><div><strong>Caja en uso</strong><small>Abierta por ${escapeHtml(s.usuario_nombre||"otro usuario")}</small></div></div><p class="cash-busy-copy-v227">Seleccioná otra caja o esperá el cierre del turno.</p>${cajaEstadoV227.puede_supervisar?`<button type="button" class="btn btn-secondary" id="btn-supervisor-close-v227">Cerrar como supervisor</button>`:""}</section>`;$("#btn-supervisor-close-v227")?.addEventListener("click",abrirCierreCajaV227);return;}cont.innerHTML=`<section class="cash-status-card-v227 open"><div class="cash-open-head-v227"><div class="cash-status-title-v227"><span class="cash-big-dot-v227 open"></span><div><strong>Turno abierto</strong><small>Desde ${escapeHtml(formatearFechaHoraV227(s.abierta_en))}</small></div></div><button type="button" class="btn btn-danger btn-sm" id="btn-open-cash-close-v227">Cerrar caja</button></div><div class="cash-summary-grid-v227"><div class="cash-summary-item-v227"><span>Ventas</span><strong>${formatearPrecio(Number(s.ventas_total||0))}</strong><small>${Number(s.tickets||0)} tickets</small></div><div class="cash-summary-item-v227"><span>Efectivo vendido</span><strong>${formatearPrecio(Number(s.ventas_efectivo||0))}</strong><small>Ventas en efectivo</small></div><div class="cash-summary-item-v227"><span>Ingresos</span><strong class="positive">${formatearPrecio(Number(s.ingresos_total||0))}</strong><small>Movimientos manuales</small></div><div class="cash-summary-item-v227"><span>Retiros</span><strong class="negative">${formatearPrecio(Number(s.retiros_total||0))}</strong><small>Salidas manuales</small></div><div class="cash-summary-item-v227 featured"><span>Efectivo esperado</span><strong>${formatearPrecio(Number(s.efectivo_esperado||0))}</strong><small>Incluye fondo inicial</small></div></div><div class="cash-actions-v227"><button type="button" class="btn btn-secondary" data-cash-movement="ingreso">＋ Ingreso</button><button type="button" class="btn btn-secondary" data-cash-movement="retiro">− Retiro</button></div><div class="cash-movements-section-v227"><div class="cash-section-head-v227"><div><h3>Movimientos</h3><p>Ingresos y retiros del turno.</p></div></div><div id="cash-movements-v227" class="cash-movements-v227"></div></div></section>`;$("#btn-open-cash-close-v227")?.addEventListener("click",abrirCierreCajaV227);cont.querySelectorAll("[data-cash-movement]").forEach(btn=>btn.addEventListener("click",()=>abrirMovimientoCajaV227(btn.dataset.cashMovement)));await renderMovimientosCajaV227();}
-async function abrirCajaV227(e){
-  e.preventDefault();
-  if(cajaOperacionEnCursoV23011)return;
-  cajaOperacionEnCursoV23011=true;
-  const er=$("#cash-opening-error-v227");
-  er.textContent="";
-  const btn=e.submitter;
-  if(btn){btn.disabled=true;btn.textContent="Abriendo...";}
-  try{
-    const{data,error}=await supabaseClient.rpc("abrir_caja_v1",{
-      p_caja_id:appContext.cashRegister.id,
-      p_fondo_inicial:Number($("#cash-opening-fund-v227").value||0),
-      p_nota:$("#cash-opening-note-v227").value.trim()||null
-    });
-    if(error){er.textContent=error.message;return;}
-    cajaEstadoV227=data;
-    renderEstadoCajaHeaderV227();
-    await renderPanelCajaV227();
-    await renderHistorialCajaV227();
-    mostrarToast("Caja abierta","success");
-  }finally{
-    cajaOperacionEnCursoV23011=false;
-    if(btn){btn.disabled=false;btn.textContent="Abrir caja";}
-  }
-}
-function abrirMovimientoCajaV227(tipo){cashMovementTypeV227=tipo;$("#cash-movement-type-v227").value=tipo;$("#cash-movement-title-v227").textContent=tipo==="ingreso"?"Registrar ingreso":"Registrar retiro";$("#cash-movement-amount-v227").value="";$("#cash-movement-reason-v227").value="";$("#cash-movement-error-v227").textContent="";$("#modal-caja-movimiento-v227").classList.remove("hidden");}
-function cerrarMovimientoCajaV227(){$("#modal-caja-movimiento-v227")?.classList.add("hidden");}
-async function guardarMovimientoCajaV227(e){
-  e.preventDefault();
-  if(cajaOperacionEnCursoV23011)return;
-  cajaOperacionEnCursoV23011=true;
-  const er=$("#cash-movement-error-v227");
-  er.textContent="";
-  const btn=e.submitter;
-  if(btn){btn.disabled=true;btn.textContent="Registrando...";}
-  try{
-    const{data,error}=await supabaseClient.rpc("registrar_movimiento_caja_v1",{
-      p_caja_id:appContext.cashRegister.id,
-      p_tipo:$("#cash-movement-type-v227").value,
-      p_monto:Number($("#cash-movement-amount-v227").value),
-      p_motivo:$("#cash-movement-reason-v227").value.trim()
-    });
-    if(error){er.textContent=error.message;return;}
-    cajaEstadoV227=data;
-    cerrarMovimientoCajaV227();
-    renderEstadoCajaHeaderV227();
-    await renderPanelCajaV227();
-    mostrarToast(cashMovementTypeV227==="ingreso"?"Ingreso registrado":"Retiro registrado","success");
-  }finally{
-    cajaOperacionEnCursoV23011=false;
-    if(btn){btn.disabled=false;btn.textContent="Registrar";}
-  }
-}
-async function renderMovimientosCajaV227(){const cont=$("#cash-movements-v227");if(!cont||!cajaEstadoV227?.sesion)return;const{data,error}=await supabaseClient.rpc("listar_movimientos_caja_abierta_v1",{p_caja_id:appContext.cashRegister.id});if(error){cont.innerHTML=`<p class="hint">No se pudieron cargar los movimientos.</p>`;return;}cajaMovimientosV227=data||[];if(!cajaMovimientosV227.length){cont.innerHTML=`<p class="cash-no-movements-v227">Todavía no hay movimientos manuales.</p>`;return;}cont.innerHTML=cajaMovimientosV227.map(m=>`<div class="cash-movement-row-v227 ${m.tipo}"><div><strong>${m.tipo==="ingreso"?"Ingreso":"Retiro"}</strong><small>${escapeHtml(m.motivo)} · ${escapeHtml(formatearFechaHoraV227(m.creado))}</small></div><strong>${m.tipo==="ingreso"?"+":"−"}${formatearPrecio(Number(m.monto||0))}</strong></div>`).join("");}
-function abrirCierreCajaV227(){if(!cajaEstadoV227?.sesion)return;const esperado=Number(cajaEstadoV227.sesion.efectivo_esperado||0);$("#cash-close-expected-v227").textContent=formatearPrecio(esperado);$("#cash-close-declared-v227").value=esperado.toFixed(2);$("#cash-close-note-v227").value="";$("#cash-close-error-v227").textContent="";actualizarPreviewCierreV227();$("#modal-cash-close-v227").classList.remove("hidden");}
-function cerrarCierreCajaV227(){$("#modal-cash-close-v227")?.classList.add("hidden");}
-function actualizarPreviewCierreV227(){const esperado=Number(cajaEstadoV227?.sesion?.efectivo_esperado||0),declarado=Number($("#cash-close-declared-v227")?.value||0),dif=declarado-esperado,el=$("#cash-difference-preview-v227");if(!el)return;el.classList.remove("positive","negative","neutral");el.classList.add(Math.abs(dif)<.005?"neutral":dif>0?"positive":"negative");el.textContent=`Diferencia: ${dif>0?"+":""}${formatearPrecio(dif)}`;}
-async function cerrarCajaV227(e){
-  e.preventDefault();
-  if(cajaOperacionEnCursoV23011)return;
-  cajaOperacionEnCursoV23011=true;
-  const er=$("#cash-close-error-v227");
-  er.textContent="";
-  const btn=e.submitter;
-  if(btn){btn.disabled=true;btn.textContent="Cerrando...";}
-  try{
-    const{data,error}=await supabaseClient.rpc("cerrar_caja_v1",{
-      p_caja_id:appContext.cashRegister.id,
-      p_efectivo_declarado:Number($("#cash-close-declared-v227").value),
-      p_nota:$("#cash-close-note-v227").value.trim()||null
-    });
-    if(error){er.textContent=error.message;return;}
-    const s=data?.sesion;
-    cerrarCierreCajaV227();
-    await cargarEstadoCajaV227();
-    await renderPanelCajaV227();
-    await renderHistorialCajaV227();
-    const dif=Number(s?.diferencia||0);
-    mostrarToast(
-      Math.abs(dif)<.005
-        ?"Caja cerrada sin diferencias"
-        :`Caja cerrada · diferencia ${dif>0?"+":""}${formatearPrecio(dif)}`,
-      Math.abs(dif)<.005?"success":"info"
-    );
-  }finally{
-    cajaOperacionEnCursoV23011=false;
-    if(btn){btn.disabled=false;btn.textContent="Cerrar caja";}
-  }
-}
-async function renderHistorialCajaV227(){const cont=$("#cash-history-v227");if(!cont||!appContext?.branch?.id)return;const{data,error}=await supabaseClient.rpc("listar_historial_cajas_v1",{p_sucursal_id:appContext.branch.id,p_limit:12});if(error){cont.innerHTML=`<p class="hint">No se pudo cargar el historial.</p>`;return;}const list=data||[];if(!list.length){cont.innerHTML=`<p class="cash-no-movements-v227">Todavía no hay cierres registrados.</p>`;return;}cont.innerHTML=list.map(s=>{const d=Number(s.diferencia||0);return`<div class="cash-history-row-v227"><div class="cash-history-main-v227"><strong>${escapeHtml(s.caja_nombre)} · ${escapeHtml(s.usuario_nombre)}</strong><small>${escapeHtml(formatearFechaHoraV227(s.cerrada_en))} · ${Number(s.tickets||0)} tickets</small></div><div class="cash-history-sales-v227"><span>Ventas</span><strong>${formatearPrecio(Number(s.ventas_total||0))}</strong></div><div class="cash-history-diff-v227 ${Math.abs(d)<.005?"zero":d>0?"positive":"negative"}"><span>Diferencia</span><strong>${d>0?"+":""}${formatearPrecio(d)}</strong></div></div>`;}).join("");}
+function cajaAbiertaMiaV227(){return cashControllerV232.isOpenByCurrentUser();}
+function renderEstadoCajaHeaderV227(){cashControllerV232.renderHeader();}
+async function abrirPanelCajaV227(){await cashControllerV232.openPanel();}
+async function renderPanelCajaV227(){await cashControllerV232.renderPanel();}
 function formatearFechaHoraV227(v){if(!v)return"—";try{return new Intl.DateTimeFormat("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(v));}catch{return String(v);}}
-async function inicializarCajaV227(){await cargarCajasSucursalV227();}
-function setupCajaV227(){$("#cash-selector-v227")?.addEventListener("change",cambiarCajaDesdeSelectorV227);$("#btn-caja-v227")?.addEventListener("click",abrirPanelCajaV227);$("#btn-cerrar-caja-panel-v227")?.addEventListener("click",cerrarPanelCajaV227);$("#modal-caja-operativa-v227 .modal-backdrop")?.addEventListener("click",cerrarPanelCajaV227);$("#form-cash-movement-v227")?.addEventListener("submit",guardarMovimientoCajaV227);$("#btn-close-cash-movement-v227")?.addEventListener("click",cerrarMovimientoCajaV227);$("#btn-cancel-cash-movement-v227")?.addEventListener("click",cerrarMovimientoCajaV227);$("#modal-caja-movimiento-v227 .modal-backdrop")?.addEventListener("click",cerrarMovimientoCajaV227);$("#form-cash-close-v227")?.addEventListener("submit",cerrarCajaV227);$("#btn-close-cash-close-v227")?.addEventListener("click",cerrarCierreCajaV227);$("#btn-cancel-cash-close-v227")?.addEventListener("click",cerrarCierreCajaV227);$("#modal-cash-close-v227 .modal-backdrop")?.addEventListener("click",cerrarCierreCajaV227);$("#cash-close-declared-v227")?.addEventListener("input",actualizarPreviewCierreV227);}
+async function inicializarCajaV227(){await cashControllerV232.initialize();}
+function setupCajaV227(){cashControllerV232.setup();}
 
 let sucursalesV226 = [];
 let productosTransferV226 = [];
@@ -7726,12 +7485,13 @@ async function renderSucursalesConfigV226() {
 
   cont.querySelectorAll('[data-branch-action="toggle-box"]').forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const { error } = await supabaseClient.rpc("cambiar_estado_caja_v1", {
-        p_caja_id: btn.dataset.cajaId,
-        p_activa: btn.dataset.activa === "1",
-      });
-
-      if (error) {
+      try {
+        await window.VendifyCashV232.setRegisterActive(
+          supabaseClient,
+          btn.dataset.cajaId,
+          btn.dataset.activa === "1"
+        );
+      } catch (error) {
         mostrarToast(error.message, "error");
         return;
       }
@@ -7823,13 +7583,13 @@ function cerrarModalCajaV226() {
 
 async function crearCajaV226(e) {
   e.preventDefault();
-
-  const { error } = await supabaseClient.rpc("crear_caja_v1", {
-    p_sucursal_id: $("#caja-sucursal-id-v226").value,
-    p_nombre: $("#caja-nombre-v226").value.trim(),
-  });
-
-  if (error) {
+  try {
+    await window.VendifyCashV232.createRegister(
+      supabaseClient,
+      $("#caja-sucursal-id-v226").value,
+      $("#caja-nombre-v226").value.trim()
+    );
+  } catch (error) {
     $("#caja-error-v226").textContent = error.message;
     return;
   }

@@ -1,4 +1,5 @@
 import "./auth-bridge.js";
+import "./cash-bridge.js";
 import "./dashboard-bridge.js";
 import "./inventory-bridge.js";
 import "./products-bridge.js";
