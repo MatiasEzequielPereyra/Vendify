@@ -4981,15 +4981,11 @@ async function cargarDashboardV231({ focusAlerts = false } = {}) {
   if (refresh) refresh.disabled = true;
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "dashboard_propietario_v1",
-      {
-        p_sucursal_id: appContext.branch?.id || null,
-        p_dias: dashboardDaysV231,
-      }
+    const data = await window.VendifyDashboardV232.loadDashboard(
+      supabaseClient,
+      appContext.branch?.id || null,
+      dashboardDaysV231
     );
-
-    if (error) throw error;
 
     renderDashboardV231(data || {});
 
@@ -5099,14 +5095,11 @@ async function cargarBadgeAlertasV231() {
   if (!esSupervisorV231() || !navigator.onLine) return;
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "alertas_operativas_v1",
-      {
-        p_sucursal_id: appContext.branch?.id || null,
-      }
+    const data = await window.VendifyDashboardV232.loadOperationalAlerts(
+      supabaseClient,
+      appContext.branch?.id || null
     );
-
-    if (!error) actualizarBadgeAlertasV231(data || []);
+    actualizarBadgeAlertasV231(data || []);
   } catch {}
 }
 

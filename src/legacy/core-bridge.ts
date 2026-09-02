@@ -1,4 +1,5 @@
 import "./auth-bridge.js";
+import "./dashboard-bridge.js";
 import "./team-bridge.js";
 import { escapeHtml, queryAll, queryOne } from "../core/dom.js";
 import { formatArs, productDisplayName } from "../core/format.js";
