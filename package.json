@@ -16,7 +16,7 @@
     "verify:staging:v2312": "node scripts/verify-staging-v2312.mjs",
     "preview:staging:v2312": "node scripts/serve-staging-v2312.mjs",
     "build:refactor:modular": "node scripts/build-refactor-modular.mjs",
-    "verify:refactor:modular": "node scripts/verify-refactor-modular.mjs && node scripts/verify-refactor-auth.mjs && node scripts/verify-refactor-team.mjs && node scripts/verify-refactor-dashboard.mjs",
+    "verify:refactor:modular": "node scripts/verify-refactor-modular.mjs && node scripts/verify-refactor-auth.mjs && node scripts/verify-refactor-team.mjs && node scripts/verify-refactor-dashboard.mjs && node scripts/verify-refactor-purchases.mjs",
     "qa:refactor:modular": "npm run build:refactor:modular && npm run verify:refactor:modular",
     "preview:refactor:modular": "node scripts/serve-refactor-modular.mjs",
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",

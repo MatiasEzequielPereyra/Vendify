@@ -38,25 +38,34 @@ rmSync(out, { recursive: true, force: true });
 cpSync(stagingOut, out, { recursive: true });
 
 const files = readdirSync(out);
-const stagedApps = files.filter((file) => /^app-staging-v2312-[0-9a-f]{12}\.js$/.test(file));
-if (stagedApps.length !== 1) {
-  throw new Error(`Expected one v2.31.2 staged app, found ${stagedApps.length}`);
+const indexPath = resolve(out, "index.html");
+let index = readFileSync(indexPath, "utf8");
+const stagedAppReferences = [
+  ...index.matchAll(/<script src="(app-staging-v2312-[0-9a-f]{12}\.js)"><\/script>/g)
+];
+if (stagedAppReferences.length !== 1) {
+  throw new Error(`Expected one referenced v2.31.2 staged app, found ${stagedAppReferences.length}`);
 }
 
-const oldAppName = stagedApps[0];
+const oldAppName = stagedAppReferences[0][1];
 const oldAppPath = resolve(out, oldAppName);
+if (!existsSync(oldAppPath)) throw new Error(`Referenced staged app is missing: ${oldAppName}`);
 let app = readFileSync(oldAppPath, "utf8");
 
 const coreContent = readFileSync(coreFile, "utf8");
 const coreName = `vendify-core-v232-${fingerprint(coreContent)}.js`;
 const appName = `app-refactor-v232-${fingerprint(app)}.js`;
 
+for (const file of files) {
+  if (/^(?:app-refactor-v232|vendify-core-v232)-[0-9a-f]{12}\.js$/.test(file)) {
+    unlinkSync(resolve(out, file));
+  }
+}
+
 writeFileSync(resolve(out, coreName), coreContent, "utf8");
 writeFileSync(resolve(out, appName), app, "utf8");
 unlinkSync(oldAppPath);
 
-const indexPath = resolve(out, "index.html");
-let index = readFileSync(indexPath, "utf8");
 const oldScript = `<script src="${oldAppName}"></script>`;
 if (!index.includes(oldScript)) {
   throw new Error("Could not find staged app script in refactor index");
@@ -68,5 +77,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core, Auth, Team, and Dashboard modules load from TypeScript before the compatibility app runtime.");
+console.log("Core, Auth, Team, Dashboard, and Purchases modules load from TypeScript before the compatibility app runtime.");
 console.log("The root app compatibility layer is compacted only after browser-validated migrations.");
