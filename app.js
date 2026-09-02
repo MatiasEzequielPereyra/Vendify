@@ -3739,8 +3739,6 @@ let commercialConfigV231 = {
   ancho_ticket_mm: 80,
 };
 
-let dashboardDaysV231 = 7;
-let dashboardDataV231 = null;
 let commercialRefreshTimerV231 = null;
 let errorLogThrottleV231 = new Map();
 
@@ -3773,19 +3771,6 @@ function descargarBlobV231(contenido, tipo, nombre) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function formatPctV231(value) {
-  const n = Number(value || 0);
-  if (!Number.isFinite(n)) return "—";
-  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-}
-
-function formatCompactNumberV231(value) {
-  return new Intl.NumberFormat("es-AR", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(Number(value || 0));
 }
 
 // ---------------------
@@ -4719,53 +4704,21 @@ function setupObservabilityV231() {
 // ---------------------
 // Dashboard
 // ---------------------
+const dashboardControllerV232 =
+  window.VendifyDashboardV232.createController({
+    client: supabaseClient,
+    isSupervisor: esSupervisorV231,
+    getBranchId: () => appContext.branch?.id || null,
+    getBusinessName: () =>
+      appContext.business?.nombre || "Negocio",
+    closeManagement: () => abrirCerrarGestionV230(false),
+    icon: iconV23011,
+    showToast: mostrarToast,
+    reportError: registrarErrorClienteV231,
+  });
+
 function dashboardEmptyV231(text) {
-  return `<div class="dashboard-empty-v231">${escapeHtml(text)}</div>`;
-}
-
-function renderDashboardBarsV231(series = []) {
-  const cont = $("#dashboard-sales-chart-v231");
-  if (!cont) return;
-
-  if (!series.length) {
-    cont.innerHTML = dashboardEmptyV231(
-      "Todavía no hay ventas para graficar."
-    );
-    return;
-  }
-
-  const max = Math.max(
-    1,
-    ...series.map((x) => Number(x.total || 0))
-  );
-
-  cont.innerHTML = series
-    .map((row) => {
-      const total = Number(row.total || 0);
-      const height = Math.max(
-        4,
-        Math.round((total / max) * 100)
-      );
-      const date = new Date(`${row.fecha}T12:00:00`);
-      const label = date.toLocaleDateString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-      });
-
-      return `
-        <div class="dashboard-bar-column-v231"
-             title="${label} · ${formatearPrecio(total)}">
-          <div class="dashboard-bar-value-v231">
-            ${total > 0 ? formatCompactNumberV231(total) : ""}
-          </div>
-          <div class="dashboard-bar-track-v231">
-            <div class="dashboard-bar-v231"
-                 style="height:${height}%"></div>
-          </div>
-          <small>${label}</small>
-        </div>`;
-    })
-    .join("");
+  return window.VendifyDashboardV232.dashboardEmpty(text);
 }
 
 function renderDashboardRowsV231(
@@ -4774,337 +4727,17 @@ function renderDashboardRowsV231(
   renderRow,
   emptyText
 ) {
-  if (!container) return;
-
-  if (!Array.isArray(rows) || !rows.length) {
-    container.innerHTML = dashboardEmptyV231(emptyText);
-    return;
-  }
-
-  container.innerHTML = rows.map(renderRow).join("");
-}
-
-function actualizarBadgeAlertasV231(alerts = []) {
-  const total = (alerts || []).reduce(
-    (sum, row) => sum + Number(row.count || 0),
-    0
+  window.VendifyDashboardV232.renderDashboardRows(
+    container,
+    rows,
+    renderRow,
+    emptyText
   );
-
-  const badge = $("#alertas-badge-v231");
-  if (!badge) return;
-
-  badge.textContent = total > 99 ? "99+" : String(total);
-  badge.classList.toggle("hidden", total <= 0);
-}
-
-function renderDashboardV231(data) {
-  dashboardDataV231 = data || {};
-
-  $("#dash-sales-v231").textContent = formatearPrecio(
-    Number(data?.ventas_netas || 0)
-  );
-
-  const changeEl = $("#dash-sales-change-v231");
-  if (changeEl) {
-    const change = data?.variacion_pct;
-    changeEl.textContent =
-      change == null
-        ? "Sin período anterior comparable"
-        : `${formatPctV231(change)} vs período anterior`;
-
-    changeEl.className =
-      `dashboard-kpi-change-v231 ${
-        Number(change || 0) >= 0 ? "positive" : "negative"
-      }`;
-  }
-
-  $("#dash-tickets-v231").textContent =
-    Number(data?.tickets || 0);
-
-  $("#dash-average-v231").textContent =
-    `Ticket promedio ${formatearPrecio(
-      Number(data?.ticket_promedio || 0)
-    )}`;
-
-  $("#dash-margin-v231").textContent = formatearPrecio(
-    Number(data?.margen_estimado || 0)
-  );
-
-  $("#dash-refunds-v231").textContent = formatearPrecio(
-    Number(data?.devoluciones_total || 0)
-  );
-
-  $("#dash-refund-count-v231").textContent =
-    `${Number(data?.devoluciones_cantidad || 0)} operación(es)`;
-
-  $("#dash-open-cash-v231").textContent =
-    Number(data?.cajas_abiertas || 0);
-
-  const alerts = Array.isArray(data?.alertas)
-    ? data.alertas
-    : [];
-
-  $("#dash-alerts-v231").textContent = alerts.reduce(
-    (sum, item) => sum + Number(item.count || 0),
-    0
-  );
-
-  $("#dash-stock-alert-v231").textContent =
-    `${alerts.length} tipo(s) de alerta`;
-
-  renderDashboardBarsV231(data?.serie || []);
-
-  renderDashboardRowsV231(
-    $("#dashboard-top-products-v231"),
-    data?.top_productos || [],
-    (row, index) => `
-      <div class="dashboard-list-row-v231">
-        <span class="dashboard-rank-v231">${index + 1}</span>
-        <div class="dashboard-list-copy-v231">
-          <strong>${escapeHtml(row.nombre || "Producto")}</strong>
-          <small>${Number(row.unidades || 0)} unidades</small>
-        </div>
-        <strong>${formatearPrecio(Number(row.total || 0))}</strong>
-      </div>`,
-    "Todavía no hay productos vendidos en este período."
-  );
-
-  const paymentTotal = (data?.medios_pago || []).reduce(
-    (sum, row) => sum + Number(row.total || 0),
-    0
-  );
-
-  renderDashboardRowsV231(
-    $("#dashboard-payments-v231"),
-    data?.medios_pago || [],
-    (row) => {
-      const pct =
-        paymentTotal > 0
-          ? Math.round(
-              (Number(row.total || 0) / paymentTotal) * 100
-            )
-          : 0;
-
-      return `
-        <div class="dashboard-payment-row-v231">
-          <div class="dashboard-list-copy-v231">
-            <strong>${escapeHtml(row.medio_pago || "Otro")}</strong>
-            <small>${pct}% del cobro</small>
-          </div>
-          <strong>${formatearPrecio(Number(row.total || 0))}</strong>
-          <div class="dashboard-mini-progress-v231">
-            <span style="width:${pct}%"></span>
-          </div>
-        </div>`;
-    },
-    "Todavía no hay cobros en el período."
-  );
-
-  renderDashboardRowsV231(
-    $("#dashboard-restock-v231"),
-    data?.reposicion || [],
-    (row) => `
-      <div class="dashboard-list-row-v231">
-        <span class="dashboard-list-icon-v231 warning">
-          ${iconV23011("inventory")}
-        </span>
-        <div class="dashboard-list-copy-v231">
-          <strong>${escapeHtml(row.nombre || "Producto")}</strong>
-          <small>
-            Stock ${Number(row.stock || 0)}
-            ${
-              row.dias_cobertura == null
-                ? ""
-                : ` · ${Number(row.dias_cobertura).toFixed(1)} días`
-            }
-          </small>
-        </div>
-        <strong>+${Number(row.reposicion_sugerida || 0)}</strong>
-      </div>`,
-    "No hay reposiciones urgentes sugeridas."
-  );
-
-  renderDashboardRowsV231(
-    $("#dashboard-alerts-list-v231"),
-    alerts,
-    (row) => `
-      <div class="dashboard-alert-row-v231 ${escapeHtml(
-        row.severity || "info"
-      )}">
-        <span class="dashboard-list-icon-v231">
-          ${iconV23011(
-            row.severity === "critical" ? "alert" : "bell"
-          )}
-        </span>
-        <div class="dashboard-list-copy-v231">
-          <strong>${escapeHtml(row.title || "Alerta")}</strong>
-          <small>${escapeHtml(row.detail || "")}</small>
-        </div>
-        <strong>${Number(row.count || 0)}</strong>
-      </div>`,
-    "Sin alertas operativas activas."
-  );
-
-  renderDashboardRowsV231(
-    $("#dashboard-activity-v231"),
-    data?.actividad || [],
-    (row) => `
-      <div class="dashboard-list-row-v231">
-        <span class="dashboard-list-icon-v231">
-          ${iconV23011(row.icon || "history")}
-        </span>
-        <div class="dashboard-list-copy-v231">
-          <strong>${escapeHtml(row.title || "Actividad")}</strong>
-          <small>${escapeHtml(row.detail || "")}</small>
-        </div>
-        <time>${
-          row.fecha
-            ? new Date(row.fecha).toLocaleString("es-AR", {
-                day: "2-digit",
-                month: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : ""
-        }</time>
-      </div>`,
-    "Todavía no hay actividad reciente."
-  );
-
-  actualizarBadgeAlertasV231(alerts);
-}
-
-async function cargarDashboardV231({ focusAlerts = false } = {}) {
-  if (!esSupervisorV231()) return;
-
-  const refresh = $("#btn-refresh-dashboard-v231");
-  if (refresh) refresh.disabled = true;
-
-  try {
-    const data = await window.VendifyDashboardV232.loadDashboard(
-      supabaseClient,
-      appContext.branch?.id || null,
-      dashboardDaysV231
-    );
-
-    renderDashboardV231(data || {});
-
-    if (focusAlerts) {
-      requestAnimationFrame(() => {
-        $("#dashboard-alerts-panel-v231")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
-    }
-  } catch (error) {
-    console.error("[Dashboard]", error);
-    registrarErrorClienteV231("dashboard", error.message);
-
-    $("#dashboard-sales-chart-v231").innerHTML =
-      dashboardEmptyV231(
-        "No se pudo cargar el Dashboard. Revisá la migración v2.31."
-      );
-  } finally {
-    if (refresh) refresh.disabled = false;
-  }
-}
-
-async function abrirDashboardV231(
-  { focusAlerts = false } = {}
-) {
-  if (!esSupervisorV231()) {
-    mostrarToast(
-      "Tu rol no tiene acceso al Dashboard",
-      "error"
-    );
-    return;
-  }
-
-  abrirCerrarGestionV230(false);
-  $("#modal-dashboard-v231")?.classList.remove("hidden");
-  await cargarDashboardV231({ focusAlerts });
-}
-
-function cerrarDashboardV231() {
-  $("#modal-dashboard-v231")?.classList.add("hidden");
-}
-
-function construirResumenDiarioV231() {
-  const data = dashboardDataV231;
-  if (!data) return "";
-
-  const top = data.top_productos?.[0];
-  const alerts = (data.alertas || []).reduce(
-    (sum, item) => sum + Number(item.count || 0),
-    0
-  );
-
-  return [
-    `Vendify · ${appContext.business?.nombre || "Negocio"}`,
-    `Resumen ${
-      dashboardDaysV231 === 1
-        ? "de hoy"
-        : `últimos ${dashboardDaysV231} días`
-    }`,
-    "",
-    `Ventas netas: ${formatearPrecio(
-      Number(data.ventas_netas || 0)
-    )}`,
-    `Tickets: ${Number(data.tickets || 0)}`,
-    `Ticket promedio: ${formatearPrecio(
-      Number(data.ticket_promedio || 0)
-    )}`,
-    `Margen estimado: ${formatearPrecio(
-      Number(data.margen_estimado || 0)
-    )}`,
-    `Devoluciones: ${formatearPrecio(
-      Number(data.devoluciones_total || 0)
-    )}`,
-    top
-      ? `Más vendido: ${top.nombre} · ${Number(
-          top.unidades || 0
-        )} unidades`
-      : null,
-    `Alertas activas: ${alerts}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-async function copiarResumenDiarioV231() {
-  const text = construirResumenDiarioV231();
-
-  if (!text) {
-    mostrarToast("Primero cargá el Dashboard", "info");
-    return;
-  }
-
-  try {
-    await navigator.clipboard.writeText(text);
-    mostrarToast("Resumen copiado", "success");
-  } catch {
-    mostrarToast(
-      "No se pudo copiar automáticamente",
-      "error"
-    );
-  }
 }
 
 async function cargarBadgeAlertasV231() {
-  if (!esSupervisorV231() || !navigator.onLine) return;
-
-  try {
-    const data = await window.VendifyDashboardV232.loadOperationalAlerts(
-      supabaseClient,
-      appContext.branch?.id || null
-    );
-    actualizarBadgeAlertasV231(data || []);
-  } catch {}
+  await dashboardControllerV232.loadAlertBadge();
 }
-
-
-
 // ---------------------
 // Onboarding comercial
 // ---------------------
@@ -5900,59 +5533,7 @@ function setupCommercialFoundationV231() {
   setupObservabilityV231();
   setupOfflineSalesV2311();
 
-  $("#btn-dashboard-v231")?.addEventListener(
-    "click",
-    () => abrirDashboardV231()
-  );
-
-  $("#btn-alertas-v231")?.addEventListener(
-    "click",
-    () => abrirDashboardV231({ focusAlerts: true })
-  );
-
-  $("#btn-close-dashboard-v231")?.addEventListener(
-    "click",
-    cerrarDashboardV231
-  );
-
-  $("#modal-dashboard-v231 .modal-backdrop")
-    ?.addEventListener(
-      "click",
-      cerrarDashboardV231
-    );
-
-  document
-    .querySelectorAll("[data-dashboard-days]")
-    .forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        dashboardDaysV231 = Number(
-          btn.dataset.dashboardDays || 7
-        );
-
-        document
-          .querySelectorAll("[data-dashboard-days]")
-          .forEach((x) => {
-            x.classList.toggle(
-              "active",
-              x === btn
-            );
-          });
-
-        await cargarDashboardV231();
-      });
-    });
-
-  $("#btn-refresh-dashboard-v231")
-    ?.addEventListener(
-      "click",
-      () => cargarDashboardV231()
-    );
-
-  $("#btn-copy-summary-v231")
-    ?.addEventListener(
-      "click",
-      copiarResumenDiarioV231
-    );
+  dashboardControllerV232.setup();
 
   $("#btn-hide-commercial-onboarding-v231")
     ?.addEventListener("click", () => {

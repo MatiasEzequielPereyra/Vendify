@@ -19,6 +19,9 @@ for (const marker of [
   "VendifyDashboardV232",
   "loadDashboard",
   "loadOperationalAlerts",
+  "createDashboardController",
+  "dashboardEmpty",
+  "renderDashboardRows",
   "dashboard_propietario_v1",
   "alertas_operativas_v1"
 ]) {
@@ -28,8 +31,11 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyDashboardV232.loadDashboard(",
-  "window.VendifyDashboardV232.loadOperationalAlerts("
+  "window.VendifyDashboardV232.createController({",
+  "window.VendifyDashboardV232.dashboardEmpty(text)",
+  "window.VendifyDashboardV232.renderDashboardRows(",
+  "dashboardControllerV232.loadAlertBadge()",
+  "dashboardControllerV232.setup()"
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Dashboard delegation: ${marker}`);
@@ -38,11 +44,21 @@ for (const marker of [
 
 for (const obsoleteMarker of [
   'supabaseClient.rpc(\n      "dashboard_propietario_v1"',
-  'supabaseClient.rpc(\n      "alertas_operativas_v1"'
+  'supabaseClient.rpc(\n      "alertas_operativas_v1"',
+  "let dashboardDaysV231",
+  "let dashboardDataV231",
+  "function renderDashboardBarsV231",
+  "function actualizarBadgeAlertasV231",
+  "function renderDashboardV231",
+  "function cargarDashboardV231",
+  "function abrirDashboardV231",
+  "function cerrarDashboardV231",
+  "function construirResumenDiarioV231",
+  "function copiarResumenDiarioV231"
 ]) {
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
     throw new Error(`Legacy app still contains migrated Dashboard data access: ${obsoleteMarker}`);
   }
 }
 
-console.log("PASS: root and generated runtimes delegate Dashboard data access to TypeScript");
+console.log("PASS: root and generated runtimes delegate Dashboard UI and data access to TypeScript");

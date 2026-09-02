@@ -4,6 +4,10 @@ import {
   loadDashboard,
   loadOperationalAlerts
 } from "../../dist-ts/dashboard/dashboard-service.js";
+import {
+  dashboardEmpty,
+  renderDashboardRows
+} from "../../dist-ts/dashboard/dashboard-ui.js";
 
 function makeClient(response) {
   const calls = [];
@@ -55,4 +59,22 @@ test("loadOperationalAlerts keeps the backend error message", async () => {
     () => loadOperationalAlerts(client, null),
     /Alertas no disponibles/
   );
+});
+
+test("dashboard empty state escapes untrusted text", () => {
+  assert.equal(
+    dashboardEmpty('<script>alert("x")</script>'),
+    '<div class="dashboard-empty-v231">&lt;script&gt;alert("x")&lt;/script&gt;</div>'
+  );
+});
+
+test("dashboard row renderer preserves rows and empty states", () => {
+  const container = { innerHTML: "" };
+  renderDashboardRows(container, [{ nombre: "A" }], (row, index) => {
+    return `${index}:${row.nombre}`;
+  }, "Vacío");
+  assert.equal(container.innerHTML, "0:A");
+
+  renderDashboardRows(container, [], () => "unused", "Sin datos");
+  assert.equal(container.innerHTML, '<div class="dashboard-empty-v231">Sin datos</div>');
 });
