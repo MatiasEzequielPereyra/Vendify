@@ -133,223 +133,7 @@ let deferredInstallPrompt = null;
 let sesionActual = null;
 let realtimeChannel = null;
 
-const CATEGORIAS_DEFAULT = [
-  "Bebidas", "Golosinas", "Snacks", "Cigarrillos", "Lácteos",
-  "Panadería", "Helados", "Limpieza", "Útiles", "Otros",
-];
-
-// =====================
-// Productos de ejemplo
-// =====================
-
-// 🔴🔴🔴 INICIO DE LA MODIFICACIÓN 🔴🔴🔴
-
-const ICONS_BASE_URL =
-  "https://raw.githubusercontent.com/MatiasEzequielPereyra/Ventas-Kiosco-v1.0/main/icons/";
-
-const PRODUCTOS_EJEMPLO = [
-  {
-    nombre: "Coca Cola 500ml",
-    categoria: "Bebidas",
-    precioCompra: 800,
-    precioVenta: 1200,
-    stock: 24,
-    stockMinimo: 6
-    // No existe imagen Coca Cola en tu carpeta icons
-  },
-
-  {
-    nombre: "Sprite 500ml",
-    categoria: "Bebidas",
-    precioCompra: 750,
-    precioVenta: 1100,
-    stock: 18,
-    stockMinimo: 6,
-    foto: `${ICONS_BASE_URL}sprite.webp`
-  },
-
-  {
-    nombre: "Agua Villavicencio 500ml",
-    categoria: "Bebidas",
-    precioCompra: 400,
-    precioVenta: 700,
-    stock: 30,
-    stockMinimo: 8,
-    foto: `${ICONS_BASE_URL}villavicencio.jpg`
-  },
-
-  {
-    nombre: "Cerveza Quilmes 473ml",
-    categoria: "Bebidas",
-    precioCompra: 900,
-    precioVenta: 1400,
-    stock: 12,
-    stockMinimo: 4,
-    foto: `${ICONS_BASE_URL}quilmes.webp`
-  },
-
-  {
-    nombre: "Alfajor Havanna",
-    categoria: "Golosinas",
-    precioCompra: 600,
-    precioVenta: 1000,
-    stock: 20,
-    stockMinimo: 5,
-    foto: `${ICONS_BASE_URL}alfajorhabana.jpg`
-  },
-
-  {
-    nombre: "Chocolate Milka 55g",
-    categoria: "Golosinas",
-    precioCompra: 900,
-    precioVenta: 1400,
-    stock: 15,
-    stockMinimo: 4,
-    foto: `${ICONS_BASE_URL}milka.webp`
-  },
-
-  {
-    nombre: "Caramelos Sugus x5",
-    categoria: "Golosinas",
-    precioCompra: 200,
-    precioVenta: 400,
-    stock: 40,
-    stockMinimo: 10,
-    foto: `${ICONS_BASE_URL}sugus.webp`
-  },
-
-  {
-    nombre: "Chicles Beldent",
-    categoria: "Golosinas",
-    precioCompra: 350,
-    precioVenta: 600,
-    stock: 25,
-    stockMinimo: 8,
-    foto: `${ICONS_BASE_URL}beldent.webp`
-  },
-
-  {
-    nombre: "Papas Lays Clásicas",
-    categoria: "Snacks",
-    precioCompra: 1100,
-    precioVenta: 1700,
-    stock: 10,
-    stockMinimo: 4,
-    foto: `${ICONS_BASE_URL} lays.webp`
-  },
-
-  {
-    nombre: "Maní salado 100g",
-    categoria: "Snacks",
-    precioCompra: 500,
-    precioVenta: 900,
-    stock: 14,
-    stockMinimo: 5,
-    foto: `${ICONS_BASE_URL}mani.webp`
-  },
-
-  {
-    nombre: "Palitos salados",
-    categoria: "Snacks",
-    precioCompra: 400,
-    precioVenta: 700,
-    stock: 3,
-    stockMinimo: 5,
-    foto: `${ICONS_BASE_URL}palitos.webp`
-  },
-
-  {
-    nombre: "Marlboro Box 20",
-    categoria: "Cigarrillos",
-    precioCompra: 2800,
-    precioVenta: 3500,
-    stock: 8,
-    stockMinimo: 3,
-    foto: `${ICONS_BASE_URL}CIGARRILLOS%20MARLBORO%20BOX%2020.JPG`
-  },
-
-  {
-    nombre: "Philip Morris 20",
-    categoria: "Cigarrillos",
-    precioCompra: 2500,
-    precioVenta: 3200,
-    stock: 2,
-    stockMinimo: 3,
-    foto: `${ICONS_BASE_URL}philips.png`
-  },
-
-  {
-    nombre: "Yogur La Serenísima",
-    categoria: "Lácteos",
-    precioCompra: 500,
-    precioVenta: 850,
-    stock: 12,
-    stockMinimo: 4,
-    foto: `${ICONS_BASE_URL}yogur.jpg`
-  },
-
-  {
-    nombre: "Leche larga vida 1L",
-    categoria: "Lácteos",
-    precioCompra: 900,
-    precioVenta: 1300,
-    stock: 10,
-    stockMinimo: 4,
-    foto: `${ICONS_BASE_URL}leche.webp`
-  },
-
-  {
-    nombre: "Facturas x unitario",
-    categoria: "Panadería",
-    precioCompra: 300,
-    precioVenta: 500,
-    stock: 16,
-    stockMinimo: 6,
-    foto: `${ICONS_BASE_URL}facturas.webp`
-  },
-
-  {
-    nombre: "Helado Frigor 1L",
-    categoria: "Helados",
-    precioCompra: 2500,
-    precioVenta: 3800,
-    stock: 6,
-    stockMinimo: 2
-    // No existe imagen de helado en tu carpeta icons
-  },
-
-  {
-    nombre: "Servilletas x50",
-    categoria: "Limpieza",
-    precioCompra: 400,
-    precioVenta: 700,
-    stock: 8,
-    stockMinimo: 3,
-    foto: `${ICONS_BASE_URL}servilleta.webp`
-  },
-
-  {
-    nombre: "Fósforos",
-    categoria: "Útiles",
-    precioCompra: 150,
-    precioVenta: 300,
-    stock: 20,
-    stockMinimo: 5,
-    foto: `${ICONS_BASE_URL}Fosforos-400.jpg`
-  },
-
-  {
-    nombre: "Pilas AA x2",
-    categoria: "Útiles",
-    precioCompra: 800,
-    precioVenta: 1300,
-    stock: 1,
-    stockMinimo: 3,
-    foto: `${ICONS_BASE_URL}pilasd.webp`
-  }
-];
-
-// 🔴🔴🔴 FIN DE LA MODIFICACIÓN 🔴🔴🔴
+// El catálogo inicial vive en src/products/catalog-data.ts.
 
 let productos = [];
 let categorias = [];
@@ -368,7 +152,6 @@ let cropLastY = 0;
 let stockAjusteId = null;
 let stockAjusteValor = 0;
 let confirmCallback = null;
-let filtroStockBajo = false;
 let carrito = []; // [{id, nombre, precioVenta, stock, cantidad}]
 
 // Compatibility aliases while the remaining legacy runtime is compacted.
@@ -1837,116 +1620,100 @@ function iniciarWatchdogRealtime() {
 
 
 function aplicarCambioRemoto(payload) {
-  const { eventType, new: nuevo, old: viejo } = payload;
-  if (eventType === "INSERT") {
-    if (!productos.some((p) => p.id === nuevo.id)) {
-      productos.push(mapearProductoDB(nuevo));
-    }
-  } else if (eventType === "UPDATE") {
-    const idx = productos.findIndex((p) => p.id === nuevo.id);
-    if (idx !== -1) productos[idx] = mapearProductoDB(nuevo);
-  } else if (eventType === "DELETE") {
-    productos = productos.filter((p) => p.id !== viejo.id);
-  }
-  actualizarFiltroCategorias();
-  renderGrid();
-  aplicarPermisosV2();
-  if (!$("#modal-venta").classList.contains("hidden")) renderVentaProductos();
+  productsControllerV232.applyRemoteChange(payload);
 }
 
 /* QA: implementación legacy removida (mapearProductoDB) */
 
 
 // =====================
-// Persistencia (Supabase)
+// Persistencia de productos delegada a TypeScript
 // =====================
+const mapearProductoDB = window.VendifyProductsV232.mapProductRow;
+const productoEtiquetaV29 = window.VendifyProductsV232.productLabel;
+
+let scannerControllerV232 = null;
+
+const productsControllerV232 =
+  window.VendifyProductsV232.createController({
+    client: supabaseClient,
+    getProducts: () => productos,
+    setProducts: (next) => { productos = next; },
+    getCategories: () => categorias,
+    setCategories: (next) => { categorias = next; },
+    getBranch: () => ({
+      id: appContext.branch?.id || null,
+      name: appContext.branch?.nombre || "Sucursal",
+    }),
+    getRole: () => appContext.membership?.role || "cashier",
+    hasPermission: tienePermisoV2,
+    requirePermission: exigirPermisoV2,
+    showToast: mostrarToast,
+    confirm: confirmar,
+    formatPrice: formatearPrecio,
+    applyPermissions: aplicarPermisosV2,
+    loadProductsOffline: () => Boolean(cargarProductosOfflineV231?.()),
+    saveProductsOffline: () => { guardarProductosOfflineV231?.(); },
+    captureOfflineStockSnapshot: async (items) => {
+      if (!window.VendifyOfflineV2312?.enabled) return;
+      await window.VendifyOfflineV2312.captureStockSnapshot({
+        businessId: appContext.business.id,
+        branchId: appContext.branch.id,
+        products: items.map((producto) => ({
+          productId: producto.id,
+          serverStock: Number(producto.stock || 0),
+        })),
+      });
+    },
+    loadCategoriesOffline: () => Boolean(cargarCategoriasOfflineV231?.()),
+    saveCategoriesOffline: () => { guardarCategoriasOfflineV231?.(); },
+    refreshOnboarding: () => { refrescarOnboardingComercialV231?.(); },
+    emitStockChange: emitirCambioStockRealtime,
+    scheduleSmartRefresh: programarRefreshInteligenteRealtime,
+    renderSaleProducts: () => { renderVentaProductos(); },
+    renderCart: () => { renderCarrito(); },
+    isSaleOpen: () => !$("#modal-venta")?.classList.contains("hidden"),
+    addToCart: agregarAlCarrito,
+    openInventoryAdjustment: (id, delta) => {
+      inventoryControllerV232.openAdjustmentFromProduct(id, delta);
+    },
+    openManualStockModal: abrirModalStock,
+    setEditingProductId: (id) => { productoEditandoId = id; },
+    getEditingProductId: () => productoEditandoId,
+    setCurrentPhoto: (photo) => { fotoActualBase64 = photo; },
+    restoreSaleBehindProduct: (focus = true) => {
+      restaurarVentaDetrasProducto({ enfocar: focus });
+    },
+    shouldReturnCreatedProductToSale: () =>
+      Boolean(scannerControllerV232?.shouldReturnCreatedProductToSale()),
+    clearPendingScannerProduct: () => {
+      scannerControllerV232?.clearPendingProduct();
+    },
+  });
+
+scannerControllerV232 =
+  window.VendifyProductsV232.createScannerController({
+    client: supabaseClient,
+    getProducts: () => productos,
+    getCart: () => carrito,
+    getBranchId: () => appContext.branch?.id || null,
+    getEditingProductId: () => productoEditandoId,
+    showToast: mostrarToast,
+    emitStockChange: emitirCambioStockRealtime,
+    renderProducts: () => { productsControllerV232.render(); },
+    renderSaleProducts: () => { renderVentaProductos(); },
+    addToCart: agregarAlCarrito,
+    openProductEditor: (product) => { productsControllerV232.openEditor(product); },
+    activateProductOverSale: activarProductoSobreVenta,
+    lookupBarcode: (code) => productsControllerV232.lookupBarcode(code),
+  });
+
 async function cargarProductos() {
-  if (!appContext?.branch?.id) {
-    productos = [];
-    return;
-  }
-
-  const { data, error } = await supabaseClient.rpc(
-    "listar_productos_sucursal_seguro_v1",
-    { p_sucursal_id: appContext.branch.id }
-  );
-
-  if (error) {
-    console.error(
-      "[V2.26] Error cargando productos de sucursal:",
-      error
-    );
-
-    if (
-      !navigator.onLine &&
-      cargarProductosOfflineV231?.()
-    ) {
-      mostrarToast(
-        "Sin conexión · mostrando el último catálogo guardado",
-        "info"
-      );
-      return;
-    }
-
-    mostrarToast(
-      "No se pudieron cargar los productos de la sucursal",
-      "error"
-    );
-    productos = [];
-    return;
-  }
-
-  productos = (data || []).map(mapearProductoDB);
-  guardarProductosOfflineV231?.();
-  await cargarStockInteligente();
-  refrescarOnboardingComercialV231?.();
+  return productsControllerV232.loadProducts();
 }
 
 async function cargarCategorias() {
-  const { data, error } = await supabaseClient.rpc(
-    "listar_categorias_seguras_v1"
-  );
-
-  if (error) {
-    console.error("[Security] categorías:", error);
-
-    if (
-      !navigator.onLine &&
-      cargarCategoriasOfflineV231?.()
-    ) {
-      return;
-    }
-
-    categorias = [...CATEGORIAS_DEFAULT];
-    return;
-  }
-
-  const nombres = (data || []).map((c) => c.nombre).filter(Boolean);
-
-  if (!nombres.length) {
-    await crearCategoriasIniciales();
-  } else {
-    categorias = nombres;
-  }
-
-  guardarCategoriasOfflineV231?.();
-}
-
-async function crearCategoriasIniciales() {
-  const { data, error } = await supabaseClient.rpc(
-    "inicializar_categorias_seguras_v1",
-    { p_nombres: CATEGORIAS_DEFAULT }
-  );
-
-  if (error) {
-    console.error("[Security] categorías iniciales:", error);
-    categorias = [...CATEGORIAS_DEFAULT];
-    return;
-  }
-
-  categorias = (data || []).map((c) => c.nombre).filter(Boolean);
-  if (!categorias.length) categorias = [...CATEGORIAS_DEFAULT];
-  guardarCategoriasOfflineV231?.();
+  return productsControllerV232.loadCategories();
 }
 
 // =====================
@@ -2309,149 +2076,21 @@ function cerrarConfirm() {
 }
 
 // =====================
-// Categorías
+// Categorías delegadas a TypeScript
 // =====================
 function renderSelectCategorias(selected = "") {
-  const select = $("#categoria");
-  select.innerHTML = `<option value="">Sin categoría</option>`;
-  categorias.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    if (c === selected) opt.selected = true;
-    select.appendChild(opt);
-  });
+  productsControllerV232.renderCategorySelect(selected);
 }
 
 function actualizarFiltroCategorias() {
-  const actual = $("#filtro-categoria").value;
-  const usadas = [...new Set([
-    ...categorias,
-    ...productos.map((p) => p.categoria).filter(Boolean),
-  ])].sort((a, b) => a.localeCompare(b, "es"));
-
-  const select = $("#filtro-categoria");
-  select.innerHTML = `<option value="">Todas las categorías</option>`;
-  usadas.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    select.appendChild(opt);
-  });
-  if (usadas.includes(actual)) select.value = actual;
+  productsControllerV232.renderCategoryFilter();
 }
 
 function renderListaCategoriasConfig() {
-  const ul = $("#lista-categorias-config");
-  if (categorias.length === 0) {
-    ul.innerHTML = `<li style="justify-content:center;color:var(--text-muted);">No hay categorías. Agregá una.</li>`;
-    return;
-  }
-  ul.innerHTML = categorias
-    .map((c, i) => `
-      <li>
-        <span>${escapeHtml(c)}</span>
-        <button type="button" class="btn-icon danger" data-cat-index="${i}" title="Eliminar">🗑️</button>
-      </li>`)
-    .join("");
+  productsControllerV232.renderCategoryList();
 }
 
-async function agregarCategoria() {
-  if (!exigirPermisoV2("manageProducts", "No tenés permiso para administrar categorías")) return;
-  const input = $("#nueva-categoria");
-  const nombre = input.value.trim();
-  if (!nombre) {
-    mostrarToast("Escribí un nombre de categoría", "error");
-    return;
-  }
-  if (categorias.some((c) => c.toLowerCase() === nombre.toLowerCase())) {
-    mostrarToast("Esa categoría ya existe", "error");
-    return;
-  }
-  const { data, error } = await supabaseClient.rpc(
-    "guardar_categoria_segura_v1",
-    { p_nombre: nombre }
-  );
-
-  if (error || !data?.ok) {
-    mostrarToast(
-      error?.message || data?.message || "No se pudo guardar la categoría",
-      "error"
-    );
-    return;
-  }
-
-  categorias.push(nombre);
-  categorias.sort((a, b) => a.localeCompare(b, "es"));
-  renderListaCategoriasConfig();
-  actualizarFiltroCategorias();
-  input.value = "";
-  input.focus();
-  mostrarToast(`Categoría "${nombre}" agregada`);
-}
-
-async function eliminarCategoria(index) {
-  if (!exigirPermisoV2("manageProducts", "No tenés permiso para administrar categorías")) return;
-  const nombre = categorias[index];
-  if (!nombre) return;
-  const enUso = productos.some((p) => p.categoria === nombre);
-  const msg = enUso
-    ? `La categoría "${nombre}" está en uso. ¿La eliminás igual? Los productos quedan sin categoría.`
-    : `¿Eliminar la categoría "${nombre}"?`;
-  const ok = await confirmar("Eliminar categoría", msg);
-  if (!ok) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "eliminar_categoria_segura_v1",
-    { p_nombre: nombre }
-  );
-
-  if (error || !data?.ok) {
-    mostrarToast(
-      error?.message || data?.message || "No se pudo eliminar la categoría",
-      "error"
-    );
-    return;
-  }
-
-  if (enUso) {
-    productos.forEach((p) => {
-      if (p.categoria === nombre) p.categoria = "";
-    });
-  }
-  categorias.splice(index, 1);
-  renderListaCategoriasConfig();
-  actualizarFiltroCategorias();
-  renderGrid();
-  mostrarToast("Categoría eliminada");
-}
-
-// =====================
-// Filtro stock bajo
-// =====================
-function toggleFiltroStockBajo() {
-  const select = $("#filtro-stock-v29");
-
-  if (select) select.value = "";
-  filtroStockBajo = !filtroStockBajo;
-
-  actualizarFiltroRapidoStockUI();
-  renderGrid();
-
-  if (filtroStockBajo) {
-    mostrarToast("Filtrando stock bajo según velocidad de venta", "info");
-  }
-}
-
-function limpiarFiltroStockBajo() {
-  filtroStockBajo = false;
-
-  const select = $("#filtro-stock-v29");
-  if (select) select.value = "";
-
-  actualizarFiltroRapidoStockUI();
-  renderGrid();
-}
+// Filtros de stock migrados a products-controller.ts
 
 // =====================
 // Productos de ejemplo
@@ -2623,181 +2262,9 @@ async function confirmarAjusteStock() {
   cerrarModalStock();
 }
 
-// =====================
-// CRUD de productos
-// =====================
-
-/* QA: implementación legacy removida (guardarProducto) */
+// CRUD, borrado masivo y cola de stock migrados a products-controller.ts
 
 
-
-async function eliminarTodosLosProductosV222() {
-  const role = appContext.membership?.role;
-
-  if (!["owner", "admin"].includes(role)) {
-    mostrarToast("Solo propietario o administrador pueden eliminar todos los productos", "error");
-    return;
-  }
-
-  if (!productos.length) {
-    mostrarToast("No hay productos para eliminar", "info");
-    return;
-  }
-
-  const cantidad = productos.length;
-
-  const ok1 = await confirmar(
-    "Eliminar todos los productos",
-    `Vas a eliminar ${cantidad} productos del negocio. Esta acción no se puede deshacer.`
-  );
-
-  if (!ok1) return;
-
-  const ok2 = await confirmar(
-    "Confirmación final",
-    `¿Realmente querés eliminar los ${cantidad} productos? Las ventas históricas no deberían borrarse, pero el catálogo actual quedará vacío.`
-  );
-
-  if (!ok2) return;
-
-  const businessId = appContext.business?.id;
-
-  if (!businessId) {
-    mostrarToast("No se pudo identificar el negocio", "error");
-    return;
-  }
-
-  const btn = $("#btn-eliminar-todos-productos");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Eliminando...";
-  }
-
-  const { data, error } = await supabaseClient.rpc(
-    "eliminar_todos_productos_seguro_v1"
-  );
-
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = "🗑 Eliminar todos";
-  }
-
-  if (error || !data?.ok) {
-    console.error("[Vendify Security] Error eliminando productos:", error || data);
-    mostrarToast(
-      error?.message || data?.message || "No se pudieron eliminar los productos",
-      "error"
-    );
-    return;
-  }
-
-  productos = [];
-  actualizarFiltroCategorias();
-  renderGrid();
-  actualizarMetricas?.();
-  mostrarToast(`${cantidad} productos eliminados`, "success");
-}
-
-async function eliminarProducto(id) {
-  const role = appContext.membership?.role;
-  if (!["owner", "admin", "manager"].includes(role)) {
-    mostrarToast("Tu rol no permite eliminar productos", "error");
-    return;
-  }
-  if (!exigirPermisoV2("manageProducts", "No tenés permiso para eliminar productos")) return;
-  const p = productos.find((x) => x.id === id);
-  if (!p) return;
-  const ok = await confirmar(
-    "Eliminar producto",
-    `¿Seguro que querés eliminar "${p.nombre}"? Esta acción no se puede deshacer.`
-  );
-  if (!ok) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "eliminar_producto_seguro_v1",
-    { p_producto_id: id }
-  );
-
-  if (error || !data?.ok) {
-    mostrarToast(
-      error?.message || data?.message || "No se pudo eliminar el producto",
-      "error"
-    );
-    return;
-  }
-  productos = productos.filter((x) => x.id !== id);
-  actualizarFiltroCategorias();
-  renderGrid();
-  mostrarToast("Producto eliminado");
-}
-
-// QA: cola por producto para evitar respuestas fuera de orden al tocar + / - rápido.
-const stockQuickQueueVQA = new Map();
-
-// "sumar" = reposición de mercadería (ingreso) · "restar" = venta
-function cambiarStock(id, delta) {
-  const anterior = stockQuickQueueVQA.get(id) || Promise.resolve();
-  const siguiente = anterior
-    .catch(() => {})
-    .then(() => cambiarStockEjecutarVQA(id, delta))
-    .finally(() => {
-      if (stockQuickQueueVQA.get(id) === siguiente) {
-        stockQuickQueueVQA.delete(id);
-      }
-    });
-
-  stockQuickQueueVQA.set(id, siguiente);
-  return siguiente;
-}
-
-async function cambiarStockEjecutarVQA(id, delta) {
-  if (!exigirPermisoV2(
-    "adjustStock",
-    "El propietario no habilitó la modificación manual de stock para tu usuario"
-  )) return;
-
-  const p = productos.find((x) => x.id === id);
-  if (!p) return;
-
-  if (delta < 0 && Number(p.stock || 0) <= 0) {
-    mostrarToast(`"${p.nombre}" ya está en stock 0`, "info");
-    return;
-  }
-
-  // Durante la puesta en marcha del producto, + / - forman parte del conteo
-  // inicial y no interrumpen al usuario con un formulario.
-  // Cuando el producto ya tuvo actividad real, el backend devuelve
-  // requiere_motivo=true y abrimos el ajuste profesional.
-  const { data, error } = await supabaseClient.rpc(
-    "ajustar_stock_inicial_rapido_v2",
-    {
-      p_producto_id: p.id,
-      p_sucursal_id: appContext.branch.id,
-      p_delta: delta > 0 ? 1 : -1,
-    }
-  );
-
-  if (error) {
-    mostrarToast(error.message || "No se pudo modificar el stock", "error");
-    return;
-  }
-
-  if (data?.requiere_motivo) {
-    inventoryControllerV232.openAdjustmentFromProduct(id, delta);
-    return;
-  }
-
-  p.stock = Number(data?.stock ?? (Number(p.stock || 0) + delta));
-
-  emitirCambioStockRealtime("stock_inicial");
-  renderGrid();
-  programarRefreshInteligenteRealtime();
-
-  if (!$("#modal-venta")?.classList.contains("hidden")) {
-    renderVentaProductos();
-    renderCarrito();
-  }
-}
 
 
 
@@ -7319,8 +6786,6 @@ function inicializarEventos() {
 
   $("#btn-cerrar-sesion")?.addEventListener("click", cerrarSesion);
 
-  $("#btn-nuevo").addEventListener("click", () => abrirModal());
-  $("#btn-empty-nuevo")?.addEventListener("click", () => abrirModal());
   $("#btn-vender").addEventListener("click", abrirVenta);
   $("#btn-cerrar-venta").addEventListener("click", cerrarVenta);
   $("#modal-venta .modal-backdrop").addEventListener("click", cerrarVenta);
@@ -7545,22 +7010,6 @@ function inicializarEventos() {
   });
 
 
-  $("#stat-bajo-card").addEventListener("click", toggleFiltroStockBajo);
-  $("#stat-sin-card")?.addEventListener("click", filtrarSinStockRapido);
-  $("#btn-limpiar-filtro").addEventListener("click", limpiarFiltroStockBajo);
-
-  $("#btn-cargar-ejemplos")?.addEventListener("click", cargarEjemplos);
-  $("#btn-cargar-ejemplos-config")?.addEventListener("click", cargarEjemplos);
-
-  $("#btn-add-categoria").addEventListener("click", agregarCategoria);
-  $("#nueva-categoria").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); agregarCategoria(); }
-  });
-  $("#lista-categorias-config").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-cat-index]");
-    if (!btn) return;
-    eliminarCategoria(parseInt(btn.dataset.catIndex, 10));
-  });
   $("#btn-cerrar-config").addEventListener("click", cerrarConfig);
   $("#btn-cerrar-config-ok").addEventListener("click", cerrarConfig);
   $("#modal-config .modal-backdrop").addEventListener("click", cerrarConfig);
@@ -7610,11 +7059,6 @@ function inicializarEventos() {
     mostrarPreviewFoto(null);
   });
 
-  $("#btn-cerrar-modal").addEventListener("click", cerrarModal);
-  $("#btn-cancelar").addEventListener("click", cerrarModal);
-  $("#modal .modal-backdrop").addEventListener("click", cerrarModal);
-  $("#form-producto").addEventListener("submit", guardarProducto);
-
   $("#modal-confirm .modal-backdrop").addEventListener("click", () => {
     cerrarConfirm();
     if (confirmCallback) confirmCallback(false);
@@ -7633,78 +7077,6 @@ function inicializarEventos() {
       stockAjusteValor = Math.max(0, v);
       $("#stock-actual").textContent = stockAjusteValor;
     }
-  });
-
-  $("#buscador").addEventListener("input", renderGrid);
-  $("#filtro-categoria").addEventListener("change", renderGrid);
-  $("#orden").addEventListener("change", renderGrid);
-
-  $("#productos-grid").addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-action]");
-    const card = e.target.closest(".producto-card");
-    const id = card?.dataset.id;
-
-    if (!id) return;
-
-    // Mobile: the product row itself is the Edit action.
-    // Explicit action buttons (+, -, stock, delete) keep their own behavior.
-    if (!btn) {
-      const mobileEditable =
-        window.matchMedia("(max-width: 700px)").matches &&
-        card.dataset.mobileEditable === "true";
-
-      if (!mobileEditable) return;
-
-      if (!exigirPermisoV2("manageProducts", "No tenés permiso para editar productos")) {
-        return;
-      }
-
-      const p = productos.find((x) => x.id === id);
-      if (p) abrirModal(p);
-      return;
-    }
-
-    const action = btn.dataset.action;
-    switch (action) {
-      case "sumar":
-        if (exigirPermisoV2("adjustStock", "No tenés permiso para modificar stock")) cambiarStock(id, 1);
-        break;
-      case "restar":
-        if (exigirPermisoV2("adjustStock", "No tenés permiso para modificar stock")) cambiarStock(id, -1);
-        break;
-      case "ajustar":
-        if (exigirPermisoV2("adjustStock", "No tenés permiso para modificar stock")) abrirModalStock(id);
-        break;
-      case "editar": {
-        if (!exigirPermisoV2("manageProducts", "No tenés permiso para editar productos")) return;
-        const p = productos.find((x) => x.id === id);
-        if (p) abrirModal(p);
-        break;
-      }
-      case "eliminar":
-        if (!exigirPermisoV2("manageProducts", "No tenés permiso para eliminar productos")) return;
-        eliminarProducto(id);
-        break;
-    }
-  });
-
-  $("#productos-grid").addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-
-    const card = e.target.closest(
-      '.producto-card[data-mobile-editable="true"]'
-    );
-
-    if (!card || e.target.closest("[data-action]")) return;
-
-    e.preventDefault();
-
-    if (!exigirPermisoV2("manageProducts", "No tenés permiso para editar productos")) {
-      return;
-    }
-
-    const p = productos.find((x) => x.id === card.dataset.id);
-    if (p) abrirModal(p);
   });
 
   document.addEventListener("keydown", (e) => {
@@ -7784,921 +7156,35 @@ function setupOnboarding() {
 
 
 // ============================================================
-// VENDIFY v2.9 — PRODUCTOS COMPACTOS + CATÁLOGO + BARCODE
+// VENDIFY v2.32 — Productos + scanner modulares
 // ============================================================
-const CATALOGO_BASE_V29 = [{"nombre": "Coca-Cola Original 354 ml lata", "marca": "Coca-Cola", "presentacion": "354 ml lata", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Original 500 ml", "marca": "Coca-Cola", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Original 1,5 L", "marca": "Coca-Cola", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Original 2,25 L", "marca": "Coca-Cola", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Zero 354 ml lata", "marca": "Coca-Cola", "presentacion": "354 ml lata", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Zero 500 ml", "marca": "Coca-Cola", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Zero 1,5 L", "marca": "Coca-Cola", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Coca-Cola Zero 2,25 L", "marca": "Coca-Cola", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sprite Original 354 ml lata", "marca": "Sprite", "presentacion": "354 ml lata", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sprite Original 500 ml", "marca": "Sprite", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sprite Original 1,5 L", "marca": "Sprite", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sprite Original 2,25 L", "marca": "Sprite", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Fanta Naranja 500 ml", "marca": "Fanta", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Fanta Naranja 1,5 L", "marca": "Fanta", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Fanta Naranja 2,25 L", "marca": "Fanta", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Original 354 ml lata", "marca": "Pepsi", "presentacion": "354 ml lata", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Original 500 ml", "marca": "Pepsi", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Original 1,5 L", "marca": "Pepsi", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Original 2,25 L", "marca": "Pepsi", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Black 354 ml lata", "marca": "Pepsi", "presentacion": "354 ml lata", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Black 500 ml", "marca": "Pepsi", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepsi Black 1,5 L", "marca": "Pepsi", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "7UP Original 500 ml", "marca": "7UP", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "7UP Original 1,5 L", "marca": "7UP", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "7UP Original 2,25 L", "marca": "7UP", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mirinda Naranja 500 ml", "marca": "Mirinda", "presentacion": "500 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mirinda Naranja 1,5 L", "marca": "Mirinda", "presentacion": "1,5 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mirinda Naranja 2,25 L", "marca": "Mirinda", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Cola 600 ml", "marca": "Manaos", "presentacion": "600 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Cola 2,25 L", "marca": "Manaos", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Cola 3 L", "marca": "Manaos", "presentacion": "3 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Naranja 600 ml", "marca": "Manaos", "presentacion": "600 ml", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Naranja 2,25 L", "marca": "Manaos", "presentacion": "2,25 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manaos Naranja 3 L", "marca": "Manaos", "presentacion": "3 L", "categoria": "Gaseosas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villavicencio Sin gas 500 ml", "marca": "Villavicencio", "presentacion": "500 ml", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villavicencio Sin gas 1,5 L", "marca": "Villavicencio", "presentacion": "1,5 L", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villavicencio Sin gas 2 L", "marca": "Villavicencio", "presentacion": "2 L", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villa del Sur Sin gas 500 ml", "marca": "Villa del Sur", "presentacion": "500 ml", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villa del Sur Sin gas 1,5 L", "marca": "Villa del Sur", "presentacion": "1,5 L", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Villa del Sur Sin gas 2,25 L", "marca": "Villa del Sur", "presentacion": "2,25 L", "categoria": "Aguas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Levité Pomelo 500 ml", "marca": "Levité", "presentacion": "500 ml", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Levité Pomelo 1,5 L", "marca": "Levité", "presentacion": "1,5 L", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Levité Manzana 500 ml", "marca": "Levité", "presentacion": "500 ml", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Levité Manzana 1,5 L", "marca": "Levité", "presentacion": "1,5 L", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Aquarius Pomelo 500 ml", "marca": "Aquarius", "presentacion": "500 ml", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Aquarius Pomelo 1,5 L", "marca": "Aquarius", "presentacion": "1,5 L", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Aquarius Pera 500 ml", "marca": "Aquarius", "presentacion": "500 ml", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Aquarius Pera 1,5 L", "marca": "Aquarius", "presentacion": "1,5 L", "categoria": "Aguas saborizadas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Speed Unlimited 250 ml", "marca": "Speed", "presentacion": "250 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Speed Unlimited 473 ml", "marca": "Speed", "presentacion": "473 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Monster Energy 473 ml", "marca": "Monster", "presentacion": "473 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Monster Mango Loco 473 ml", "marca": "Monster", "presentacion": "473 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Monster Ultra 473 ml", "marca": "Monster", "presentacion": "473 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Red Bull Energy Drink 250 ml", "marca": "Red Bull", "presentacion": "250 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Red Bull Energy Drink 355 ml", "marca": "Red Bull", "presentacion": "355 ml", "categoria": "Energizantes", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gatorade Manzana 500 ml", "marca": "Gatorade", "presentacion": "500 ml", "categoria": "Isotónicas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gatorade Manzana 750 ml", "marca": "Gatorade", "presentacion": "750 ml", "categoria": "Isotónicas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gatorade Cool Blue 500 ml", "marca": "Gatorade", "presentacion": "500 ml", "categoria": "Isotónicas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gatorade Cool Blue 750 ml", "marca": "Gatorade", "presentacion": "750 ml", "categoria": "Isotónicas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cepita Naranja 200 ml", "marca": "Cepita", "presentacion": "200 ml", "categoria": "Jugos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cepita Naranja 1 L", "marca": "Cepita", "presentacion": "1 L", "categoria": "Jugos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Baggio Multifruta 200 ml", "marca": "Baggio", "presentacion": "200 ml", "categoria": "Jugos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Baggio Multifruta 1 L", "marca": "Baggio", "presentacion": "1 L", "categoria": "Jugos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Tang Naranja sobre", "marca": "Tang", "presentacion": "sobre", "categoria": "Jugos en polvo", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Tang Pomelo sobre", "marca": "Tang", "presentacion": "sobre", "categoria": "Jugos en polvo", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Clight Naranja sobre", "marca": "Clight", "presentacion": "sobre", "categoria": "Jugos en polvo", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Quilmes Clásica 473 ml lata", "marca": "Quilmes", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Quilmes Clásica 710 ml botella", "marca": "Quilmes", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Brahma Clásica 473 ml lata", "marca": "Brahma", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Brahma Clásica 710 ml botella", "marca": "Brahma", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Schneider Clásica 473 ml lata", "marca": "Schneider", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Schneider Clásica 710 ml botella", "marca": "Schneider", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Imperial Clásica 473 ml lata", "marca": "Imperial", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Imperial Clásica 710 ml botella", "marca": "Imperial", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Andes Origen Clásica 473 ml lata", "marca": "Andes Origen", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Andes Origen Clásica 710 ml botella", "marca": "Andes Origen", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Heineken Original 473 ml lata", "marca": "Heineken", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Heineken Original 710 ml botella", "marca": "Heineken", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Stella Artois Original 473 ml lata", "marca": "Stella Artois", "presentacion": "473 ml lata", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Stella Artois Original 710 ml botella", "marca": "Stella Artois", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Corona Extra 330 ml botella", "marca": "Corona", "presentacion": "330 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Corona Extra 710 ml botella", "marca": "Corona", "presentacion": "710 ml botella", "categoria": "Cervezas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Clásicas chica", "marca": "Lay's", "presentacion": "chica", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Clásicas mediana", "marca": "Lay's", "presentacion": "mediana", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Clásicas grande", "marca": "Lay's", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Jamón Serrano chica", "marca": "Lay's", "presentacion": "chica", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Jamón Serrano mediana", "marca": "Lay's", "presentacion": "mediana", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lay's Jamón Serrano grande", "marca": "Lay's", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pehuamar Clásicas chica", "marca": "Pehuamar", "presentacion": "chica", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pehuamar Clásicas mediana", "marca": "Pehuamar", "presentacion": "mediana", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pehuamar Clásicas grande", "marca": "Pehuamar", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Krachitos Clásicas chica", "marca": "Krachitos", "presentacion": "chica", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Krachitos Clásicas mediana", "marca": "Krachitos", "presentacion": "mediana", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Krachitos Clásicas grande", "marca": "Krachitos", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Doritos Queso chico", "marca": "Doritos", "presentacion": "chico", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Doritos Queso mediano", "marca": "Doritos", "presentacion": "mediano", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Doritos Queso grande", "marca": "Doritos", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cheetos Queso chico", "marca": "Cheetos", "presentacion": "chico", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cheetos Queso mediano", "marca": "Cheetos", "presentacion": "mediano", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cheetos Queso grande", "marca": "Cheetos", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "3D Original chico", "marca": "3D", "presentacion": "chico", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "3D Original mediano", "marca": "3D", "presentacion": "mediano", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "3D Original grande", "marca": "3D", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chizitos Queso chico", "marca": "Chizitos", "presentacion": "chico", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chizitos Queso mediano", "marca": "Chizitos", "presentacion": "mediano", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chizitos Queso grande", "marca": "Chizitos", "presentacion": "grande", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Maní Salado 50 g", "marca": "Maní", "presentacion": "50 g", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Maní Salado 100 g", "marca": "Maní", "presentacion": "100 g", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Maní Salado 250 g", "marca": "Maní", "presentacion": "250 g", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Palitos Salados 80 g", "marca": "Palitos", "presentacion": "80 g", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Palitos Salados 150 g", "marca": "Palitos", "presentacion": "150 g", "categoria": "Snacks", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Guaymallén Chocolate simple", "marca": "Guaymallén", "presentacion": "simple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Guaymallén Chocolate triple", "marca": "Guaymallén", "presentacion": "triple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Guaymallén Blanco simple", "marca": "Guaymallén", "presentacion": "simple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Guaymallén Blanco triple", "marca": "Guaymallén", "presentacion": "triple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Jorgito Chocolate simple", "marca": "Jorgito", "presentacion": "simple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Jorgelin Chocolate triple", "marca": "Jorgelin", "presentacion": "triple", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Terrabusi Tita unidad", "marca": "Terrabusi", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Terrabusi Rhodesia unidad", "marca": "Terrabusi", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Havanna Chocolate unidad", "marca": "Havanna", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Havanna 70% Cacao unidad", "marca": "Havanna", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cachafaz Chocolate unidad", "marca": "Cachafaz", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rasta Negro unidad", "marca": "Rasta", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rasta Blanco unidad", "marca": "Rasta", "presentacion": "unidad", "categoria": "Alfajores", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Milka Chocolate con leche 55 g", "marca": "Milka", "presentacion": "55 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Milka Chocolate con leche 100 g", "marca": "Milka", "presentacion": "100 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Milka Oreo 55 g", "marca": "Milka", "presentacion": "55 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Milka Oreo 100 g", "marca": "Milka", "presentacion": "100 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cofler Block 38 g", "marca": "Cofler", "presentacion": "38 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cofler Block 110 g", "marca": "Cofler", "presentacion": "110 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Águila Chocolate 60 g", "marca": "Águila", "presentacion": "60 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Shot Maní 35 g", "marca": "Shot", "presentacion": "35 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Shot Maní 90 g", "marca": "Shot", "presentacion": "90 g", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Bon o Bon Bombón unidad", "marca": "Bon o Bon", "presentacion": "unidad", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Bon o Bon Bombón pack x6", "marca": "Bon o Bon", "presentacion": "pack x6", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ferrero Rocher Bombones pack x3", "marca": "Ferrero Rocher", "presentacion": "pack x3", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ferrero Rocher Bombones pack x8", "marca": "Ferrero Rocher", "presentacion": "pack x8", "categoria": "Chocolates", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Beldent Menta pack", "marca": "Beldent", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Beldent Frutilla pack", "marca": "Beldent", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Topline Menta pack", "marca": "Topline", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Topline Seven pack", "marca": "Topline", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Halls Menta pack", "marca": "Halls", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Halls Strong pack", "marca": "Halls", "presentacion": "pack", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mentos Menta rollo", "marca": "Mentos", "presentacion": "rollo", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mentos Fruta rollo", "marca": "Mentos", "presentacion": "rollo", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sugus Caramelos unidad", "marca": "Sugus", "presentacion": "unidad", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sugus Caramelos bolsa", "marca": "Sugus", "presentacion": "bolsa", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Flynn Paff Caramelo unidad", "marca": "Flynn Paff", "presentacion": "unidad", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chupetín Pico Dulce unidad", "marca": "Chupetín", "presentacion": "unidad", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rocklets Confites 35 g", "marca": "Rocklets", "presentacion": "35 g", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rocklets Confites 80 g", "marca": "Rocklets", "presentacion": "80 g", "categoria": "Golosinas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Oreo Original 118 g", "marca": "Oreo", "presentacion": "118 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Oreo Original 182 g", "marca": "Oreo", "presentacion": "182 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepitos Chips 118 g", "marca": "Pepitos", "presentacion": "118 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pepitos Chips 357 g", "marca": "Pepitos", "presentacion": "357 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chocolinas Chocolate 170 g", "marca": "Chocolinas", "presentacion": "170 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chocolinas Chocolate 250 g", "marca": "Chocolinas", "presentacion": "250 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sonrisas Frutilla 118 g", "marca": "Sonrisas", "presentacion": "118 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Merengadas Original 93 g", "marca": "Merengadas", "presentacion": "93 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Melitas Miel 170 g", "marca": "Melitas", "presentacion": "170 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Don Satur Bizcochos salados 200 g", "marca": "Don Satur", "presentacion": "200 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Don Satur Bizcochos dulces 200 g", "marca": "Don Satur", "presentacion": "200 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Criollitas Original 100 g", "marca": "Criollitas", "presentacion": "100 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Criollitas Original 300 g", "marca": "Criollitas", "presentacion": "300 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Maná Vainilla 145 g", "marca": "Maná", "presentacion": "145 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Terrabusi Variedad 300 g", "marca": "Terrabusi", "presentacion": "300 g", "categoria": "Galletitas", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Marlboro Box 20 unidades", "marca": "Marlboro", "presentacion": "20 unidades", "categoria": "Cigarrillos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 3}, {"nombre": "Philip Morris Box 20 unidades", "marca": "Philip Morris", "presentacion": "20 unidades", "categoria": "Cigarrillos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 3}, {"nombre": "Lucky Strike Box 20 unidades", "marca": "Lucky Strike", "presentacion": "20 unidades", "categoria": "Cigarrillos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 3}, {"nombre": "Camel Box 20 unidades", "marca": "Camel", "presentacion": "20 unidades", "categoria": "Cigarrillos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 3}, {"nombre": "Chesterfield Box 20 unidades", "marca": "Chesterfield", "presentacion": "20 unidades", "categoria": "Cigarrillos", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 3}, {"nombre": "BIC Encendedor unidad", "marca": "BIC", "presentacion": "unidad", "categoria": "Accesorios", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pilas AA Alcalinas pack x2", "marca": "Pilas AA", "presentacion": "pack x2", "categoria": "Accesorios", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pilas AA Alcalinas pack x4", "marca": "Pilas AA", "presentacion": "pack x4", "categoria": "Accesorios", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pilas AAA Alcalinas pack x2", "marca": "Pilas AAA", "presentacion": "pack x2", "categoria": "Accesorios", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pilas AAA Alcalinas pack x4", "marca": "Pilas AAA", "presentacion": "pack x4", "categoria": "Accesorios", "catalogos": ["kiosco", "almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Serenísima Leche entera 1 L", "marca": "La Serenísima", "presentacion": "1 L", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Serenísima Leche descremada 1 L", "marca": "La Serenísima", "presentacion": "1 L", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Milkaut Leche entera 1 L", "marca": "Milkaut", "presentacion": "1 L", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Yogur Bebible 190 ml", "marca": "Yogur", "presentacion": "190 ml", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Yogur Bebible 900 ml", "marca": "Yogur", "presentacion": "900 ml", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Yogur Firme 120 g", "marca": "Yogur", "presentacion": "120 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Yogur Firme 190 g", "marca": "Yogur", "presentacion": "190 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manteca 100 g", "marca": "Manteca", "presentacion": "100 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Manteca 200 g", "marca": "Manteca", "presentacion": "200 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Queso crema 190 g", "marca": "Queso crema", "presentacion": "190 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Queso crema 300 g", "marca": "Queso crema", "presentacion": "300 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Queso rallado 40 g", "marca": "Queso rallado", "presentacion": "40 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Queso rallado 120 g", "marca": "Queso rallado", "presentacion": "120 g", "categoria": "Lácteos", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Molinos Ala Arroz largo fino 500 g", "marca": "Molinos Ala", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Molinos Ala Arroz largo fino 1 kg", "marca": "Molinos Ala", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gallo Arroz 500 g", "marca": "Gallo", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gallo Arroz 1 kg", "marca": "Gallo", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Lucchetti Fideos Spaghetti 500 g", "marca": "Lucchetti", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Matarazzo Fideos Tallarín 500 g", "marca": "Matarazzo", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Matarazzo Fideos Tirabuzón 500 g", "marca": "Matarazzo", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Favorita Harina 000 1 kg", "marca": "Favorita", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pureza Harina 0000 1 kg", "marca": "Pureza", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Chango Azúcar 1 kg", "marca": "Chango", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ledesma Azúcar 1 kg", "marca": "Ledesma", "presentacion": "1 kg", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Celusal Sal fina 500 g", "marca": "Celusal", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Dos Anclas Sal fina 500 g", "marca": "Dos Anclas", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Natura Aceite girasol 900 ml", "marca": "Natura", "presentacion": "900 ml", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Natura Aceite girasol 1,5 L", "marca": "Natura", "presentacion": "1,5 L", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cañuelas Aceite girasol 900 ml", "marca": "Cañuelas", "presentacion": "900 ml", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cañuelas Aceite girasol 1,5 L", "marca": "Cañuelas", "presentacion": "1,5 L", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Campagnola Puré de tomate 520 g", "marca": "La Campagnola", "presentacion": "520 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Arcor Puré de tomate 520 g", "marca": "Arcor", "presentacion": "520 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Arcor Choclo en lata 300 g", "marca": "Arcor", "presentacion": "300 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Campagnola Arvejas 300 g", "marca": "La Campagnola", "presentacion": "300 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Knorr Caldo pack", "marca": "Knorr", "presentacion": "pack", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Alicante Orégano 25 g", "marca": "Alicante", "presentacion": "25 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Alicante Pimentón 25 g", "marca": "Alicante", "presentacion": "25 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Playadito Yerba mate 500 g", "marca": "Playadito", "presentacion": "500 g", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Playadito Yerba mate 1 kg", "marca": "Playadito", "presentacion": "1 kg", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Taragüi Yerba mate 500 g", "marca": "Taragüi", "presentacion": "500 g", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Taragüi Yerba mate 1 kg", "marca": "Taragüi", "presentacion": "1 kg", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rosamonte Yerba mate 500 g", "marca": "Rosamonte", "presentacion": "500 g", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rosamonte Yerba mate 1 kg", "marca": "Rosamonte", "presentacion": "1 kg", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Amanda Yerba mate 500 g", "marca": "Amanda", "presentacion": "500 g", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Amanda Yerba mate 1 kg", "marca": "Amanda", "presentacion": "1 kg", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mañanita Yerba mate 500 g", "marca": "Mañanita", "presentacion": "500 g", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Mañanita Yerba mate 1 kg", "marca": "Mañanita", "presentacion": "1 kg", "categoria": "Yerba", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Virginia Café molido 250 g", "marca": "La Virginia", "presentacion": "250 g", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Virginia Café molido 500 g", "marca": "La Virginia", "presentacion": "500 g", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Nescafé Café instantáneo 100 g", "marca": "Nescafé", "presentacion": "100 g", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Nescafé Café instantáneo 170 g", "marca": "Nescafé", "presentacion": "170 g", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Virginia Té 25 saquitos", "marca": "La Virginia", "presentacion": "25 saquitos", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Virginia Té 50 saquitos", "marca": "La Virginia", "presentacion": "50 saquitos", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cabrales Café molido 250 g", "marca": "Cabrales", "presentacion": "250 g", "categoria": "Infusiones", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Arcor Mermelada frutilla 454 g", "marca": "Arcor", "presentacion": "454 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Arcor Mermelada durazno 454 g", "marca": "Arcor", "presentacion": "454 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Serenísima Dulce de leche 400 g", "marca": "La Serenísima", "presentacion": "400 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Serenísima Dulce de leche 1 kg", "marca": "La Serenísima", "presentacion": "1 kg", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Nesquik Cacao 180 g", "marca": "Nesquik", "presentacion": "180 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Nesquik Cacao 360 g", "marca": "Nesquik", "presentacion": "360 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Quaker Avena 300 g", "marca": "Quaker", "presentacion": "300 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Quaker Avena 500 g", "marca": "Quaker", "presentacion": "500 g", "categoria": "Desayuno", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Magistral Detergente 300 ml", "marca": "Magistral", "presentacion": "300 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Magistral Detergente 500 ml", "marca": "Magistral", "presentacion": "500 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Magistral Detergente 750 ml", "marca": "Magistral", "presentacion": "750 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ala Detergente 500 ml", "marca": "Ala", "presentacion": "500 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ayudín Lavandina 1 L", "marca": "Ayudín", "presentacion": "1 L", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ayudín Lavandina 2 L", "marca": "Ayudín", "presentacion": "2 L", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ayudín Lavandina 4 L", "marca": "Ayudín", "presentacion": "4 L", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Poett Limpiador 900 ml", "marca": "Poett", "presentacion": "900 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cif Crema 375 ml", "marca": "Cif", "presentacion": "375 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Cif Crema 750 ml", "marca": "Cif", "presentacion": "750 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Skip Jabón líquido 800 ml", "marca": "Skip", "presentacion": "800 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Skip Jabón líquido 3 L", "marca": "Skip", "presentacion": "3 L", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ala Jabón en polvo 400 g", "marca": "Ala", "presentacion": "400 g", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Ala Jabón en polvo 800 g", "marca": "Ala", "presentacion": "800 g", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Comfort Suavizante 900 ml", "marca": "Comfort", "presentacion": "900 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Vanish Quitamanchas 450 ml", "marca": "Vanish", "presentacion": "450 ml", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Virulana Esponja unidad", "marca": "Virulana", "presentacion": "unidad", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Patito Bolsas residuos pack", "marca": "Patito", "presentacion": "pack", "categoria": "Limpieza", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Colgate Pasta dental 70 g", "marca": "Colgate", "presentacion": "70 g", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Colgate Pasta dental 90 g", "marca": "Colgate", "presentacion": "90 g", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Oral-B Cepillo dental unidad", "marca": "Oral-B", "presentacion": "unidad", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Dove Jabón 90 g", "marca": "Dove", "presentacion": "90 g", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Rexona Desodorante aerosol 150 ml", "marca": "Rexona", "presentacion": "150 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Axe Desodorante aerosol 150 ml", "marca": "Axe", "presentacion": "150 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sedal Shampoo 190 ml", "marca": "Sedal", "presentacion": "190 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sedal Shampoo 340 ml", "marca": "Sedal", "presentacion": "340 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pantene Shampoo 200 ml", "marca": "Pantene", "presentacion": "200 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pantene Shampoo 400 ml", "marca": "Pantene", "presentacion": "400 ml", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Elite Papel higiénico pack x4", "marca": "Elite", "presentacion": "pack x4", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Elite Papel higiénico pack x6", "marca": "Elite", "presentacion": "pack x6", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Higienol Papel higiénico pack x4", "marca": "Higienol", "presentacion": "pack x4", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Sussex Rollo cocina pack x2", "marca": "Sussex", "presentacion": "pack x2", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Always Toallitas pack", "marca": "Always", "presentacion": "pack", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Gillette Máquina afeitar unidad", "marca": "Gillette", "presentacion": "unidad", "categoria": "Higiene", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Hellmann's Mayonesa 250 g", "marca": "Hellmann's", "presentacion": "250 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Hellmann's Mayonesa 500 g", "marca": "Hellmann's", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Natura Mayonesa 250 g", "marca": "Natura", "presentacion": "250 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Natura Mayonesa 500 g", "marca": "Natura", "presentacion": "500 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Savora Mostaza 250 g", "marca": "Savora", "presentacion": "250 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Danica Ketchup 250 g", "marca": "Danica", "presentacion": "250 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "La Campagnola Atún 170 g", "marca": "La Campagnola", "presentacion": "170 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Arcor Duraznos en lata 820 g", "marca": "Arcor", "presentacion": "820 g", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Dos Anclas Vinagre 500 ml", "marca": "Dos Anclas", "presentacion": "500 ml", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Dos Anclas Vinagre 1 L", "marca": "Dos Anclas", "presentacion": "1 L", "categoria": "Almacén", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pan Lactal chico", "marca": "Pan", "presentacion": "chico", "categoria": "Panadería", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pan Lactal grande", "marca": "Pan", "presentacion": "grande", "categoria": "Panadería", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Pan Hamburguesa pack", "marca": "Pan", "presentacion": "pack", "categoria": "Panadería", "catalogos": ["almacen", "minimercado"], "stockMinimo": 5}, {"nombre": "Papas fritas Congeladas 400 g", "marca": "Papas fritas", "presentacion": "400 g", "categoria": "Congelados", "catalogos": ["minimercado"], "stockMinimo": 5}, {"nombre": "Papas fritas Congeladas 1 kg", "marca": "Papas fritas", "presentacion": "1 kg", "categoria": "Congelados", "catalogos": ["minimercado"], "stockMinimo": 5}, {"nombre": "Helado Pote 500 g", "marca": "Helado", "presentacion": "500 g", "categoria": "Helados", "catalogos": ["minimercado"], "stockMinimo": 5}, {"nombre": "Helado Pote 1 kg", "marca": "Helado", "presentacion": "1 kg", "categoria": "Helados", "catalogos": ["minimercado"], "stockMinimo": 5}, {"nombre": "Helado Palito unidad", "marca": "Helado", "presentacion": "unidad", "categoria": "Helados", "catalogos": ["minimercado"], "stockMinimo": 5}];
-let catalogoTipoV29 = "kiosco";
-let catalogoSeleccionV29 = new Set();
-let scannerModeV29 = null;
-let scannerControlsV29 = null;
-let scannerReaderV29 = null;
-let scannerLastCodeV29 = "";
-let scannerLastAtV29 = 0;
-let scannerTrackVPro = null;
-let scannerNativeDetectorVPro = null;
-let scannerNativeLoopVPro = null;
-let scannerNativeBusyVPro = false;
-let scannerAssistTimerVPro = null;
-let scannerAutoZoomTimerVPro = null;
-let scannerOpenedAtVPro = 0;
-let scannerLastSuccessAtVPro = 0;
-let scannerCurrentZoomVPro = 1;
-let scannerZoomCapsVPro = null;
-let scannerTorchOnVPro = false;
-let scannerTorchSupportedVPro = false;
-let scannerFocusSupportedVPro = false;
-let scannerProfileVPro = null;
-let scannerEngineSuccessVPro = null;
-
-const SCANNER_PROFILE_KEY_VPRO = "vendify_scanner_profile_v2";
-
-function cargarPerfilScannerVPro() {
-  if (scannerProfileVPro) return scannerProfileVPro;
-
-  try {
-    scannerProfileVPro = JSON.parse(localStorage.getItem(SCANNER_PROFILE_KEY_VPRO) || "null");
-  } catch {
-    scannerProfileVPro = null;
-  }
-
-  if (!scannerProfileVPro || typeof scannerProfileVPro !== "object") {
-    scannerProfileVPro = {
-      successes: 0,
-      preferredZoom: 1,
-      avgReadMs: null,
-      engines: { native: 0, zxing: 0, capture: 0 },
-      formats: {},
-    };
-  }
-
-  return scannerProfileVPro;
-}
-
-function guardarPerfilScannerVPro() {
-  try {
-    localStorage.setItem(
-      SCANNER_PROFILE_KEY_VPRO,
-      JSON.stringify(cargarPerfilScannerVPro())
-    );
-  } catch {}
-}
-
-function registrarExitoScannerVPro({ engine = "zxing", format = "", zoom = null } = {}) {
-  const profile = cargarPerfilScannerVPro();
-  const elapsed = Math.max(0, Date.now() - scannerOpenedAtVPro);
-
-  profile.successes = Number(profile.successes || 0) + 1;
-  profile.engines ||= {};
-  profile.engines[engine] = Number(profile.engines[engine] || 0) + 1;
-
-  if (format) {
-    profile.formats ||= {};
-    profile.formats[format] = Number(profile.formats[format] || 0) + 1;
-  }
-
-  if (Number.isFinite(elapsed) && elapsed > 0 && elapsed < 30000) {
-    profile.avgReadMs =
-      profile.avgReadMs == null
-        ? elapsed
-        : Math.round(profile.avgReadMs * 0.8 + elapsed * 0.2);
-  }
-
-  const z = Number(zoom ?? scannerCurrentZoomVPro);
-  if (Number.isFinite(z) && z >= 1) {
-    profile.preferredZoom = Number(
-      (
-        Number(profile.preferredZoom || 1) * 0.72 +
-        z * 0.28
-      ).toFixed(2)
-    );
-  }
-
-  scannerEngineSuccessVPro = engine;
-  scannerLastSuccessAtVPro = Date.now();
-  guardarPerfilScannerVPro();
-  actualizarTextoAdaptativoVPro();
-}
-
-function actualizarTextoAdaptativoVPro() {
-  const el = $("#scanner-adaptive-text-vpro");
-  if (!el) return;
-
-  const p = cargarPerfilScannerVPro();
-
-  if (!p.successes) {
-    el.textContent = "Optimizando para este dispositivo";
-    return;
-  }
-
-  const avg = p.avgReadMs ? `${(p.avgReadMs / 1000).toFixed(1)} s` : "—";
-  el.textContent = `Perfil adaptativo · ${p.successes} lecturas · promedio ${avg}`;
-}
-
-function actualizarEngineScannerVPro(texto) {
-  const el = $("#scanner-engine-vpro");
-  if (el) el.textContent = texto || "Auto";
-}
-
-function mostrarHintScannerVPro(texto = "", tipo = "info") {
-  const el = $("#scanner-hint-vpro");
-  if (!el) return;
-
-  if (!texto) {
-    el.classList.add("hidden");
-    el.textContent = "";
-    el.dataset.type = "";
-    return;
-  }
-
-  el.textContent = texto;
-  el.dataset.type = tipo;
-  el.classList.remove("hidden");
-}
-
-function obtenerTrackScannerVPro() {
-  const video = $("#scanner-video-v29");
-  const track = video?.srcObject?.getVideoTracks?.()?.[0] || null;
-  scannerTrackVPro = track;
-  return track;
-}
-
-async function configurarTrackScannerVPro() {
-  const track = obtenerTrackScannerVPro();
-  if (!track) return;
-
-  let caps = {};
-  try {
-    caps = track.getCapabilities?.() || {};
-  } catch {}
-
-  let settings = {};
-  try {
-    settings = track.getSettings?.() || {};
-  } catch {}
-
-  const resolution = $("#scanner-resolution-badge-vpro");
-  if (resolution) {
-    const w = Number(settings.width || 0);
-    const h = Number(settings.height || 0);
-    resolution.textContent =
-      w >= 1800 ? "FHD" :
-      w >= 1200 ? "HD+" :
-      w >= 700 ? "HD" : "CAM";
-  }
-
-  scannerFocusSupportedVPro =
-    Array.isArray(caps.focusMode) &&
-    caps.focusMode.includes("continuous");
-
-  const focusBadge = $("#scanner-focus-badge-vpro");
-  if (focusBadge) {
-    focusBadge.textContent = scannerFocusSupportedVPro ? "AF continuo" : "AF";
-  }
-
-  if (scannerFocusSupportedVPro) {
-    try {
-      await track.applyConstraints({
-        advanced: [{ focusMode: "continuous" }]
-      });
-    } catch (err) {
-      console.debug("[Scanner Pro] focusMode no aplicable:", err);
-    }
-  }
-
-  scannerTorchSupportedVPro = Boolean(caps.torch);
-  $("#btn-scanner-torch-vpro")?.classList.toggle(
-    "hidden",
-    !scannerTorchSupportedVPro
-  );
-
-  if (caps.zoom && Number.isFinite(Number(caps.zoom.min))) {
-    scannerZoomCapsVPro = {
-      min: Number(caps.zoom.min),
-      max: Number(caps.zoom.max),
-      step: Number(caps.zoom.step || 0.1),
-    };
-
-    $("#scanner-zoom-wrap-vpro")?.classList.remove("hidden");
-
-    const profile = cargarPerfilScannerVPro();
-    const preferred = Math.max(
-      scannerZoomCapsVPro.min,
-      Math.min(
-        Math.min(scannerZoomCapsVPro.max, 2.2),
-        Number(profile.preferredZoom || settings.zoom || 1)
-      )
-    );
-
-    await aplicarZoomScannerVPro(preferred, { silencioso: true });
-  } else {
-    scannerZoomCapsVPro = null;
-    $("#scanner-zoom-wrap-vpro")?.classList.add("hidden");
-    scannerCurrentZoomVPro = 1;
-    actualizarZoomUIVPro();
-  }
-}
-
-function actualizarZoomUIVPro() {
-  const el = $("#scanner-zoom-value-vpro");
-  if (el) el.textContent = `${Number(scannerCurrentZoomVPro || 1).toFixed(1)}×`;
-}
-
-async function aplicarZoomScannerVPro(value, { silencioso = false } = {}) {
-  if (!scannerTrackVPro || !scannerZoomCapsVPro) return;
-
-  const min = scannerZoomCapsVPro.min;
-  const max = Math.min(scannerZoomCapsVPro.max, 3);
-  const z = Math.max(min, Math.min(max, Number(value)));
-
-  try {
-    await scannerTrackVPro.applyConstraints({
-      advanced: [{ zoom: z }]
-    });
-    scannerCurrentZoomVPro = z;
-    actualizarZoomUIVPro();
-
-    if (!silencioso) {
-      mostrarHintScannerVPro(`Zoom ${z.toFixed(1)}×`, "info");
-      setTimeout(() => {
-        if ($("#scanner-hint-vpro")?.textContent?.startsWith("Zoom")) {
-          mostrarHintScannerVPro("");
-        }
-      }, 900);
-    }
-  } catch (err) {
-    console.debug("[Scanner Pro] zoom no aplicable:", err);
-  }
-}
-
-async function cambiarZoomScannerVPro(delta) {
-  if (!scannerZoomCapsVPro) return;
-  const step = Math.max(0.1, scannerZoomCapsVPro.step || 0.1);
-  await aplicarZoomScannerVPro(scannerCurrentZoomVPro + delta * step * 2);
-}
-
-async function toggleTorchScannerVPro() {
-  if (!scannerTrackVPro || !scannerTorchSupportedVPro) return;
-
-  scannerTorchOnVPro = !scannerTorchOnVPro;
-
-  try {
-    await scannerTrackVPro.applyConstraints({
-      advanced: [{ torch: scannerTorchOnVPro }]
-    });
-
-    const btn = $("#btn-scanner-torch-vpro");
-    btn?.classList.toggle("active", scannerTorchOnVPro);
-    if (btn) {
-      const small = btn.querySelector("small");
-      if (small) small.textContent = scannerTorchOnVPro ? "Apagar" : "Linterna";
-    }
-  } catch (err) {
-    scannerTorchOnVPro = false;
-    console.debug("[Scanner Pro] torch no aplicable:", err);
-  }
-}
-
-async function iniciarDetectorNativoVPro() {
-  if (!("BarcodeDetector" in window)) {
-    scannerNativeDetectorVPro = null;
-    return false;
-  }
-
-  try {
-    const wanted = [
-      "ean_13", "ean_8", "upc_a", "upc_e",
-      "code_128", "code_39", "itf", "codabar"
-    ];
-
-    let supported = wanted;
-
-    if (typeof BarcodeDetector.getSupportedFormats === "function") {
-      const browserFormats = await BarcodeDetector.getSupportedFormats();
-      supported = wanted.filter((f) => browserFormats.includes(f));
-    }
-
-    if (!supported.length) return false;
-
-    scannerNativeDetectorVPro = new BarcodeDetector({ formats: supported });
-    actualizarEngineScannerVPro("Nativo + ZXing");
-
-    const loop = async () => {
-      if (
-        !scannerNativeDetectorVPro ||
-        scannerNativeBusyVPro ||
-        $("#modal-scanner-v29")?.classList.contains("hidden")
-      ) {
-        scannerNativeLoopVPro = requestAnimationFrame(loop);
-        return;
-      }
-
-      const video = $("#scanner-video-v29");
-
-      if (video?.readyState >= 2 && video.videoWidth > 0) {
-        scannerNativeBusyVPro = true;
-
-        try {
-          const codes = await scannerNativeDetectorVPro.detect(video);
-          const hit = codes?.find((c) => c?.rawValue);
-
-          if (hit?.rawValue) {
-            procesarCodigoV29(hit.rawValue, {
-              engine: "native",
-              format: hit.format || "",
-            });
-          }
-        } catch {
-          // El detector nativo puede fallar en frames durante autofocus.
-        } finally {
-          scannerNativeBusyVPro = false;
-        }
-      }
-
-      scannerNativeLoopVPro = requestAnimationFrame(loop);
-    };
-
-    scannerNativeLoopVPro = requestAnimationFrame(loop);
-    return true;
-  } catch (err) {
-    console.debug("[Scanner Pro] BarcodeDetector no disponible:", err);
-    scannerNativeDetectorVPro = null;
-    return false;
-  }
-}
-
-function detenerDetectorNativoVPro() {
-  if (scannerNativeLoopVPro) {
-    cancelAnimationFrame(scannerNativeLoopVPro);
-  }
-  scannerNativeLoopVPro = null;
-  scannerNativeDetectorVPro = null;
-  scannerNativeBusyVPro = false;
-}
-
-function iniciarAsistenciaScannerVPro() {
-  clearInterval(scannerAssistTimerVPro);
-  clearInterval(scannerAutoZoomTimerVPro);
-
-  scannerAssistTimerVPro = setInterval(() => {
-    const video = $("#scanner-video-v29");
-    if (!video || video.readyState < 2 || video.videoWidth < 2) return;
-
-    try {
-      const c = document.createElement("canvas");
-      c.width = 64;
-      c.height = 48;
-      const ctx = c.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(video, 0, 0, c.width, c.height);
-
-      const px = ctx.getImageData(0, 0, c.width, c.height).data;
-      let lum = 0;
-
-      for (let i = 0; i < px.length; i += 16) {
-        lum += 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2];
-      }
-
-      const samples = px.length / 16;
-      const avg = samples ? lum / samples : 120;
-
-      if (avg < 52 && scannerTorchSupportedVPro && !scannerTorchOnVPro) {
-        mostrarHintScannerVPro("Hay poca luz · probá encender la linterna", "warning");
-      } else if (
-        $("#scanner-hint-vpro")?.textContent?.includes("poca luz")
-      ) {
-        mostrarHintScannerVPro("");
-      }
-    } catch {}
-  }, 1300);
-
-  scannerAutoZoomTimerVPro = setInterval(async () => {
-    if (
-      !scannerZoomCapsVPro ||
-      scannerLastSuccessAtVPro >= scannerOpenedAtVPro ||
-      $("#modal-scanner-v29")?.classList.contains("hidden")
-    ) {
-      return;
-    }
-
-    const elapsed = Date.now() - scannerOpenedAtVPro;
-
-    if (elapsed < 2600) return;
-
-    const maxAdaptive = Math.min(scannerZoomCapsVPro.max, 1.8);
-
-    if (scannerCurrentZoomVPro < maxAdaptive - 0.05) {
-      await aplicarZoomScannerVPro(
-        Math.min(maxAdaptive, scannerCurrentZoomVPro + 0.2),
-        { silencioso: true }
-      );
-
-      const status = $("#scanner-status-v29");
-      if (status) {
-        status.textContent =
-          `Buscando · autozoom ${scannerCurrentZoomVPro.toFixed(1)}×`;
-      }
-    }
-  }, 2200);
-}
-
-function detenerAsistenciaScannerVPro() {
-  clearInterval(scannerAssistTimerVPro);
-  clearInterval(scannerAutoZoomTimerVPro);
-  scannerAssistTimerVPro = null;
-  scannerAutoZoomTimerVPro = null;
-}
-
-async function probarCanvasConLectoresVPro(canvas, label = "capture") {
-  // 1) Detector nativo.
-  if ("BarcodeDetector" in window) {
-    try {
-      const detector =
-        scannerNativeDetectorVPro ||
-        new BarcodeDetector({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "itf"]
-        });
-
-      const codes = await detector.detect(canvas);
-      const hit = codes?.find((c) => c?.rawValue);
-
-      if (hit?.rawValue) {
-        await procesarCodigoV29(hit.rawValue, {
-          engine: label,
-          format: hit.format || "",
-        });
-        return true;
-      }
-    } catch {}
-  }
-
-  // 2) ZXing sobre imagen fija.
-  try {
-    const reader = new ZXingBrowser.BrowserMultiFormatReader();
-    if (typeof reader.decodeFromCanvas === "function") {
-      const result = await reader.decodeFromCanvas(canvas);
-      if (result?.getText?.()) {
-        await procesarCodigoV29(result.getText(), {
-          engine: label,
-          format: result.getBarcodeFormat?.()?.toString?.() || "",
-        });
-        return true;
-      }
-    }
-  } catch {}
-
-  return false;
-}
-
-function crearCanvasFrameVPro({ contrast = 1, threshold = null, crop = 0.04 } = {}) {
-  const video = $("#scanner-video-v29");
-  if (!video?.videoWidth || !video?.videoHeight) return null;
-
-  const sx = Math.round(video.videoWidth * crop);
-  const sy = Math.round(video.videoHeight * crop);
-  const sw = Math.round(video.videoWidth * (1 - crop * 2));
-  const sh = Math.round(video.videoHeight * (1 - crop * 2));
-
-  const maxW = 1600;
-  const scale = Math.min(1, maxW / sw);
-
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(sw * scale));
-  canvas.height = Math.max(1, Math.round(sh * scale));
-
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  ctx.drawImage(
-    video,
-    sx, sy, sw, sh,
-    0, 0, canvas.width, canvas.height
-  );
-
-  if (contrast !== 1 || threshold != null) {
-    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const d = img.data;
-
-    for (let i = 0; i < d.length; i += 4) {
-      let r = d[i], g = d[i + 1], b = d[i + 2];
-      let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-
-      gray = (gray - 128) * contrast + 128;
-      gray = Math.max(0, Math.min(255, gray));
-
-      if (threshold != null) {
-        gray = gray >= threshold ? 255 : 0;
-      }
-
-      d[i] = d[i + 1] = d[i + 2] = gray;
-    }
-
-    ctx.putImageData(img, 0, 0);
-  }
-
-  return canvas;
-}
-
-async function capturarYAnalizarScannerVPro() {
-  const btn = $("#btn-scanner-capture-vpro");
-  const status = $("#scanner-status-v29");
-
-  if (!$("#scanner-video-v29")?.videoWidth) {
-    mostrarHintScannerVPro("La cámara todavía no está lista", "warning");
-    return;
-  }
-
-  if (btn) btn.disabled = true;
-  setScannerAnimandoV29(false);
-  if (status) status.textContent = "Analizando captura con varios filtros…";
-
-  try {
-    const variants = [
-      { contrast: 1, threshold: null, crop: 0.02 },
-      { contrast: 1.45, threshold: null, crop: 0.04 },
-      { contrast: 1.8, threshold: null, crop: 0.07 },
-      { contrast: 1.25, threshold: 125, crop: 0.04 },
-      { contrast: 1.25, threshold: 155, crop: 0.04 },
-    ];
-
-    for (const opts of variants) {
-      const canvas = crearCanvasFrameVPro(opts);
-      if (!canvas) continue;
-
-      const ok = await probarCanvasConLectoresVPro(canvas, "capture");
-      if (ok) return;
-    }
-
-    if (status) status.textContent = "No pude leer esa captura";
-    mostrarHintScannerVPro(
-      "Probá estirar el envase, cambiar el ángulo o usar un poco de zoom",
-      "warning"
-    );
-    navigator.vibrate?.([35, 45, 35]);
-    setScannerAnimandoV29(true);
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-
-let usbBufferV29 = "";
-let usbStartedAtV29 = 0;
-let usbLastAtV29 = 0;
-
-
-// ============================================================
-// Stock inteligente por producto / sucursal
-// ============================================================
-
-let stockInteligente = new Map();
 
 function obtenerStockInteligente(producto) {
-  if (!producto?.id) return null;
-  return stockInteligente.get(producto.id) || null;
+  return productsControllerV232.getSmartStock(producto);
 }
 
 function esSinStock(producto) {
-  return Number(producto?.stock || 0) <= 0;
+  return productsControllerV232.isOutOfStock(producto);
 }
 
 function esStockBajoInteligente(producto) {
-  const stock = Number(producto?.stock || 0);
-  if (stock <= 0) return false;
-
-  const info = obtenerStockInteligente(producto);
-
-  // Si todavía no existe el RPC/migración, mantener compatibilidad
-  // con el valor antiguo para no romper la interfaz.
-  if (!info) {
-    return stock <= Number(producto?.stockMinimo ?? 0);
-  }
-
-  return Boolean(info.esBajo);
-}
-
-function textoStockInteligente(producto) {
-  const info = obtenerStockInteligente(producto);
-
-  if (!info) {
-    return `Stock actual: ${Number(producto?.stock || 0)}`;
-  }
-
-  const stock = Number(producto?.stock || 0);
-
-  if (stock <= 0) {
-    return "Sin stock";
-  }
-
-  if (!info.tieneHistorial) {
-    return "Sin historial suficiente de ventas";
-  }
-
-  const dias =
-    info.diasCobertura == null
-      ? "—"
-      : `${Number(info.diasCobertura).toFixed(1)} días`;
-
-  return [
-    `Stock bajo calculado: ≤ ${info.stockBajo}`,
-    `Venta estimada: ${Number(info.promedioDiario || 0).toFixed(2)}/día`,
-    `Cobertura actual: ${dias}`,
-  ].join(" · ");
+  return productsControllerV232.isLowStock(producto);
 }
 
 async function cargarStockInteligente() {
-  stockInteligente = new Map();
-
-  if (!appContext?.branch?.id) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "obtener_stock_inteligente_sucursal",
-    { p_sucursal_id: appContext.branch.id }
-  );
-
-  if (error) {
-    // Fallback silencioso: la app sigue funcionando aunque el usuario
-    // todavía no haya ejecutado la migración.
-    console.warn("[Vendify] Stock inteligente no disponible:", error.message);
-    return;
-  }
-
-  (data || []).forEach((row) => {
-    stockInteligente.set(row.producto_id, {
-      vendidos7d: Number(row.vendidos_7d || 0),
-      vendidos30d: Number(row.vendidos_30d || 0),
-      promedioDiario: Number(row.promedio_diario || 0),
-      stockBajo: Number(row.stock_bajo_calculado || 0),
-      diasCobertura:
-        row.dias_cobertura == null ? null : Number(row.dias_cobertura),
-      reposicion7d: Number(row.reposicion_sugerida_7d || 0),
-      estado: row.estado || "sin_datos",
-      tieneHistorial: Boolean(row.tiene_historial),
-      esBajo: row.estado === "bajo",
-    });
-  });
-}
-
-function actualizarStockSmartForm(producto = null) {
-  const value = $("#stock-smart-form-value");
-  const hint = $("#stock-smart-form-hint");
-  if (!value || !hint) return;
-
-  if (!producto) {
-    value.textContent = "Se calculará según las ventas";
-    hint.textContent =
-      "Cuando el producto tenga historial, Vendify calculará su umbral automáticamente.";
-    return;
-  }
-
-  const info = obtenerStockInteligente(producto);
-
-  if (!info?.tieneHistorial) {
-    value.textContent = "Todavía sin historial";
-    hint.textContent =
-      "El umbral aparecerá cuando existan ventas suficientes del producto.";
-    return;
-  }
-
-  value.textContent = `≤ ${info.stockBajo} unidades`;
-
-  const dias =
-    info.diasCobertura == null
-      ? "—"
-      : `${Number(info.diasCobertura).toFixed(1)} días`;
-
-  hint.textContent =
-    `${Number(info.promedioDiario || 0).toFixed(2)} unidades/día · ` +
-    `cobertura actual ${dias}`;
-}
-
-function actualizarFiltroRapidoStockUI() {
-  const select = $("#filtro-stock-v29");
-  const chip = $("#filtro-activo");
-  const text = $("#filtro-activo-texto");
-  const value = select?.value || "";
-
-  $("#stat-bajo-card")?.classList.toggle(
-    "active",
-    filtroStockBajo || value === "bajo"
-  );
-
-  $("#stat-sin-card")?.classList.toggle(
-    "active",
-    value === "sin"
-  );
-
-  const activo = filtroStockBajo || value === "bajo" || value === "sin";
-  chip?.classList.toggle("hidden", !activo);
-
-  if (text) {
-    text.textContent =
-      value === "sin"
-        ? "Mostrando productos sin stock"
-        : "Mostrando productos con stock bajo inteligente";
-  }
-}
-
-function filtrarSinStockRapido() {
-  const select = $("#filtro-stock-v29");
-  if (!select) return;
-
-  filtroStockBajo = false;
-  select.value = select.value === "sin" ? "" : "sin";
-  actualizarFiltroRapidoStockUI();
-  renderGrid();
-
-  if (select.value === "sin") {
-    mostrarToast("Filtrando productos sin stock", "info");
-  }
-}
-
-
-function mapearProductoDB(row) {
-  return {
-    id: row.id, nombre: row.nombre, marca: row.marca || "", presentacion: row.presentacion || "",
-    codigoBarras: row.codigo_barras || "", categoria: row.categoria || "",
-    precioCompra: row.precio_compra || 0, precioVenta: row.precio_venta || 0,
-    stock: row.stock || 0, stockMinimo: row.stock_minimo ?? 5, foto: row.foto || null, creado: row.creado,
-  };
-}
-
-function productoEtiquetaV29(p) {
-  return p.nombre || [p.marca, p.presentacion].filter(Boolean).join(" ") || "Producto";
-}
-
-function filtrarYOrdenar() {
-  const texto = $("#buscador")?.value.trim().toLowerCase() || "";
-  const cat = $("#filtro-categoria")?.value || "";
-  const stockFilter = $("#filtro-stock-v29")?.value || "";
-  const [campo, dir] = ($("#orden")?.value || "nombre-asc").split("-");
-
-  let lista = productos.filter((p) => {
-    const searchHay = [
-      p.nombre,
-      p.marca,
-      p.presentacion,
-      p.codigoBarras,
-      p.categoria,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    const matchTexto = !texto || searchHay.includes(texto);
-    const matchCat = !cat || p.categoria === cat;
-
-    const low = esStockBajoInteligente(p);
-    const zero = esSinStock(p);
-
-    const matchLegacy = !filtroStockBajo || low;
-    const matchStock =
-      !stockFilter ||
-      (stockFilter === "bajo" && low) ||
-      (stockFilter === "sin" && zero);
-
-    return matchTexto && matchCat && matchLegacy && matchStock;
-  });
-
-  lista.sort((a, b) => {
-    let va = a[campo] ?? "";
-    let vb = b[campo] ?? "";
-
-    if (typeof va === "string") {
-      va = va.toLowerCase();
-      vb = String(vb).toLowerCase();
-    }
-
-    if (va < vb) return dir === "asc" ? -1 : 1;
-    if (va > vb) return dir === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  return lista;
+  return productsControllerV232.loadSmartStock();
 }
 
 function renderGrid() {
-  const lista = filtrarYOrdenar();
-  const grid = $("#productos-grid");
-  const empty = $("#empty-state");
-  const noResults = $("#no-results");
-
-  if (!grid) return;
-
-  const role = appContext.membership?.role || "cashier";
-  const manage = tienePermisoV2("manageProducts");
-  const adjust = tienePermisoV2("adjustStock");
-  const costs = tienePermisoV2("viewCosts");
-
-  const totalStock = productos.reduce((a, p) => a + Number(p.stock || 0), 0);
-  const costoTotal = productos.reduce(
-    (a, p) => a + Number(p.stock || 0) * Number(p.precioCompra || 0),
-    0
-  );
-  const ventaTotal = productos.reduce(
-    (a, p) => a + Number(p.stock || 0) * Number(p.precioVenta || 0),
-    0
-  );
-  const bajos = productos.filter(esStockBajoInteligente).length;
-  const sinStock = productos.filter(esSinStock).length;
-
-  $("#stat-productos").textContent = productos.length;
-  $("#stat-stock").textContent = totalStock;
-  $("#stat-costo").textContent = costs ? formatearPrecio(costoTotal) : "—";
-  $("#stat-venta").textContent = formatearPrecio(ventaTotal);
-  $("#stat-bajo").textContent = bajos;
-  $("#stat-sin").textContent = sinStock;
-
-  if (!productos.length) {
-    grid.innerHTML = "";
-    empty?.classList.toggle("hidden", !manage);
-    noResults?.classList.add("hidden");
-    return;
-  }
-
-  empty?.classList.add("hidden");
-
-  if (!lista.length) {
-    grid.innerHTML = "";
-    noResults?.classList.remove("hidden");
-    return;
-  }
-
-  noResults?.classList.add("hidden");
-
-  grid.innerHTML = lista
-    .map((p) => {
-      const low = esStockBajoInteligente(p);
-      const stockInfoTitle = escapeHtml(textoStockInteligente(p));
-      const stockClass =
-        Number(p.stock || 0) === 0
-          ? "stock-zero-v29"
-          : low
-            ? "stock-low-v29"
-            : "";
-
-      // Un solo nombre completo. productoEtiquetaV29 ya agrega presentación
-      // sin repetirla cuando corresponde.
-      const nombreCompleto = productoEtiquetaV29(p);
-      const inicial = (p.marca || p.nombre || "P").slice(0, 1).toUpperCase();
-      const categoria = p.categoria || "Sin categoría";
-
-      const stockHtml = adjust
-        ? `<div class="row-stock-actions-v29" title="${stockInfoTitle}">
-            <button data-action="restar" aria-label="Restar stock">−</button>
-            <button class="stock-number-v29 ${stockClass}" data-action="ajustar">${Number(p.stock || 0)}</button>
-            <button data-action="sumar" aria-label="Sumar stock">+</button>
-          </div>`
-        : `<strong class="stock-number-v29 ${stockClass}" title="${stockInfoTitle}">${Number(p.stock || 0)}</strong>`;
-
-      const actions = manage
-        ? `<div class="row-actions-v29">
-            <button class="btn btn-ghost btn-sm" data-action="editar">Editar</button>
-            <button class="btn-icon danger" data-action="eliminar" title="Eliminar" aria-label="Eliminar">🗑</button>
-          </div>`
-        : "";
-
-      return `
-        <article
-          class="producto-card producto-row-v29 producto-row-v223"
-          data-id="${p.id}"
-          data-mobile-editable="${manage ? "true" : "false"}"
-          ${manage ? 'tabindex="0" role="button" aria-label="Editar ' + escapeHtml(nombreCompleto) + '"' : ""}
-        >
-          <div class="producto-v223-media">
-            ${
-              p.foto
-                ? `<img src="${p.foto}" alt="" class="producto-v223-img">`
-                : `<div class="producto-v223-icon">${escapeHtml(inicial)}</div>`
-            }
-          </div>
-
-          <div class="producto-v223-info">
-            <strong class="producto-v223-nombre">${escapeHtml(nombreCompleto)}</strong>
-            <small class="producto-v223-categoria">${escapeHtml(categoria)}</small>
-          </div>
-
-          <div class="producto-v223-stock">${stockHtml}</div>
-
-          <div class="producto-v223-precio">
-            <strong>${formatearPrecio(p.precioVenta)}</strong>
-            ${costs ? `<small>Costo ${formatearPrecio(p.precioCompra)}</small>` : ""}
-          </div>
-
-          <div class="producto-v223-acciones">${actions}</div>
-        </article>
-      `;
-    })
-    .join("");
-
-  aplicarPermisosV2();
+  productsControllerV232.render();
 }
-
 
 let productoSobreVentaActivo = false;
 
 function activarProductoSobreVenta() {
   const productoModal = $("#modal");
   const ventaModal = $("#modal-venta");
-
   if (!productoModal || !ventaModal) return;
-
   productoSobreVentaActivo = true;
   productoModal.classList.add("modal-product-over-sale");
   ventaModal.classList.add("modal-under-product");
@@ -8708,709 +7194,80 @@ function activarProductoSobreVenta() {
 function restaurarVentaDetrasProducto({ enfocar = true } = {}) {
   const productoModal = $("#modal");
   const ventaModal = $("#modal-venta");
-
   productoModal?.classList.remove("modal-product-over-sale");
   ventaModal?.classList.remove("modal-under-product");
   ventaModal?.removeAttribute("aria-hidden");
-
   productoSobreVentaActivo = false;
-
   if (enfocar && ventaModal && !ventaModal.classList.contains("hidden")) {
     setTimeout(() => $("#venta-buscador")?.focus(), 60);
   }
 }
 
-function abrirModal(producto=null) {
-  if(!exigirPermisoV2("manageProducts","No tenés permiso para modificar productos"))return;
-  productoEditandoId=producto?.id || null; fotoActualBase64=producto?.foto || null;
-  $("#modal-titulo").textContent=producto?"Editar producto":"Nuevo producto";
-  const branchHint = $("#producto-branch-hint-v226");
-  if (branchHint) branchHint.textContent = `Stock de sucursal: ${appContext.branch?.nombre || "—"}`;
-  $("#producto-id").value=producto?.id||""; $("#nombre").value=producto?.nombre||""; $("#marca").value=producto?.marca||"";
-  $("#presentacion").value=producto?.presentacion||""; $("#codigo-barras").value=producto?.codigoBarras||"";
-  $("#precio-compra").value=producto?.precioCompra??""; $("#precio-venta").value=producto?.precioVenta??"";
-  $("#stock").value=producto?.stock??0;
-  $("#stock-minimo").value=0;
-
-  const puedeAjustarStockProducto = tienePermisoV2("adjustStock");
-  $("#stock").disabled = !puedeAjustarStockProducto;
-  $("#stock").title = puedeAjustarStockProducto
-    ? ""
-    : "El propietario no habilitó la modificación manual de stock";
-
-  actualizarStockSmartForm(producto || null);
-  $("#error-nombre").textContent="";
-  $("#barcode-status-v29").textContent="";
-  renderSelectCategorias(producto?.categoria || "");
-
-  const modal = $("#modal");
-  const modalContent = modal?.querySelector(".modal-content");
-  modal?.classList.remove("hidden");
-
-  requestAnimationFrame(() => {
-    // Always start at the top. Focusing a lower field used to make the
-    // product modal jump down on smaller screens.
-    if (modalContent) modalContent.scrollTop = 0;
-
-    const initialField = producto ? $("#nombre") : $("#marca");
-
-    try {
-      initialField?.focus({ preventScroll: true });
-    } catch {
-      initialField?.focus();
-    }
-
-    if (modalContent) modalContent.scrollTop = 0;
-  });
+function abrirModal(producto = null) {
+  productsControllerV232.openEditor(producto);
 }
 
 function cerrarModal({ preservarFlujoScanner = false } = {}) {
-  $("#modal").classList.add("hidden");
-  $("#form-producto").reset();
-  productoEditandoId = null;
-  fotoActualBase64 = null;
-
-  restaurarVentaDetrasProducto({ enfocar: !preservarFlujoScanner });
-
-  if (!preservarFlujoScanner) {
-    pendingReturnToSaleV214 = false;
-    pendingAddAfterCreateV214 = false;
-    pendingScannedCodeV214 = null;
-  }
-}
-
-async function guardarProducto(e) {
-  e.preventDefault();
-
-  if (!exigirPermisoV2("manageProducts", "No tenés permiso para modificar productos")) return;
-
-  if (!appContext?.branch?.id) {
-    mostrarToast("Seleccioná una sucursal antes de guardar", "error");
-    return;
-  }
-
-  const nombre = $("#nombre").value.trim();
-  const codigo = $("#codigo-barras").value.trim();
-  const stockSucursal = Math.max(0, parseInt($("#stock").value, 10) || 0);
-
-  if (!nombre) {
-    $("#error-nombre").textContent = "El nombre es obligatorio";
-    return;
-  }
-
-  const duplicate =
-    codigo &&
-    productos.find(
-      (p) => p.codigoBarras === codigo && p.id !== productoEditandoId
-    );
-
-  if (duplicate) {
-    mostrarToast(`Ese código ya pertenece a "${duplicate.nombre}"`, "error");
-    return;
-  }
-
-  const eraEdicion = Boolean(productoEditandoId);
-  const btn = $("#btn-guardar");
-  btn.disabled = true;
-
-  const { data, error } = await supabaseClient.rpc(
-    "guardar_producto_seguro_v2",
-    {
-      p_producto_id: productoEditandoId || null,
-      p_sucursal_id: appContext.branch.id,
-      p_nombre: nombre,
-      p_marca: $("#marca").value.trim() || null,
-      p_presentacion: $("#presentacion").value.trim() || null,
-      p_codigo_barras: codigo || null,
-      p_categoria: $("#categoria").value.trim() || null,
-      p_precio_compra: Math.max(0, parseFloat($("#precio-compra").value) || 0),
-      p_precio_venta: Math.max(0, parseFloat($("#precio-venta").value) || 0),
-      p_stock: stockSucursal,
-    }
-  );
-
-  btn.disabled = false;
-
-  if (error || !data?.ok || !data?.producto) {
-    mostrarToast(
-      error?.message ||
-        data?.message ||
-        "No se pudo guardar el producto",
-      "error"
-    );
-    return;
-  }
-
-  const mapped = mapearProductoDB(data.producto);
-
-  if (eraEdicion) {
-    const i = productos.findIndex((p) => p.id === productoEditandoId);
-    if (i >= 0) productos[i] = mapped;
-  } else {
-    productos.push(mapped);
-  }
-
-  await cargarStockInteligente();
-  actualizarFiltroCategorias();
-  renderGrid();
-
-  const volverAVentaTrasAlta =
-    !eraEdicion &&
-    pendingReturnToSaleV214 &&
-    pendingAddAfterCreateV214;
-
-  cerrarModal({ preservarFlujoScanner: volverAVentaTrasAlta });
-
-  if (volverAVentaTrasAlta) {
-    pendingReturnToSaleV214 = false;
-    pendingAddAfterCreateV214 = false;
-    pendingScannedCodeV214 = null;
-
-    $("#modal-venta")?.classList.remove("hidden");
-    restaurarVentaDetrasProducto({ enfocar: false });
-
-    agregarAlCarrito(mapped.id);
-    renderVentaProductos();
-    renderCarrito();
-
-    setTimeout(() => $("#venta-buscador")?.focus(), 80);
-
-    mostrarToast(
-      `${mapped.nombre} registrado en ${appContext.branch.nombre} y agregado a la venta`,
-      "success"
-    );
-    return;
-  }
-
-  mostrarToast(
-    eraEdicion
-      ? `Producto actualizado en ${appContext.branch.nombre}`
-      : `Producto agregado a ${appContext.branch.nombre}`,
-    "success"
-  );
-}
-
-function mapearCategoriaOFFV29(categories="") {
-  const c=categories.toLowerCase();
-  if(c.includes("beer")||c.includes("cerve"))return "Cervezas"; if(c.includes("soda")||c.includes("gase"))return "Gaseosas";
-  if(c.includes("water")||c.includes("agua"))return "Aguas"; if(c.includes("chocolate"))return "Chocolates";
-  if(c.includes("snack")||c.includes("chip"))return "Snacks"; if(c.includes("biscuit")||c.includes("cookie")||c.includes("gallet"))return "Galletitas";
-  if(c.includes("dairy")||c.includes("milk")||c.includes("láct"))return "Lácteos"; return "Otros";
+  productsControllerV232.closeEditor(preservarFlujoScanner);
 }
 
 async function buscarDatosBarcodeV29(code) {
-  code=String(code||"").trim(); if(!code)return null;
-  const status=$("#barcode-status-v29"); if(status)status.textContent="Buscando datos del producto...";
-  try{
-    const url=`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,brands,quantity,categories`;
-    const r=await fetch(url); if(!r.ok)throw new Error("Consulta no disponible"); const j=await r.json();
-    if(j.status!==1 || !j.product){if(status)status.textContent="Código no encontrado. Podés completar los datos manualmente.";return null;}
-    const p=j.product; const brand=String(p.brands||"").split(",")[0].trim(); const name=String(p.product_name||"").trim(); const quantity=String(p.quantity||"").trim();
-    if($("#marca")&&!$("#marca").value)$("#marca").value=brand; if($("#presentacion")&&!$("#presentacion").value)$("#presentacion").value=quantity;
-    if($("#nombre")&&!$("#nombre").value)$("#nombre").value=[brand,name,quantity].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
-    const localCat=mapearCategoriaOFFV29(p.categories||""); if($("#categoria") && !$("#categoria").value){if(!categorias.includes(localCat))await asegurarCategoriaV29(localCat);renderSelectCategorias(localCat);}
-    if(status)status.textContent="Datos encontrados. Revisalos y completá precio/stock."; return p;
-  }catch(err){console.warn("OpenFoodFacts",err);if(status)status.textContent="No pudimos consultar la base externa. El código quedó cargado.";return null;}
+  return productsControllerV232.lookupBarcode(String(code || ""));
 }
 
-async function asegurarCategoriaV29(nombre) {
-  if (!nombre || categorias.includes(nombre)) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "guardar_categoria_segura_v1",
-    { p_nombre: nombre }
-  );
-
-  if (!error && data?.ok) {
-    categorias.push(nombre);
-    categorias.sort((a, b) => a.localeCompare(b, "es"));
-    actualizarFiltroCategorias();
-  }
+function abrirCatalogoV29() {
+  productsControllerV232.openCatalog();
 }
 
-
-
-function setScannerAnimandoV29(activo) {
-  const wrap = $(".scanner-video-wrap-v29");
-  wrap?.classList.toggle("is-scanning", Boolean(activo));
-
-  const modal = $("#modal-scanner-v29");
-  modal?.classList.toggle("scanner-reading-active", Boolean(activo));
-}
-
-function mostrarCodigoNoRegistradoV214(code) {
-  setScannerAnimandoV29(false);
-  pendingScannedCodeV214 = String(code || "").trim();
-
-  const panel = $("#scanner-not-found-actions-v214");
-  const text = $("#scanner-not-found-text-v214");
-  const status = $("#scanner-status-v29");
-
-  if (status) status.textContent = `Código ${pendingScannedCodeV214} no registrado`;
-
-  if (text) {
-    text.textContent =
-      `El código ${pendingScannedCodeV214} no existe en tu catálogo. Podés registrarlo ahora y volver automáticamente a esta venta.`;
-  }
-
-  panel?.classList.remove("hidden");
-}
-
-function ocultarCodigoNoRegistradoV214() {
-  $("#scanner-not-found-actions-v214")?.classList.add("hidden");
-  const text = $("#scanner-not-found-text-v214");
-  if (text) text.textContent = "";
-}
-
-async function registrarProductoDesdeScannerV214() {
-  if (!pendingScannedCodeV214) return;
-
-  const code = pendingScannedCodeV214;
-  const volverAVenta = scannerModeV29 === "venta";
-
-  pendingReturnToSaleV214 = volverAVenta;
-  pendingAddAfterCreateV214 = volverAVenta;
-
-  cerrarScannerV29();
-
-  abrirModal();
-
-  if (volverAVenta) {
-    activarProductoSobreVenta();
-  }
-
-  const codigoInput = $("#codigo-barras");
-  if (codigoInput) codigoInput.value = code;
-
-  const stockInput = $("#stock");
-  if (stockInput && Number(stockInput.value || 0) <= 0) {
-    stockInput.value = "1";
-  }
-
-  try {
-    await buscarDatosBarcodeV29(code);
-  } catch (error) {
-    console.warn("[V2.14] Búsqueda externa:", error);
-  }
-
-  mostrarToast("Completá los datos y guardá el producto", "info");
-}
-
-function cancelarRegistroDesdeScannerV214() {
-  pendingScannedCodeV214 = null;
-  setScannerAnimandoV29(true);
-  ocultarCodigoNoRegistradoV214();
-
-  const status = $("#scanner-status-v29");
-  if (status) status.textContent = "Cámara activa · mantené el código dentro del marco";
-  scannerOpenedAtVPro = Date.now();
-  scannerLastSuccessAtVPro = 0;
-}
-
-
-
-async function asegurarUnidadFisicaEscaneadaV230(producto) {
-  if (!producto?.id || !appContext?.branch?.id) return true;
-
-  const item = carrito.find((c) => c.id === producto.id);
-  const requerido = Number(item?.cantidad || 0) + 1;
-  const disponible = Number(producto.stock || 0);
-
-  if (disponible >= requerido) return true;
-
-  const { data, error } = await supabaseClient.rpc(
-    "confirmar_stock_por_scanner_v2",
-    {
-      p_producto_id: producto.id,
-      p_sucursal_id: appContext.branch.id,
-      p_stock_minimo_necesario: requerido,
-    }
-  );
-
-  if (error) {
-    console.error("[Scanner stock]", error);
-    mostrarToast(
-      error.message || "No se pudo confirmar la unidad escaneada",
-      "error"
-    );
-    return false;
-  }
-
-  producto.stock = Number(data?.stock ?? requerido);
-  emitirCambioStockRealtime("scanner_stock_fisico");
-  renderGrid();
-  return true;
-}
-
-async function procesarCodigoV29(code, meta = {}) {
-  code = String(code || "").replace(/\D/g, "").trim();
-  if (!code) return;
-
-  const now = Date.now();
-
-  if (code === scannerLastCodeV29 && now - scannerLastAtV29 < 900) {
-    return;
-  }
-
-  scannerLastCodeV29 = code;
-  scannerLastAtV29 = now;
-
-  setScannerAnimandoV29(false);
-
-  if (meta.engine && meta.engine !== "manual" && meta.engine !== "usb") {
-    registrarExitoScannerVPro({
-      engine: meta.engine,
-      format: meta.format || "",
-      zoom: scannerCurrentZoomVPro,
-    });
-  }
-
-  if (scannerModeV29 === "venta") {
-    const p = productos.find((x) => x.codigoBarras === code);
-
-    if (p) {
-      const stockConfirmado = await asegurarUnidadFisicaEscaneadaV230(p);
-      if (!stockConfirmado) {
-        setScannerAnimandoV29(true);
-        return;
-      }
-
-      agregarAlCarrito(p.id);
-      renderVentaProductos();
-
-      const s = $("#scanner-status-v29");
-      if (s) {
-        const engine =
-          meta.engine === "native" ? " · detector nativo" :
-          meta.engine === "capture" ? " · captura mejorada" :
-          meta.engine === "zxing" ? " · ZXing" : "";
-
-        s.textContent = `✓ ${p.nombre} agregado${engine}`;
-      }
-
-      navigator.vibrate?.(70);
-
-      setTimeout(() => {
-        cerrarScannerV29();
-      }, 260);
-    } else {
-      mostrarCodigoNoRegistradoV214(code);
-    }
-
-    return;
-  }
-
-  if (scannerModeV29 === "producto") {
-    const existing = productos.find(
-      (x) => x.codigoBarras === code && x.id !== productoEditandoId
-    );
-
-    cerrarScannerV29();
-
-    if (existing) {
-      mostrarToast(`El código ya corresponde a ${existing.nombre}`, "info");
-      abrirModal(existing);
-      return;
-    }
-
-    $("#codigo-barras").value = code;
-
-    if (!productoEditandoId && Number($("#stock")?.value || 0) <= 0) {
-      $("#stock").value = "1";
-    }
-
-    await buscarDatosBarcodeV29(code);
-  }
+async function cargarEjemplos() {
+  productsControllerV232.openCatalog();
 }
 
 async function abrirScannerV29(mode) {
-  scannerModeV29 = mode;
-  scannerLastCodeV29 = "";
-  scannerLastAtV29 = 0;
-  scannerClosingV29 = false;
-  pendingScannedCodeV214 = null;
-  scannerOpenedAtVPro = Date.now();
-  scannerLastSuccessAtVPro = 0;
-  scannerEngineSuccessVPro = null;
-  scannerTorchOnVPro = false;
-  scannerCurrentZoomVPro = 1;
-
-  ocultarCodigoNoRegistradoV214();
-  mostrarHintScannerVPro("");
-  actualizarTextoAdaptativoVPro();
-  actualizarEngineScannerVPro("Preparando");
-
-  document.body.classList.add("scanner-v29-open");
-
-  const scannerModal = $("#modal-scanner-v29");
-  const ventaModal = $("#modal-venta");
-
-  if (scannerModal) {
-    scannerModal.style.zIndex = "12000";
-    scannerModal.classList.remove("hidden");
-  }
-
-  if (mode === "venta" && ventaModal) {
-    ventaModal.classList.add("modal-behind-scanner");
-    ventaModal.setAttribute("aria-hidden", "true");
-  }
-
-  $("#scanner-mode-label-v29").textContent =
-    mode === "venta"
-      ? "Escaneá productos: se agregan directamente al carrito."
-      : "Apuntá la cámara al código del producto.";
-
-  $("#scanner-status-v29").textContent =
-    "Abriendo cámara trasera en alta resolución…";
-
-  setScannerAnimandoV29(false);
-
-  try {
-    if (!window.ZXingBrowser?.BrowserMultiFormatReader) {
-      throw new Error("El lector de códigos no cargó");
-    }
-
-    scannerReaderV29 = new ZXingBrowser.BrowserMultiFormatReader();
-    const videoEl = $("#scanner-video-v29");
-
-    // Pedimos explícitamente cámara trasera + resolución alta.
-    // BrowserMultiFormatReader permite controlar la captura con constraints.
-    const constraints = {
-      audio: false,
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1920, min: 720 },
-        height: { ideal: 1080, min: 480 },
-        frameRate: { ideal: 30, min: 15 },
-      },
-    };
-
-    if (typeof scannerReaderV29.decodeFromConstraints === "function") {
-      scannerControlsV29 = await scannerReaderV29.decodeFromConstraints(
-        constraints,
-        videoEl,
-        (result) => {
-          if (result) {
-            procesarCodigoV29(result.getText(), {
-              engine: "zxing",
-              format: result.getBarcodeFormat?.()?.toString?.() || "",
-            });
-          }
-        }
-      );
-    } else {
-      // Fallback para builds viejos de ZXing.
-      let selectedDeviceId;
-
-      try {
-        const devices =
-          await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
-
-        const backCamera =
-          devices.find((d) =>
-            /back|rear|environment|trasera/i.test(d.label || "")
-          ) || devices[devices.length - 1];
-
-        selectedDeviceId = backCamera?.deviceId;
-      } catch {}
-
-      scannerControlsV29 = await scannerReaderV29.decodeFromVideoDevice(
-        selectedDeviceId,
-        videoEl,
-        (result) => {
-          if (result) {
-            procesarCodigoV29(result.getText(), {
-              engine: "zxing",
-              format: result.getBarcodeFormat?.()?.toString?.() || "",
-            });
-          }
-        }
-      );
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 120));
-    await configurarTrackScannerVPro();
-
-    const nativeOk = await iniciarDetectorNativoVPro();
-
-    if (!nativeOk) {
-      actualizarEngineScannerVPro("ZXing");
-    }
-
-    iniciarAsistenciaScannerVPro();
-
-    $("#scanner-status-v29").textContent =
-      "Cámara activa · mantené el código dentro del marco";
-
-    setScannerAnimandoV29(true);
-  } catch (err) {
-    setScannerAnimandoV29(false);
-    detenerDetectorNativoVPro();
-    detenerAsistenciaScannerVPro();
-
-    console.error("[Scanner Pro]", err);
-
-    $("#scanner-status-v29").textContent =
-      "No se pudo abrir la cámara. Revisá permisos o ingresá el código manualmente.";
-
-    mostrarHintScannerVPro(
-      "Si el teléfono tiene varias cámaras, probá cerrar y volver a abrir el scanner.",
-      "warning"
-    );
-  }
+  return scannerControllerV232.open(mode);
 }
 
 function cerrarScannerV29() {
-  setScannerAnimandoV29(false);
-  detenerDetectorNativoVPro();
-  detenerAsistenciaScannerVPro();
-
-  try {
-    scannerControlsV29?.stop?.();
-  } catch {}
-
-  scannerControlsV29 = null;
-  scannerReaderV29 = null;
-  scannerModeV29 = null;
-  scannerNativeDetectorVPro = null;
-  scannerTrackVPro = null;
-  scannerZoomCapsVPro = null;
-  scannerTorchOnVPro = false;
-  scannerTorchSupportedVPro = false;
-
-  const v = $("#scanner-video-v29");
-
-  if (v?.srcObject) {
-    v.srcObject.getTracks().forEach((t) => t.stop());
-    v.srcObject = null;
-  }
-
-  const scannerModal = $("#modal-scanner-v29");
-  const ventaModal = $("#modal-venta");
-
-  scannerModal?.classList.add("hidden");
-
-  if (scannerModal) {
-    scannerModal.style.zIndex = "";
-  }
-
-  document.body.classList.remove("scanner-v29-open");
-
-  if (ventaModal) {
-    ventaModal.classList.remove("modal-behind-scanner");
-    ventaModal.removeAttribute("aria-hidden");
-  }
-
-  mostrarHintScannerVPro("");
-  $("#btn-scanner-torch-vpro")?.classList.remove("active");
-  $("#scanner-zoom-wrap-vpro")?.classList.add("hidden");
-
-  setTimeout(() => {
-    scannerClosingV29 = false;
-  }, 250);
+  scannerControllerV232.close();
 }
 
 function renderVentaProductos() {
-  const texto=$("#venta-buscador")?.value.trim().toLowerCase()||"";
-  const lista=productos.filter(p=>!texto||[p.nombre,p.marca,p.presentacion,p.codigoBarras,p.categoria].filter(Boolean).join(" ").toLowerCase().includes(texto)).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
-  const cont=$("#venta-productos-lista");if(!cont)return; if(!lista.length){cont.innerHTML='<p class="carrito-vacio">Sin resultados</p>';return;}
-  cont.innerHTML=lista.map(p=>{const c=carrito.find(x=>x.id===p.id), disp=p.stock-(c?.cantidad||0);return `<div class="venta-producto-item ${disp<=0?"sin-stock":""}" data-id="${p.id}"><div class="venta-producto-thumb">${escapeHtml((p.marca||p.nombre).slice(0,1).toUpperCase())}</div><div class="venta-producto-info"><div class="venta-producto-nombre">${escapeHtml(p.nombre)}</div><div class="venta-producto-meta">${p.codigoBarras?`EAN ${escapeHtml(p.codigoBarras)} · `:""}${formatearPrecio(p.precioVenta)} · quedan ${disp}</div></div></div>`;}).join("");
-}
-
-function catalogItemsV29() {return CATALOGO_BASE_V29.filter(x=>x.catalogos.includes(catalogoTipoV29));}
-function abrirCatalogoV29() {if(!exigirPermisoV2("manageProducts","No tenés permiso para cargar catálogos"))return;catalogoTipoV29="kiosco";catalogoSeleccionV29=new Set(catalogItemsV29().map(x=>x.nombre));$("#catalog-search-v29").value="";$("#modal-catalogo-v29").classList.remove("hidden");renderCatalogoV29();}
-function cerrarCatalogoV29() {$("#modal-catalogo-v29")?.classList.add("hidden");}
-function renderCatalogoV29() {
-  document.querySelectorAll(".catalog-tab-v29").forEach(b=>b.classList.toggle("active",b.dataset.catalog===catalogoTipoV29));
-  const q=$("#catalog-search-v29").value.trim().toLowerCase(); const all=catalogItemsV29(); const vis=all.filter(x=>!q||[x.nombre,x.marca,x.presentacion,x.categoria].join(" ").toLowerCase().includes(q));
-  const existing=new Set(productos.map(p=>p.nombre.toLowerCase()));
-  $("#catalog-list-v29").innerHTML=vis.map(x=>{const exists=existing.has(x.nombre.toLowerCase());return `<label class="catalog-row-v29 ${exists?"already-v29":""}"><input type="checkbox" data-catalog-name="${escapeHtml(x.nombre)}" ${catalogoSeleccionV29.has(x.nombre)&&!exists?"checked":""} ${exists?"disabled":""}><span><strong>${escapeHtml(x.nombre)}</strong><small>${escapeHtml(x.categoria)}${exists?" · ya cargado":""}</small></span></label>`;}).join("");
-  $("#catalog-selected-count-v29").textContent=[...catalogoSeleccionV29].filter(n=>!existing.has(n.toLowerCase())).length;
-}
-async function importarCatalogoV29() {
-  const existing = new Set(productos.map((p) => p.nombre.toLowerCase()));
-
-  const sel = CATALOGO_BASE_V29.filter(
-    (x) =>
-      catalogoSeleccionV29.has(x.nombre) &&
-      !existing.has(x.nombre.toLowerCase())
-  );
-
-  if (!sel.length) {
-    mostrarToast("No hay productos nuevos seleccionados", "info");
+  const texto = $("#venta-buscador")?.value.trim().toLowerCase() || "";
+  const lista = productos
+    .filter((p) =>
+      !texto ||
+      [p.nombre, p.marca, p.presentacion, p.codigoBarras, p.categoria]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(texto)
+    )
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const cont = $("#venta-productos-lista");
+  if (!cont) return;
+  if (!lista.length) {
+    cont.innerHTML = '<p class="carrito-vacio">Sin resultados</p>';
     return;
   }
-
-  const { data, error } = await supabaseClient.rpc(
-    "importar_productos_seguro_v1",
-    {
-      p_sucursal_id: appContext.branch.id,
-      p_items: sel.map((x) => ({
-        nombre: x.nombre,
-        marca: x.marca,
-        presentacion: x.presentacion,
-        categoria: x.categoria,
-      })),
-    }
-  );
-
-  if (error || !data?.ok) {
-    mostrarToast(
-      error?.message || data?.message || "No se pudo importar el catálogo",
-      "error"
-    );
-    console.error(error || data);
-    return;
-  }
-
-  await cargarCategorias();
-  await cargarProductos();
-  actualizarFiltroCategorias();
-  renderGrid();
-  cerrarCatalogoV29();
-
-  mostrarToast(
-    `${Number(data.importados || 0)} productos importados. Ahora cargá precios y stock.`,
-    "success"
-  );
+  cont.innerHTML = lista.map((p) => {
+    const item = carrito.find((candidate) => candidate.id === p.id);
+    const disponible = p.stock - (item?.cantidad || 0);
+    return `<div class="venta-producto-item ${disponible <= 0 ? "sin-stock" : ""}" data-id="${p.id}">
+      <div class="venta-producto-thumb">${escapeHtml((p.marca || p.nombre).slice(0, 1).toUpperCase())}</div>
+      <div class="venta-producto-info">
+        <div class="venta-producto-nombre">${escapeHtml(p.nombre)}</div>
+        <div class="venta-producto-meta">${p.codigoBarras ? `EAN ${escapeHtml(p.codigoBarras)} · ` : ""}${formatearPrecio(p.precioVenta)} · quedan ${disponible}</div>
+      </div>
+    </div>`;
+  }).join("");
 }
-
-async function cargarEjemplos() {abrirCatalogoV29();}
 
 function setupV29() {
-  $("#filtro-stock-v29")?.addEventListener("change", () => {
-    filtroStockBajo = false;
-    actualizarFiltroRapidoStockUI();
-    renderGrid();
-  }); $("#btn-catalogo-v29")?.addEventListener("click",abrirCatalogoV29);
-  $("#btn-eliminar-todos-productos")?.addEventListener("click", eliminarTodosLosProductosV222);
-  $("#btn-scan-producto")?.addEventListener("click",()=>abrirScannerV29("producto")); $("#btn-scan-venta")?.addEventListener("click",()=>abrirScannerV29("venta"));
-  $("#btn-buscar-barcode")?.addEventListener("click",()=>buscarDatosBarcodeV29($("#codigo-barras").value));
-  $("#btn-close-scanner-v29")?.addEventListener("click",cerrarScannerV29); $("#modal-scanner-v29 .modal-backdrop")?.addEventListener("click",cerrarScannerV29);
-  $("#btn-use-manual-code-v29")?.addEventListener("click",()=>procesarCodigoV29($("#scanner-manual-code-v29").value, { engine: "manual" }));
-  $("#btn-scanner-torch-vpro")?.addEventListener("click", toggleTorchScannerVPro);
-  $("#btn-scanner-zoom-out-vpro")?.addEventListener("click", () => cambiarZoomScannerVPro(-1));
-  $("#btn-scanner-zoom-in-vpro")?.addEventListener("click", () => cambiarZoomScannerVPro(1));
-  $("#btn-scanner-capture-vpro")?.addEventListener("click", capturarYAnalizarScannerVPro);
-  $("#btn-register-scanned-v214")?.addEventListener("click", registrarProductoDesdeScannerV214);
-  $("#btn-cancel-register-scanned-v214")?.addEventListener("click", cancelarRegistroDesdeScannerV214);
-  $("#scanner-manual-code-v29")?.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();procesarCodigoV29(e.target.value, { engine: "manual" });}});
-  $("#btn-close-catalogo-v29")?.addEventListener("click",cerrarCatalogoV29);$("#btn-cancel-catalogo-v29")?.addEventListener("click",cerrarCatalogoV29);$("#modal-catalogo-v29 .modal-backdrop")?.addEventListener("click",cerrarCatalogoV29);
-  $("#catalog-search-v29")?.addEventListener("input",renderCatalogoV29);
-  document.querySelectorAll(".catalog-tab-v29").forEach(b=>b.addEventListener("click",()=>{catalogoTipoV29=b.dataset.catalog;catalogoSeleccionV29=new Set(catalogItemsV29().map(x=>x.nombre));renderCatalogoV29();}));
-  $("#catalog-list-v29")?.addEventListener("change",e=>{const cb=e.target.closest("[data-catalog-name]");if(!cb)return;cb.checked?catalogoSeleccionV29.add(cb.dataset.catalogName):catalogoSeleccionV29.delete(cb.dataset.catalogName);renderCatalogoV29();});
-  $("#catalog-select-all-v29")?.addEventListener("click",()=>{document.querySelectorAll('#catalog-list-v29 input:not(:disabled)').forEach(cb=>catalogoSeleccionV29.add(cb.dataset.catalogName));renderCatalogoV29();});
-  $("#catalog-clear-v29")?.addEventListener("click",()=>{document.querySelectorAll('#catalog-list-v29 input:not(:disabled)').forEach(cb=>catalogoSeleccionV29.delete(cb.dataset.catalogName));renderCatalogoV29();});
-  $("#btn-import-catalogo-v29")?.addEventListener("click",importarCatalogoV29);
-
-  // Scanner USB: los lectores suelen escribir el código muy rápido y enviar Enter.
-  document.addEventListener("keydown",e=>{
-    const saleOpen=!$("#modal-venta")?.classList.contains("hidden"); const productOpen=!$("#modal")?.classList.contains("hidden"); if(!saleOpen&&!productOpen)return;
-    const now=performance.now();
-    if(e.key==="Enter"){if(usbBufferV29.length>=6 && now-usbStartedAtV29<2500){e.preventDefault();const code=usbBufferV29;usbBufferV29="";scannerModeV29=saleOpen?"venta":"producto";procesarCodigoV29(code, { engine: "usb" });if(productOpen)scannerModeV29=null;}else usbBufferV29="";return;}
-    if(/^\d$/.test(e.key)){if(now-usbLastAtV29>180){usbBufferV29="";usbStartedAtV29=now;}if(!usbBufferV29)usbStartedAtV29=now;usbBufferV29+=e.key;usbLastAtV29=now;}
-  },true);
+  productsControllerV232.setup();
+  scannerControllerV232.setup();
 }
+
+
 
 
 // ============================================================

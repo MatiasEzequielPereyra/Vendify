@@ -73,13 +73,6 @@ stagedApp = replaceExactlyOnce(
 
 stagedApp = replaceExactlyOnce(
   stagedApp,
-  /productos = \(data \|\| \[\]\)\.map\(mapearProductoDB\);\s+guardarProductosOfflineV231\?\.\(\);/g,
-  `productos = (data || []).map(mapearProductoDB);\n\n  if (window.VendifyOfflineV2312?.enabled) {\n    await window.VendifyOfflineV2312.captureStockSnapshot({\n      businessId: appContext.business.id,\n      branchId: appContext.branch.id,\n      products: productos.map((producto) => ({\n        productId: producto.id,\n        serverStock: Number(producto.stock || 0),\n      })),\n    });\n  }\n\n  guardarProductosOfflineV231?.();`,
-  "stock snapshot capture"
-);
-
-stagedApp = replaceExactlyOnce(
-  stagedApp,
   /async function sincronizarVentasOfflineV2311\(\{\s+mostrarResumen = false,\s+incluirRevision = false,\s+\} = \{\}\) \{\s+if \(!navigator\.onLine\) \{/g,
   `async function sincronizarVentasOfflineV2311({\n  mostrarResumen = false,\n  incluirRevision = false,\n} = {}) {\n  if (\n    window.VendifyOfflineV2312?.enabled &&\n    typeof window.sincronizarVentasOfflineIndexedDbV2312 === "function"\n  ) {\n    return window.sincronizarVentasOfflineIndexedDbV2312({\n      mostrarResumen,\n      incluirRevision,\n    });\n  }\n\n  if (!navigator.onLine) {`,
   "offline sync routing"
