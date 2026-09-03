@@ -36,10 +36,21 @@ for (const marker of [
   "offlineControllerV232.registerLegacySale(items, pagos, totales, observacion)",
   "offlineControllerV232.registerSale(items, payments, totals, observation)",
   "offlineControllerV232.sync(options)",
-  "offlineControllerV232.setup()"
+  "offlineControllerV232.setup()",
+  "renderSaleProducts: renderVentaProductos",
+  "renderCart: renderCarrito"
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Offline delegation: ${marker}`);
+  }
+}
+
+for (const invalidBinding of [
+  "\n  renderSaleProducts,",
+  "\n  renderCart,"
+]) {
+  if (app.includes(invalidBinding) || sourceApp.includes(invalidBinding)) {
+    throw new Error(`Offline controller contains an unresolved legacy binding: ${invalidBinding.trim()}`);
   }
 }
 
