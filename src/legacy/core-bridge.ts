@@ -2,6 +2,7 @@ import "./auth-bridge.js";
 import "./cash-bridge.js";
 import "./dashboard-bridge.js";
 import "./inventory-bridge.js";
+import "./offline-bridge.js";
 import "./products-bridge.js";
 import "./purchases-bridge.js";
 import "./sales-bridge.js";

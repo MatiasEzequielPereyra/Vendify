@@ -87,15 +87,11 @@ for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
 pass("staging local references resolve");
 
 const stagedApp = readFileSync(resolve(target, stagedAppName), "utf8");
-const appMarkers = [
-  "registrarVentaOfflineIndexedDbV2312",
-  "captureStockSnapshot",
-  "sincronizarVentasOfflineIndexedDbV2312"
-];
+const appMarkers = ["captureStockSnapshot"];
 for (const marker of appMarkers) {
   if (!stagedApp.includes(marker)) fail(`staging app missing integration marker ${marker}`);
 }
-pass("staging app routes checkout, stock snapshot and sync to v2.31.2");
+pass("staging app captures the v2.31.2 stock snapshot");
 
 const runtime = readFileSync(resolve(target, runtimeName), "utf8");
 const bridge = readFileSync(resolve(target, bridgeName), "utf8");
@@ -109,8 +105,11 @@ if (!runtime.includes("vendify_offline_engine_v2312")) {
 if (!runtime.includes("enqueueLegacySale") || !runtime.includes("syncNow") || !runtime.includes("listSales")) {
   fail("staging runtime does not expose the current POS queue/sync diagnostics API");
 }
-if (!bridge.includes("registrarVentaOfflineIndexedDbV2312")) {
-  fail("staging bridge does not contain IndexedDB checkout integration");
+if (
+  !bridge.includes("registrarVentaOfflineIndexedDbV2312") ||
+  !bridge.includes("sincronizarVentasOfflineIndexedDbV2312")
+) {
+  fail("staging bridge does not contain IndexedDB checkout and sync integration");
 }
 if (!pendingUi.includes("Ventas pendientes") || !pendingUi.includes("Reintentar sincronización")) {
   fail("staging pending sales UI does not contain required controls");

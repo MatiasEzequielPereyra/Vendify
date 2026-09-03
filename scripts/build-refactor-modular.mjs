@@ -14,18 +14,6 @@ function fingerprint(content) {
   return createHash("sha256").update(content).digest("hex").slice(0, 12);
 }
 
-function replaceExactlyOnce(source, pattern, replacement, label) {
-  const matches = [...source.matchAll(pattern)];
-  if (matches.length !== 1) {
-    throw new Error(`Refactor patch ${label} expected 1 match, found ${matches.length}`);
-  }
-
-  // Use a replacer callback so replacement text is inserted literally.
-  // This is required for helpers such as `$$`: in a normal replacement string,
-  // JavaScript interprets `$$` as a single literal `$`.
-  return source.replace(pattern, () => replacement);
-}
-
 execFileSync(process.execPath, [resolve(root, "scripts/build-staging-v2312.mjs")], {
   cwd: root,
   stdio: "inherit"
@@ -50,7 +38,7 @@ if (stagedAppReferences.length !== 1) {
 const oldAppName = stagedAppReferences[0][1];
 const oldAppPath = resolve(out, oldAppName);
 if (!existsSync(oldAppPath)) throw new Error(`Referenced staged app is missing: ${oldAppName}`);
-let app = readFileSync(oldAppPath, "utf8");
+const app = readFileSync(oldAppPath, "utf8");
 
 const coreContent = readFileSync(coreFile, "utf8");
 const coreName = `vendify-core-v232-${fingerprint(coreContent)}.js`;
@@ -77,5 +65,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core, Auth, Team, Dashboard, Purchases, Inventory, Products, Cash, and Sales/POS modules load from TypeScript before the compatibility app runtime.");
+console.log("Core, Auth, Team, Dashboard, Purchases, Inventory, Products, Cash, Sales/POS, and Offline compatibility modules load from TypeScript before the compatibility app runtime.");
 console.log("The root app compatibility layer is compacted only after browser-validated migrations.");

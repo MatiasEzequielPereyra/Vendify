@@ -3346,699 +3346,57 @@ function restaurarCarritoV231() {
   }
 }
 
-const VENDIFY_OFFLINE_SALES_PREFIX_V2311 =
-  "vendify_offline_sales_v2311";
-const VENDIFY_CASH_PROOF_PREFIX_V2311 =
-  "vendify_cash_proof_v2311";
-const VENDIFY_OFFLINE_MAX_SALES_V2311 = 200;
-const VENDIFY_OFFLINE_CASH_PROOF_MAX_MS_V2311 =
-  18 * 60 * 60 * 1000;
-
-let offlineSalesSyncPromiseV2311 = null;
-
-function offlineSalesKeyV2311() {
-  const uid = sesionActual?.user?.id || "anon";
-  const business = appContext.business?.id || "none";
-
-  return `${VENDIFY_OFFLINE_SALES_PREFIX_V2311}:${uid}:${business}`;
-}
-
-function cashProofKeyV2311() {
-  const uid = sesionActual?.user?.id || "anon";
-  const business = appContext.business?.id || "none";
-  const branch = appContext.branch?.id || "none";
-  const cash = appContext.cashRegister?.id || "none";
-
-  return `${VENDIFY_CASH_PROOF_PREFIX_V2311}:${uid}:${business}:${branch}:${cash}`;
-}
-
 function leerVentasOfflineV2311() {
-  try {
-    const raw = localStorage.getItem(
-      offlineSalesKeyV2311()
-    );
-
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function guardarVentasOfflineV2311(queue) {
-  try {
-    localStorage.setItem(
-      offlineSalesKeyV2311(),
-      JSON.stringify(queue || [])
-    );
-    return true;
-  } catch (error) {
-    console.error("[Offline sales] storage:", error);
-    return false;
-  }
-}
-
-function resumenColaOfflineV2311() {
-  const queue = leerVentasOfflineV2311();
-
-  return {
-    total: queue.length,
-    pending: queue.filter(
-      (sale) => sale.status !== "revision"
-    ).length,
-    revision: queue.filter(
-      (sale) => sale.status === "revision"
-    ).length,
-    queue,
-  };
+  return offlineControllerV232.readLegacySales();
 }
 
 function guardarPruebaCajaOfflineV2311() {
-  if (
-    !cajaAbiertaMiaV227() ||
-    !sesionActual?.user?.id ||
-    !appContext?.business?.id ||
-    !appContext?.branch?.id ||
-    !appContext?.cashRegister?.id
-  ) {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      cashProofKeyV2311(),
-      JSON.stringify({
-        savedAt: new Date().toISOString(),
-        userId: sesionActual.user.id,
-        businessId: appContext.business.id,
-        branchId: appContext.branch.id,
-        cashId: appContext.cashRegister.id,
-        estado: cashControllerV232.getState(),
-      })
-    );
-  } catch {}
+  offlineControllerV232.persistCashProof();
 }
 
 function restaurarPruebaCajaOfflineV2311() {
-  if (
-    !sesionActual?.user?.id ||
-    !appContext?.business?.id ||
-    !appContext?.branch?.id ||
-    !appContext?.cashRegister?.id
-  ) {
-    return false;
-  }
-
-  try {
-    const raw = localStorage.getItem(
-      cashProofKeyV2311()
-    );
-
-    if (!raw) return false;
-
-    const proof = JSON.parse(raw);
-    const savedAt = new Date(
-      proof?.savedAt || 0
-    ).getTime();
-
-    const valid =
-      proof?.userId === sesionActual.user.id &&
-      proof?.businessId === appContext.business.id &&
-      proof?.branchId === appContext.branch.id &&
-      proof?.cashId === appContext.cashRegister.id &&
-      proof?.estado?.sesion &&
-      proof?.estado?.es_mia === true &&
-      Number.isFinite(savedAt) &&
-      Date.now() - savedAt <=
-        VENDIFY_OFFLINE_CASH_PROOF_MAX_MS_V2311;
-
-    if (!valid) return false;
-
-    cashControllerV232.setState(proof.estado);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function cajaOfflineHabilitadaV2311() {
-  if (cajaAbiertaMiaV227()) return true;
-  return restaurarPruebaCajaOfflineV2311();
-}
-
-function puedeCobrarOfflineV2311() {
-  if (navigator.onLine) return false;
-  if (!appContext?.ready) return false;
-  if (!tienePermisoV2("sell")) return false;
-  if (!appContext?.branch?.id) return false;
-  if (!appContext?.cashRegister?.id) return false;
-  if (!cajaOfflineHabilitadaV2311()) return false;
-
-  const { total } = resumenColaOfflineV2311();
-  return total < VENDIFY_OFFLINE_MAX_SALES_V2311;
+  return offlineControllerV232.restoreCashProof();
 }
 
 function actualizarUIVentasOfflineV2311() {
-  const state = resumenColaOfflineV2311();
-  const globalBanner = $("#offline-sync-banner-v2311");
-  const globalText = $("#offline-sync-text-v2311");
-  const retry = $("#btn-sync-offline-sales-v2311");
-  const saleBanner = $("#offline-sale-banner-v2311");
-  const saleMessage = $("#offline-sale-message-v2311");
-  const connection = $("#connection-status-v23011");
-
-  const showGlobal =
-    state.total > 0;
-
-  globalBanner?.classList.toggle(
-    "hidden",
-    !showGlobal
-  );
-
-  if (globalText && showGlobal) {
-    if (state.revision > 0) {
-      globalText.textContent =
-        `${state.total} venta${state.total === 1 ? "" : "s"} pendiente${state.total === 1 ? "" : "s"} · ${state.revision} requiere${state.revision === 1 ? "" : "n"} revisión`;
-    } else if (navigator.onLine) {
-      globalText.textContent =
-        `${state.total} venta${state.total === 1 ? "" : "s"} esperando sincronización`;
-    } else {
-      globalText.textContent =
-        `${state.total} venta${state.total === 1 ? "" : "s"} guardada${state.total === 1 ? "" : "s"} sin conexión`;
-    }
-  }
-
-  if (retry) {
-    retry.disabled = !navigator.onLine;
-    retry.textContent =
-      navigator.onLine
-        ? "Sincronizar"
-        : "Esperando internet";
-  }
-
-  if (connection) {
-    connection.dataset.pendingOffline =
-      String(state.total);
-
-    connection.classList.toggle(
-      "has-offline-sales-v2311",
-      state.total > 0
-    );
-  }
-
-  const offline = !navigator.onLine;
-  saleBanner?.classList.toggle(
-    "hidden",
-    !offline
-  );
-
-  if (saleMessage && offline) {
-    if (puedeCobrarOfflineV2311()) {
-      saleMessage.textContent =
-        state.total > 0
-          ? `Podés seguir vendiendo. Hay ${state.total} venta${state.total === 1 ? "" : "s"} pendiente${state.total === 1 ? "" : "s"} de sincronización.`
-          : "Podés cobrar en Efectivo o Transferencia. La venta se sincronizará automáticamente al volver internet.";
-    } else {
-      saleMessage.textContent =
-        "Para vender sin conexión, esta caja debe haber sido abierta y verificada previamente con internet.";
-    }
-  }
+  offlineControllerV232.updateUi();
 }
 
 function aplicarEstadoOfflineVentaV231() {
-  const btn = $("#btn-cobrar");
-  if (!btn) return;
-
-  const offline = !navigator.onLine;
-
-  btn.classList.toggle(
-    "offline-enabled-v2311",
-    offline && puedeCobrarOfflineV2311()
-  );
-
-  btn.classList.toggle(
-    "offline-disabled-v231",
-    offline && !puedeCobrarOfflineV2311()
-  );
-
-  if (offline) {
-    const enabled = puedeCobrarOfflineV2311();
-
-    btn.textContent = enabled
-      ? "Cobrar offline"
-      : "Cobro offline no disponible";
-
-    btn.disabled =
-      posControllerV232.getCart().length === 0 ||
-      posControllerV232.isConfirming() ||
-      !enabled;
-
-    btn.title = enabled
-      ? "La venta quedará pendiente de sincronización"
-      : "La caja debe haber sido verificada abierta con internet";
-  } else {
-    btn.textContent = "Cobrar";
-    btn.title = "";
-    btn.disabled =
-      posControllerV232.getCart().length === 0 ||
-      posControllerV232.isConfirming();
-  }
-
-  actualizarUIVentasOfflineV2311();
+  offlineControllerV232.applySaleState();
 }
 
 function validarPagosOfflineV2311(pagos) {
-  const permitidos = new Set([
-    "Efectivo",
-    "Transferencia",
-  ]);
-
-  const invalidos = (pagos || []).filter(
-    (pago) => !permitidos.has(pago.medio_pago)
-  );
-
-  if (invalidos.length) {
-    throw new Error(
-      "Sin internet solo se permiten cobros en Efectivo o Transferencia."
-    );
-  }
+  offlineControllerV232.validatePayments(pagos);
 }
 
 function validarStockLocalVentaV2311(items) {
-  for (const item of items || []) {
-    const product = productos.find(
-      (p) => p.id === item.id
-    );
-
-    if (!product) {
-      throw new Error(
-        `No se encontró "${item.nombre}" en el catálogo local.`
-      );
-    }
-
-    if (
-      Number(product.stock || 0) <
-      Number(item.cantidad || 0)
-    ) {
-      throw new Error(
-        `Stock local insuficiente de "${product.nombre}".`
-      );
-    }
-  }
+  offlineControllerV232.validateLocalStock(items);
 }
 
 function aplicarVentaAlStockLocalV2311(items) {
-  for (const item of items || []) {
-    const product = productos.find(
-      (p) => p.id === item.id
-    );
-
-    if (!product) continue;
-
-    product.stock = Math.max(
-      0,
-      Number(product.stock || 0) -
-        Number(item.cantidad || 0)
-    );
-  }
-
-  guardarProductosOfflineV231?.();
-  renderGrid();
-
-  if (
-    !$("#modal-venta")?.classList.contains("hidden")
-  ) {
-    renderVentaProductos();
-  }
+  offlineControllerV232.applySaleToLocalStock(items);
 }
 
 function aplicarVentaCajaLocalV2311(pagos, total) {
-  const cashState = cashControllerV232.getState();
-  if (!cashState?.sesion || !cashState?.es_mia) {
-    return;
-  }
-
-  const cash = (pagos || [])
-    .filter(
-      (pago) => pago.medio_pago === "Efectivo"
-    )
-    .reduce(
-      (sum, pago) =>
-        sum + Number(pago.monto || 0),
-      0
-    );
-
-  const session = cashState.sesion;
-
-  session.ventas_total =
-    Number(session.ventas_total || 0) +
-    Number(total || 0);
-
-  session.ventas_efectivo =
-    Number(session.ventas_efectivo || 0) +
-    cash;
-
-  session.efectivo_esperado =
-    Number(session.efectivo_esperado || 0) +
-    cash;
-
-  session.tickets =
-    Number(session.tickets || 0) + 1;
-
-  guardarPruebaCajaOfflineV2311();
-  renderEstadoCajaHeaderV227();
+  offlineControllerV232.applySaleToLocalCash(pagos, total);
 }
 
 function construirTicketOfflineV2311(sale) {
-  return {
-    venta: {
-      id: sale.request_id,
-      creado: sale.created_at,
-      subtotal: sale.totales.subtotal,
-      descuento_total: 0,
-      total: sale.totales.total,
-      estado: "pendiente_sincronizacion",
-      observacion: sale.observacion || null,
-    },
-    items: sale.items.map((item) => ({
-      producto_nombre: item.producto_nombre,
-      cantidad: item.cantidad,
-      precio_unitario: item.precio_unitario,
-      subtotal:
-        Number(item.precio_unitario || 0) *
-        Number(item.cantidad || 0),
-    })),
-    pagos: sale.pagos.map((pago) => ({
-      ...pago,
-      operacion: "cobro",
-    })),
-  };
+  return offlineControllerV232.buildTicket(sale);
 }
 
-function registrarVentaOfflineV2311(
-  items,
-  pagos,
-  totales,
-  observacion
-) {
-  if (!puedeCobrarOfflineV2311()) {
-    throw new Error(
-      "La caja no está habilitada para ventas offline."
-    );
-  }
-
-  if (
-    totales?.tipo ||
-    Number(totales?.descuento || 0) > 0
-  ) {
-    throw new Error(
-      "Los descuentos requieren conexión para validar la autorización."
-    );
-  }
-
-  validarPagosOfflineV2311(pagos);
-  validarStockLocalVentaV2311(items);
-
-  const queue = leerVentasOfflineV2311();
-
-  if (
-    queue.length >=
-    VENDIFY_OFFLINE_MAX_SALES_V2311
-  ) {
-    throw new Error(
-      "Se alcanzó el máximo de ventas offline pendientes. Reconectá internet antes de continuar."
-    );
-  }
-
-  const requestId =
-    asegurarVentaRequestIdV23011();
-
-  const sale = {
-    request_id: requestId,
-    status: "pending",
-    attempts: 0,
-    last_error: null,
-    created_at: new Date().toISOString(),
-
-    user_id: sesionActual?.user?.id || null,
-    negocio_id: appContext.business.id,
-    sucursal_id: appContext.branch.id,
-    caja_id: appContext.cashRegister.id,
-
-    items: (items || []).map((item) => ({
-      producto_id: item.id,
-      producto_nombre: item.nombre,
-      cantidad: Number(item.cantidad),
-      precio_unitario: Number(item.precioVenta),
-    })),
-
-    pagos: (pagos || []).map((pago) => ({
-      medio_pago: pago.medio_pago,
-      monto: Number(pago.monto),
-    })),
-
-    totales: {
-      subtotal: Number(totales.subtotal || 0),
-      total: Number(totales.total || 0),
-    },
-
-    observacion:
-      String(observacion || "").trim() || null,
-  };
-
-  const saved = guardarVentasOfflineV2311([
-    ...queue,
-    sale,
-  ]);
-
-  if (!saved) {
-    throw new Error(
-      "No hay espacio suficiente para guardar la venta sin conexión."
-    );
-  }
-
-  aplicarVentaAlStockLocalV2311(items);
-  aplicarVentaCajaLocalV2311(
-    pagos,
-    totales.total
-  );
-
-  try {
-    localStorage.removeItem(
-      safeBusinessKeyV231(
-        VENDIFY_CART_PREFIX_V231
-      )
-    );
-  } catch {}
-
-  actualizarUIVentasOfflineV2311();
-
-  return construirTicketOfflineV2311(sale);
+function registrarVentaOfflineV2311(items, pagos, totales, observacion) {
+  return offlineControllerV232.registerLegacySale(items, pagos, totales, observacion);
 }
 
-function esErrorRedV2311(error) {
-  const text = String(
-    error?.message ||
-    error ||
-    ""
-  ).toLowerCase();
-
-  return (
-    !navigator.onLine ||
-    text.includes("failed to fetch") ||
-    text.includes("network") ||
-    text.includes("load failed") ||
-    text.includes("internet")
-  );
-}
-
-async function sincronizarVentasOfflineV2311({
-  mostrarResumen = false,
-  incluirRevision = false,
-} = {}) {
-  if (
-    window.VendifyOfflineV2312?.enabled &&
-    typeof window.sincronizarVentasOfflineIndexedDbV2312 === "function"
-  ) {
-    return window.sincronizarVentasOfflineIndexedDbV2312({
-      mostrarResumen,
-      incluirRevision,
-    });
-  }
-
-  if (!navigator.onLine) {
-    actualizarUIVentasOfflineV2311();
-    return {
-      synced: 0,
-      revision: 0,
-      pending: resumenColaOfflineV2311().total,
-    };
-  }
-
-  if (offlineSalesSyncPromiseV2311) {
-    return offlineSalesSyncPromiseV2311;
-  }
-
-  offlineSalesSyncPromiseV2311 = (async () => {
-    let queue = leerVentasOfflineV2311();
-    let synced = 0;
-    let revision = 0;
-    let stoppedByNetwork = false;
-
-    for (let index = 0; index < queue.length;) {
-      const sale = queue[index];
-
-      if (
-        sale.status === "revision" &&
-        !incluirRevision
-      ) {
-        revision += 1;
-        index += 1;
-        continue;
-      }
-
-      const payload = sale.items.map(
-        (item) => ({
-          producto_id: item.producto_id,
-          cantidad: Number(item.cantidad),
-        })
-      );
-
-      let response;
-
-      try {
-        response = await supabaseClient.rpc(
-          "registrar_venta_v4",
-          {
-            p_items: payload,
-            p_pagos: sale.pagos,
-            p_descuento_tipo: null,
-            p_descuento_valor: 0,
-            p_observacion: sale.observacion,
-            p_sucursal_id: sale.sucursal_id,
-            p_caja_id: sale.caja_id,
-            p_request_id: sale.request_id,
-          }
-        );
-      } catch (error) {
-        response = {
-          data: null,
-          error,
-        };
-      }
-
-      if (response?.error) {
-        if (esErrorRedV2311(response.error)) {
-          stoppedByNetwork = true;
-          break;
-        }
-
-        sale.attempts =
-          Number(sale.attempts || 0) + 1;
-
-        sale.last_error =
-          response.error.message ||
-          "La venta necesita revisión.";
-
-        sale.status = "revision";
-        revision += 1;
-        queue[index] = sale;
-        guardarVentasOfflineV2311(queue);
-        index += 1;
-        continue;
-      }
-
-      // registrar_venta_v4 es idempotente. Si el servidor ya la recibió
-      // antes de perder la respuesta, devuelve la misma venta y podemos
-      // quitarla de la cola sin duplicarla.
-      queue.splice(index, 1);
-      guardarVentasOfflineV2311(queue);
-      synced += 1;
-    }
-
-    actualizarUIVentasOfflineV2311();
-
-    if (synced > 0) {
-      try {
-        await cargarProductos();
-        renderGrid();
-        await cargarEstadoCajaV227();
-      } catch (refreshError) {
-        console.warn(
-          "[Offline sales] sincronizada, refresh pendiente:",
-          refreshError
-        );
-      }
-    }
-
-    const remaining = leerVentasOfflineV2311();
-    const reviewSales = remaining.filter(
-      (sale) => sale.status === "revision"
-    );
-
-    if (mostrarResumen) {
-      if (synced > 0 && reviewSales.length === 0) {
-        mostrarToast(
-          `${synced} venta${synced === 1 ? "" : "s"} offline sincronizada${synced === 1 ? "" : "s"}`,
-          "success"
-        );
-      } else if (reviewSales.length > 0) {
-        const firstError =
-          reviewSales[0]?.last_error ||
-          "Revisá stock y estado de caja.";
-
-        mostrarToast(
-          `${reviewSales.length} venta${reviewSales.length === 1 ? "" : "s"} requiere${reviewSales.length === 1 ? "" : "n"} revisión: ${firstError}`,
-          "error"
-        );
-      } else if (
-        stoppedByNetwork &&
-        remaining.length > 0
-      ) {
-        mostrarToast(
-          "La conexión volvió a cortarse. Las ventas siguen guardadas.",
-          "info"
-        );
-      }
-    }
-
-    return {
-      synced,
-      revision: reviewSales.length,
-      pending: remaining.length,
-    };
-  })().finally(() => {
-    offlineSalesSyncPromiseV2311 = null;
-  });
-
-  return offlineSalesSyncPromiseV2311;
+async function sincronizarVentasOfflineV2311(options = {}) {
+  return offlineControllerV232.sync(options);
 }
 
 function setupOfflineSalesV2311() {
-  $("#btn-sync-offline-sales-v2311")
-    ?.addEventListener("click", async () => {
-      await sincronizarVentasOfflineV2311({
-        mostrarResumen: true,
-        incluirRevision: true,
-      });
-    });
-
-  actualizarUIVentasOfflineV2311();
-
-  if (
-    navigator.onLine &&
-    leerVentasOfflineV2311().length > 0
-  ) {
-    setTimeout(() => {
-      sincronizarVentasOfflineV2311({
-        mostrarResumen: true,
-      });
-    }, 800);
-  }
+  offlineControllerV232.setup();
 }
-
 // ---------------------
 // Observabilidad
 // ---------------------
@@ -5043,53 +4401,6 @@ function setupCommercialFoundationV231() {
       if (btn) guardarPlanPlataformaV231(btn);
     });
 
-  window.addEventListener("offline", () => {
-    guardarCarritoV231();
-    guardarPruebaCajaOfflineV2311?.();
-    aplicarEstadoOfflineVentaV231();
-    actualizarUIVentasOfflineV2311();
-  });
-
-  window.addEventListener(
-    "online",
-    async () => {
-      setConnectionStateV23011?.(
-        "syncing",
-        "Sincronizando"
-      );
-
-      await sincronizarVentasOfflineV2311({
-        mostrarResumen: true,
-      });
-
-      aplicarEstadoOfflineVentaV231();
-      await cargarCommercialFoundationV231();
-
-      try {
-        await cargarEstadoCajaV227();
-      } catch {}
-
-      renderCarrito();
-      actualizarUIVentasOfflineV2311();
-
-      if (navigator.onLine) {
-        setConnectionStateV23011?.(
-          "online"
-        );
-      }
-    }
-  );
-
-  window.addEventListener("focus", () => {
-    if (
-      navigator.onLine &&
-      leerVentasOfflineV2311().length > 0
-    ) {
-      sincronizarVentasOfflineV2311({
-        mostrarResumen: false,
-      });
-    }
-  });
 }
 
 
@@ -5288,20 +4599,8 @@ const posControllerV232 =
     persistCart: () => guardarCarritoV231?.(),
     applyOfflineSaleState: () => aplicarEstadoOfflineVentaV231?.(),
     validateOfflinePayments: validarPagosOfflineV2311,
-    registerOfflineSale: async (items, payments, totals, observation) => {
-      if (
-        window.VendifyOfflineV2312?.enabled &&
-        typeof window.registrarVentaOfflineIndexedDbV2312 === "function"
-      ) {
-        return window.registrarVentaOfflineIndexedDbV2312(
-          items,
-          payments,
-          totals,
-          observation
-        );
-      }
-      return registrarVentaOfflineV2311(items, payments, totals, observation);
-    },
+    registerOfflineSale: (items, payments, totals, observation) =>
+      offlineControllerV232.registerSale(items, payments, totals, observation),
     updateOfflineUi: actualizarUIVentasOfflineV2311,
     clearPersistedCart: () => {
       try {
@@ -5820,6 +5119,43 @@ const cashControllerV232 = window.VendifyCashV232.createController({
   persistOfflineState: () => guardarPruebaCajaOfflineV2311?.(),
   isOnline: () => navigator.onLine,
 });
+
+const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
+  client: supabaseClient,
+  storage: localStorage,
+  getContext: () => ({
+    ready: Boolean(appContext?.ready),
+    userId: sesionActual?.user?.id || null,
+    businessId: appContext?.business?.id || null,
+    branchId: appContext?.branch?.id || null,
+    cashRegisterId: appContext?.cashRegister?.id || null,
+  }),
+  getProducts: () => productos,
+  getCartSize: () => posControllerV232.getCart().length,
+  isSaleConfirming: () => posControllerV232.isConfirming(),
+  hasSellPermission: () => tienePermisoV2("sell"),
+  isCashOpenByCurrentUser: () => cashControllerV232.isOpenByCurrentUser(),
+  getCashState: () => cashControllerV232.getState(),
+  setCashState: (state) => cashControllerV232.setState(state),
+  ensureRequestId: () => posControllerV232.ensureRequestId(),
+  clearPersistedCart: () => {
+    try {
+      localStorage.removeItem(safeBusinessKeyV231(VENDIFY_CART_PREFIX_V231));
+    } catch {}
+  },
+  persistProducts: () => guardarProductosOfflineV231?.(),
+  persistCart: () => guardarCarritoV231?.(),
+  renderProducts: renderGrid,
+  renderSaleProducts,
+  renderCashHeader: () => cashControllerV232.renderHeader(),
+  renderCart,
+  reloadProducts: cargarProductos,
+  reloadCash: cargarEstadoCajaV227,
+  reloadCommercialFoundation: cargarCommercialFoundationV231,
+  setConnectionState: (state, label) => setConnectionStateV23011?.(state, label),
+  showToast: mostrarToast,
+});
+
 async function cargarCajasSucursalV227({ mantener = true } = {}) {
   await cashControllerV232.loadRegisters({ keep: mantener });
 }

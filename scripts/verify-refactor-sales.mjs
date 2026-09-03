@@ -27,8 +27,7 @@ for (const marker of [
   "window.VendifySalesV232.createPosController({",
   "posControllerV232.getCart()",
   "posControllerV232.ensureRequestId()",
-  "typeof window.registrarVentaOfflineIndexedDbV2312 === \"function\"",
-  "return registrarVentaOfflineV2311(items, payments, totals, observation)",
+  "offlineControllerV232.registerSale(items, payments, totals, observation)",
   "discountControllerV232.setup()",
   "posControllerV232.setup()",
   "salesHistoryControllerV232.setup()"
@@ -54,7 +53,7 @@ for (const obsoleteMarker of [
 
 for (const offlineMarker of [
   "registrarVentaOfflineV2311", "asegurarVentaRequestIdV23011", "validarPagosOfflineV2311",
-  "window.VendifyOfflineV2312", "sincronizarVentasOfflineIndexedDbV2312"
+  "offlineControllerV232"
 ]) {
   if (!app.includes(offlineMarker)) throw new Error(`Sales refactor broke offline compatibility marker: ${offlineMarker}`);
 }

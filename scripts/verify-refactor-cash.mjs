@@ -25,6 +25,7 @@ for (const marker of [
   "listCashHistory",
   "createCashRegister",
   "setCashRegisterActive",
+  "dependencies.setCashState(proof.estado)",
   "listar_cajas_sucursal_v1",
   "obtener_estado_caja_v1",
   "registrar_movimiento_caja_v1"
@@ -39,7 +40,7 @@ for (const marker of [
   "cashControllerV232.loadState()",
   "cashControllerV232.isOpenByCurrentUser()",
   "cashControllerV232.getState()",
-  "cashControllerV232.setState(proof.estado)",
+  "setCashState: (state) => cashControllerV232.setState(state)",
   "cashControllerV232.renderOptions()",
   "cashControllerV232.setup()"
 ]) {
