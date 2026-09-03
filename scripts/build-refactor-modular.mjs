@@ -77,5 +77,5 @@ index = index.replace(
 writeFileSync(indexPath, index, "utf8");
 
 console.log("Vendify modular refactor preview created in dist-refactor-modular/");
-console.log("Core, Auth, Team, Dashboard, Purchases, Inventory, Products, and Cash modules load from TypeScript before the compatibility app runtime.");
+console.log("Core, Auth, Team, Dashboard, Purchases, Inventory, Products, Cash, and Sales/POS modules load from TypeScript before the compatibility app runtime.");
 console.log("The root app compatibility layer is compacted only after browser-validated migrations.");

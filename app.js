@@ -152,7 +152,6 @@ let cropLastY = 0;
 let stockAjusteId = null;
 let stockAjusteValor = 0;
 let confirmCallback = null;
-let carrito = []; // [{id, nombre, precioVenta, stock, cantidad}]
 
 // Compatibility aliases while the remaining legacy runtime is compacted.
 // The implementation now lives in src/core and is loaded before app.js.
@@ -472,7 +471,7 @@ async function cambiarSucursalV2(sucursalId, { recargar = true } = {}) {
   guardarContextoOfflineV231?.();
 
   if (recargar) {
-    carrito = [];
+    posControllerV232.clearCart();
     await cargarProductos();
     actualizarFiltroCategorias();
     renderGrid();
@@ -486,20 +485,13 @@ async function cambiarSucursalV2(sucursalId, { recargar = true } = {}) {
 async function registrarVentaV2(items, medioPago) {
   if (!exigirPermisoV2("sell", "Tu usuario no tiene permiso para registrar ventas")) return null;
   if (!appContext.ready) throw new Error("El contexto del negocio todavía no está cargado");
-
-  const payload = (items || []).map((item) => ({
-    producto_id: item.id || item.producto_id,
-    cantidad: Number(item.cantidad),
-  }));
-
-  const { data, error } = await supabaseClient.rpc("registrar_venta_v2", {
-    p_items: payload,
-    p_medio_pago: medioPago || null,
-    p_sucursal_id: appContext.branch.id,
-    p_caja_id: appContext.cashRegister.id,
-  });
-
-  if (error) throw new Error(error.message || "No se pudo registrar la venta");
+  const data = await window.VendifySalesV232.registerLegacySale(
+    supabaseClient,
+    items || [],
+    medioPago || null,
+    appContext.branch.id,
+    appContext.cashRegister.id
+  );
   emitirCambioStockRealtime("venta");
   return data;
 }
@@ -558,7 +550,7 @@ async function initAuth() {
         appBootPromiseVQA = null;
         limpiarContextoApp();
         productos = [];
-        carrito = [];
+        posControllerV232.clearCart();
         mostrarLogin();
         if (realtimeChannel) {
           supabaseClient.removeChannel(realtimeChannel);
@@ -1695,7 +1687,7 @@ scannerControllerV232 =
   window.VendifyProductsV232.createScannerController({
     client: supabaseClient,
     getProducts: () => productos,
-    getCart: () => carrito,
+    getCart: () => posControllerV232.getCart(),
     getBranchId: () => appContext.branch?.id || null,
     getEditingProductId: () => productoEditandoId,
     showToast: mostrarToast,
@@ -2349,20 +2341,10 @@ function setupSecuritySessionGuardV2301() {
 // ============================================================
 
 const VENDIFY_VERSION_V23011 = "2.31.0";
-let ventaRequestIdV23011 = null;
-let ventaConfirmandoV23011 = false;
 let syncInFlightV23011 = null;
 
-function nuevaRequestIdV23011() {
-  if (crypto?.randomUUID) return crypto.randomUUID();
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 function asegurarVentaRequestIdV23011() {
-  if (!ventaRequestIdV23011) ventaRequestIdV23011 = nuevaRequestIdV23011();
-  return ventaRequestIdV23011;
+  return posControllerV232.ensureRequestId();
 }
 
 function setConnectionStateV23011(state = "online", label = null) {
@@ -2986,7 +2968,7 @@ async function cerrarCapaSuperiorV2311() {
 
   // Venta requiere cuidado para no perder el carrito con un gesto accidental.
   if (modal.id === "modal-venta") {
-    if (carrito.length > 0) {
+    if (posControllerV232.getCart().length > 0) {
       const cerrar = await confirmar(
         "¿Cerrar esta venta?",
         "El carrito actual se descartará.",
@@ -3308,7 +3290,8 @@ function guardarCarritoV231() {
   try {
     const key = safeBusinessKeyV231(VENDIFY_CART_PREFIX_V231);
 
-    if (!carrito.length) {
+    const cart = posControllerV232.getCart();
+    if (!cart.length) {
       localStorage.removeItem(key);
       return;
     }
@@ -3317,14 +3300,14 @@ function guardarCarritoV231() {
       key,
       JSON.stringify({
         savedAt: new Date().toISOString(),
-        carrito,
+        carrito: cart,
       })
     );
   } catch {}
 }
 
 function restaurarCarritoV231() {
-  if (carrito.length || !productos.length) return false;
+  if (posControllerV232.getCart().length || !productos.length) return false;
 
   try {
     const raw = localStorage.getItem(
@@ -3356,7 +3339,7 @@ function restaurarCarritoV231() {
 
     if (!restored.length) return false;
 
-    carrito = restored;
+    posControllerV232.setCart(restored);
     return true;
   } catch {
     return false;
@@ -3608,8 +3591,8 @@ function aplicarEstadoOfflineVentaV231() {
       : "Cobro offline no disponible";
 
     btn.disabled =
-      carrito.length === 0 ||
-      ventaConfirmandoV23011 ||
+      posControllerV232.getCart().length === 0 ||
+      posControllerV232.isConfirming() ||
       !enabled;
 
     btn.title = enabled
@@ -3619,8 +3602,8 @@ function aplicarEstadoOfflineVentaV231() {
     btn.textContent = "Cobrar";
     btn.title = "";
     btn.disabled =
-      carrito.length === 0 ||
-      ventaConfirmandoV23011;
+      posControllerV232.getCart().length === 0 ||
+      posControllerV232.isConfirming();
   }
 
   actualizarUIVentasOfflineV2311();
@@ -3875,6 +3858,16 @@ async function sincronizarVentasOfflineV2311({
   mostrarResumen = false,
   incluirRevision = false,
 } = {}) {
+  if (
+    window.VendifyOfflineV2312?.enabled &&
+    typeof window.sincronizarVentasOfflineIndexedDbV2312 === "function"
+  ) {
+    return window.sincronizarVentasOfflineIndexedDbV2312({
+      mostrarResumen,
+      incluirRevision,
+    });
+  }
+
   if (!navigator.onLine) {
     actualizarUIVentasOfflineV2311();
     return {
@@ -5235,1240 +5228,131 @@ const purchasesControllerV232 =
     renderProducts: renderGrid,
   });
 // ============================================================
-// Seguridad de descuentos — PIN Owner/Admin
+// Seguridad de descuentos + Ventas/POS — runtime modular
 // ============================================================
+const discountControllerV232 =
+  window.VendifySalesV232.createDiscountController({
+    client: supabaseClient,
+    getBranchId: () => appContext.branch?.id || null,
+    getRole: () => appContext.membership?.role || null,
+    isAppReady: () => Boolean(appContext?.ready),
+    getSubtotal: () => posControllerV232.getTotal(),
+    formatCurrency: formatearPrecio,
+    icon: iconV23011,
+    showToast: mostrarToast,
+    recalculateTotals: () => posControllerV232.updateTotals(),
+  });
 
-let descuentoAutorizacion = null;
+const salesHistoryControllerV232 =
+  window.VendifySalesV232.createHistoryController({
+    client: supabaseClient,
+    getContext: () => ({
+      businessName: appContext.business?.nombre || "Negocio",
+      branchId: appContext.branch?.id || null,
+      branchName: appContext.branch?.nombre || "",
+      cashRegisterId: appContext.cashRegister?.id || null,
+      cashRegisterName: appContext.cashRegister?.nombre || "",
+      role: appContext.membership?.role || "",
+    }),
+    isCashOpenByCurrentUser: cajaAbiertaMiaV227,
+    openCashPanel: () => abrirPanelCajaV227(),
+    formatCurrency: formatearPrecio,
+    showToast: mostrarToast,
+    getAutoPrint: () => commercialConfigV231?.auto_imprimir_ticket === true,
+    getTicketWidth: () => Number(commercialConfigV231?.ancho_ticket_mm) === 58 ? 58 : 80,
+    emitStockChange: emitirCambioStockRealtime,
+    reloadProducts: cargarProductos,
+    renderProducts: renderGrid,
+    reloadCash: cargarEstadoCajaV227,
+  });
 
-function solicitudDescuentoActual() {
-  const subtotal = Number(calcularTotalCarrito().toFixed(2));
-  const tipo = $("#venta-descuento-tipo-v228")?.value || "";
-  let valor = Number($("#venta-descuento-valor-v228")?.value || 0);
+const posControllerV232 =
+  window.VendifySalesV232.createPosController({
+    client: supabaseClient,
+    discount: discountControllerV232,
+    getContext: () => ({
+      ready: Boolean(appContext?.ready),
+      branchId: appContext.branch?.id || null,
+      cashRegisterId: appContext.cashRegister?.id || null,
+    }),
+    canSell: (message) => exigirPermisoV2("sell", message),
+    getProducts: () => productos,
+    isCashOpenByCurrentUser: cajaAbiertaMiaV227,
+    hasCashSession: () => Boolean(cashControllerV232.getState()?.sesion),
+    restoreOfflineCash: () => restaurarPruebaCajaOfflineV2311?.() === true,
+    openCashPanel: () => abrirPanelCajaV227(),
+    isOnline: () => navigator.onLine,
+    formatCurrency: formatearPrecio,
+    showToast: mostrarToast,
+    renderSaleProducts: renderVentaProductos,
+    persistCart: () => guardarCarritoV231?.(),
+    applyOfflineSaleState: () => aplicarEstadoOfflineVentaV231?.(),
+    validateOfflinePayments: validarPagosOfflineV2311,
+    registerOfflineSale: async (items, payments, totals, observation) => {
+      if (
+        window.VendifyOfflineV2312?.enabled &&
+        typeof window.registrarVentaOfflineIndexedDbV2312 === "function"
+      ) {
+        return window.registrarVentaOfflineIndexedDbV2312(
+          items,
+          payments,
+          totals,
+          observation
+        );
+      }
+      return registrarVentaOfflineV2311(items, payments, totals, observation);
+    },
+    updateOfflineUi: actualizarUIVentasOfflineV2311,
+    clearPersistedCart: () => {
+      try {
+        localStorage.removeItem(safeBusinessKeyV231(VENDIFY_CART_PREFIX_V231));
+      } catch {}
+    },
+    reloadProducts: cargarProductos,
+    renderProducts: renderGrid,
+    reloadCash: cargarEstadoCajaV227,
+    emitStockChange: emitirCambioStockRealtime,
+    refreshDependentViews: refrescarVistasDependientesRealtimeVQA,
+    showTicket: (data) => salesHistoryControllerV232.showTicket(data),
+    afterOnlineSale: () => {
+      refrescarOnboardingComercialV231?.();
+      cargarBadgeAlertasV231?.();
+    },
+  });
 
-  if (tipo === "porcentaje") {
-    valor = Math.max(0, Math.min(100, valor));
-  } else if (tipo === "monto") {
-    valor = Math.max(0, Math.min(subtotal, valor));
-  } else {
-    valor = 0;
-  }
-
-  return {
-    subtotal,
-    tipo: tipo || null,
-    valor: Number(valor.toFixed(2)),
-  };
+function actualizarEstadoPinDescuento() {
+  return discountControllerV232.updatePinState();
 }
-
-function autorizacionDescuentoCoincide() {
-  if (!descuentoAutorizacion?.ok) return false;
-
-  const actual = solicitudDescuentoActual();
-
-  return (
-    actual.tipo === descuentoAutorizacion.tipo &&
-    Math.abs(actual.valor - descuentoAutorizacion.valor) <= 0.001 &&
-    Math.abs(actual.subtotal - descuentoAutorizacion.subtotal) <= 0.01 &&
-    Date.now() < descuentoAutorizacion.expiraMs
-  );
-}
-
-function actualizarUIAutorizacionDescuento() {
-  const btn = $("#btn-autorizar-descuento");
-  const status = $("#discount-auth-status");
-  const caption = $("#discount-auth-caption");
-  const solicitud = solicitudDescuentoActual();
-
-  const tieneSolicitud =
-    Boolean(solicitud.tipo) &&
-    solicitud.valor > 0 &&
-    solicitud.subtotal > 0;
-
-  const autorizada = tieneSolicitud && autorizacionDescuentoCoincide();
-
-  if (btn) {
-    btn.disabled = !tieneSolicitud || autorizada;
-    const checkIcon =
-      typeof iconV23011 === "function"
-        ? iconV23011("check")
-        : '<span aria-hidden="true">✓</span>';
-
-    const lockIcon =
-      typeof iconV23011 === "function"
-        ? iconV23011("lock")
-        : '<span aria-hidden="true">•</span>';
-
-    btn.innerHTML = autorizada
-      ? `${checkIcon}<span>Autorizado</span>`
-      : `${lockIcon}<span>Autorizar</span>`;
-  }
-
-  if (status) {
-    status.classList.remove("pending", "authorized", "required");
-
-    if (!solicitud.tipo || solicitud.valor <= 0) {
-      status.classList.add("pending");
-      status.innerHTML =
-        '<span class="discount-auth-dot"></span><span>Sin descuento aplicado</span>';
-    } else if (autorizada) {
-      status.classList.add("authorized");
-      status.innerHTML =
-        `<span class="discount-auth-dot"></span>` +
-        `<span>Autorizado por ${escapeHtml(descuentoAutorizacion.autorizador || "Administrador")}</span>`;
-    } else {
-      status.classList.add("required");
-      status.innerHTML =
-        '<span class="discount-auth-dot"></span><span>Ingresá un PIN de administrador para aplicar este descuento</span>';
-    }
-  }
-
-  if (caption) {
-    caption.textContent = autorizada
-      ? "Autorizado"
-      : "Requiere autorización";
-  }
-}
-
-function invalidarAutorizacionDescuento({ recalcular = true } = {}) {
-  descuentoAutorizacion = null;
-  actualizarUIAutorizacionDescuento();
-  if (recalcular) actualizarTotalesVentaV228();
-}
-
-function abrirAutorizacionDescuento() {
-  const solicitud = solicitudDescuentoActual();
-
-  if (!solicitud.tipo || solicitud.valor <= 0) {
-    mostrarToast("Ingresá primero el descuento que querés aplicar", "info");
-    return;
-  }
-
-  if (solicitud.subtotal <= 0) {
-    mostrarToast("Agregá productos antes de autorizar el descuento", "info");
-    return;
-  }
-
-  const request =
-    solicitud.tipo === "porcentaje"
-      ? `${solicitud.valor}%`
-      : formatearPrecio(solicitud.valor);
-
-  $("#discount-auth-subtotal").textContent =
-    formatearPrecio(solicitud.subtotal);
-  $("#discount-auth-request").textContent = request;
-  $("#discount-admin-pin").value = "";
-  $("#discount-auth-error").textContent = "";
-
-  $("#modal-discount-auth").classList.remove("hidden");
-  setTimeout(() => $("#discount-admin-pin")?.focus(), 60);
-}
-
-function cerrarAutorizacionDescuento() {
-  $("#modal-discount-auth")?.classList.add("hidden");
-  $("#discount-admin-pin").value = "";
-  $("#discount-auth-error").textContent = "";
-}
-
-async function enviarAutorizacionDescuento(e) {
-  e.preventDefault();
-
-  const solicitud = solicitudDescuentoActual();
-  const pin = $("#discount-admin-pin").value.trim();
-  const errorEl = $("#discount-auth-error");
-  const btn = $("#btn-submit-discount-auth");
-
-  errorEl.textContent = "";
-
-  if (!/^\d{4,8}$/.test(pin)) {
-    errorEl.textContent = "El PIN debe tener entre 4 y 8 números.";
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Verificando...";
-
-  const { data, error } = await supabaseClient.rpc(
-    "autorizar_descuento_v1",
-    {
-      p_pin: pin,
-      p_sucursal_id: appContext.branch.id,
-      p_subtotal: solicitud.subtotal,
-      p_descuento_tipo: solicitud.tipo,
-      p_descuento_valor: solicitud.valor,
-    }
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Autorizar descuento";
-
-  if (error) {
-    errorEl.textContent = error.message;
-    return;
-  }
-
-  if (!data?.ok) {
-    errorEl.textContent =
-      data?.message || "PIN incorrecto o autorización no disponible.";
-    return;
-  }
-
-  descuentoAutorizacion = {
-    ok: true,
-    tipo: solicitud.tipo,
-    valor: solicitud.valor,
-    subtotal: solicitud.subtotal,
-    autorizador: data.autorizador_nombre || data.autorizador_rol || "Administrador",
-    expiraMs: Date.now() + Math.max(30, Number(data.expira_segundos || 180)) * 1000,
-  };
-
-  cerrarAutorizacionDescuento();
-  actualizarUIAutorizacionDescuento();
-  actualizarTotalesVentaV228();
-
-  mostrarToast(
-    `Descuento autorizado por ${descuentoAutorizacion.autorizador}`,
-    "success"
-  );
-}
-
-async function actualizarEstadoPinDescuento() {
-  const card = $("#config-discount-pin-card");
-  const status = $("#pin-config-status");
-  const btn = $("#btn-configurar-pin-descuento");
-
-  if (!card || !status || !btn || !appContext?.ready) return;
-
-  const role = appContext.membership?.role;
-  const puede = role === "owner" || role === "admin";
-
-  card.classList.toggle("hidden", !puede);
-
-  if (!puede) return;
-
-  status.textContent = "Consultando estado...";
-
-  const { data, error } = await supabaseClient.rpc("estado_pin_descuento_v1");
-
-  if (error) {
-    status.textContent = "No se pudo consultar el estado del PIN.";
-    return;
-  }
-
-  if (data?.configurado) {
-    status.innerHTML =
-      '<span class="pin-status-dot configured"></span>' +
-      '<span>Tu PIN está configurado</span>';
-    btn.textContent = "Cambiar PIN";
-  } else {
-    status.innerHTML =
-      '<span class="pin-status-dot"></span>' +
-      '<span>Todavía no configuraste tu PIN</span>';
-    btn.textContent = "Configurar PIN";
-  }
-
-  const count = Number(data?.autorizadores_configurados || 0);
-  if (count > 0) {
-    status.innerHTML +=
-      `<small>${count} ${count === 1 ? "autorizador disponible" : "autorizadores disponibles"} en el negocio</small>`;
-  }
-}
-
-function abrirConfigPinDescuento() {
-  $("#config-discount-pin").value = "";
-  $("#config-discount-pin-confirm").value = "";
-  $("#config-discount-pin-error").textContent = "";
-  $("#modal-config-discount-pin").classList.remove("hidden");
-  setTimeout(() => $("#config-discount-pin")?.focus(), 60);
-}
-
-function cerrarConfigPinDescuento() {
-  $("#modal-config-discount-pin")?.classList.add("hidden");
-  $("#config-discount-pin").value = "";
-  $("#config-discount-pin-confirm").value = "";
-  $("#config-discount-pin-error").textContent = "";
-}
-
-async function guardarConfigPinDescuento(e) {
-  e.preventDefault();
-
-  const pin = $("#config-discount-pin").value.trim();
-  const confirm = $("#config-discount-pin-confirm").value.trim();
-  const errorEl = $("#config-discount-pin-error");
-  const btn = $("#btn-save-config-pin");
-
-  errorEl.textContent = "";
-
-  if (!/^\d{4,8}$/.test(pin)) {
-    errorEl.textContent = "Usá un PIN de 4 a 8 números.";
-    return;
-  }
-
-  if (pin !== confirm) {
-    errorEl.textContent = "Los PIN no coinciden.";
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
-
-  const { data, error } = await supabaseClient.rpc(
-    "configurar_pin_descuento_v1",
-    { p_pin: pin }
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Guardar PIN";
-
-  if (error) {
-    errorEl.textContent = error.message;
-    return;
-  }
-
-  if (!data?.ok) {
-    errorEl.textContent = data?.message || "No se pudo configurar el PIN.";
-    return;
-  }
-
-  cerrarConfigPinDescuento();
-  await actualizarEstadoPinDescuento();
-  mostrarToast("PIN de descuentos configurado", "success");
-}
-
-
-// ============================================================
-// Vendify v2.28 — Ventas profesionales
-// ============================================================
-
-let pagoModoV228 = "single";
-let historialVentasV228 = [];
-let ticketActualV228 = null;
-let gestionVentaV228 = null;
-
-const MEDIOS_PAGO_V228 = [
-  "Efectivo",
-  "Débito",
-  "Crédito",
-  "Transferencia",
-  "Mercado Pago",
-  "Otro",
-];
-
 function calcularTotalesVentaV228() {
-  const subtotal = calcularTotalCarrito();
-  const solicitud = solicitudDescuentoActual();
-  const autorizada = autorizacionDescuentoCoincide();
-
-  let tipo = null;
-  let valor = 0;
-  let descuento = 0;
-
-  if (autorizada && solicitud.tipo === "porcentaje") {
-    tipo = solicitud.tipo;
-    valor = solicitud.valor;
-    descuento = subtotal * valor / 100;
-  } else if (autorizada && solicitud.tipo === "monto") {
-    tipo = solicitud.tipo;
-    valor = solicitud.valor;
-    descuento = Math.min(subtotal, valor);
-  }
-
-  descuento = Math.round(descuento * 100) / 100;
-  const total = Math.max(0, Math.round((subtotal - descuento) * 100) / 100);
-
-  return { subtotal, tipo, valor, descuento, total };
+  return posControllerV232.calculateTotals();
 }
-
 function actualizarTotalesVentaV228() {
-  const t = calcularTotalesVentaV228();
-
-  const subtotalEl = $("#venta-subtotal-v228");
-  const descuentoEl = $("#venta-descuento-total-v228");
-  const descuentoRow = $("#venta-descuento-row-v228");
-  const totalEl = $("#carrito-total");
-
-  if (subtotalEl) subtotalEl.textContent = formatearPrecio(t.subtotal);
-  if (descuentoEl) descuentoEl.textContent = `−${formatearPrecio(t.descuento)}`;
-  if (descuentoRow) descuentoRow.classList.toggle("hidden", t.descuento <= 0);
-  if (totalEl) totalEl.textContent = formatearPrecio(t.total);
-
-  actualizarRestantePagoMixtoV228();
-  actualizarUIAutorizacionDescuento();
-  return t;
+  return posControllerV232.updateTotals();
 }
-
-function resetVentaProfesionalV228() {
-  pagoModoV228 = "single";
-  descuentoAutorizacion = null;
-
-  document.querySelectorAll("[data-pay-mode-v228]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.payModeV228 === "single");
-  });
-
-  $("#single-payment-v228")?.classList.remove("hidden");
-  $("#mixed-payment-v228")?.classList.add("hidden");
-
-  if ($("#medio-pago")) $("#medio-pago").value = "Efectivo";
-  if ($("#venta-descuento-tipo-v228")) $("#venta-descuento-tipo-v228").value = "";
-  if ($("#venta-descuento-valor-v228")) {
-    $("#venta-descuento-valor-v228").value = "0";
-    $("#venta-descuento-valor-v228").disabled = true;
-  }
-  if ($("#venta-observacion-v228")) $("#venta-observacion-v228").value = "";
-
-  renderPagosMixtosV228([
-    { medio_pago: "Efectivo", monto: 0 },
-    { medio_pago: "Transferencia", monto: 0 },
-  ]);
-
-  actualizarTotalesVentaV228();
-}
-
-function activarModoPagoV228(modo) {
-  pagoModoV228 = modo === "mixed" ? "mixed" : "single";
-
-  document.querySelectorAll("[data-pay-mode-v228]").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.payModeV228 === pagoModoV228);
-  });
-
-  $("#single-payment-v228")?.classList.toggle("hidden", pagoModoV228 !== "single");
-  $("#mixed-payment-v228")?.classList.toggle("hidden", pagoModoV228 !== "mixed");
-
-  if (pagoModoV228 === "mixed") {
-    const rows = $("#mixed-payment-rows-v228");
-    if (rows && !rows.children.length) {
-      renderPagosMixtosV228([
-        { medio_pago: "Efectivo", monto: calcularTotalesVentaV228().total },
-        { medio_pago: "Transferencia", monto: 0 },
-      ]);
-    } else {
-      const inputs = [...document.querySelectorAll(".mixed-pay-amount-v228")];
-      const sum = inputs.reduce((a, el) => a + Number(el.value || 0), 0);
-      if (sum <= 0 && inputs[0]) {
-        inputs[0].value = calcularTotalesVentaV228().total.toFixed(2);
-      }
-    }
-  }
-
-  actualizarRestantePagoMixtoV228();
-}
-
-function pagoOptionsV228(selected) {
-  return MEDIOS_PAGO_V228
-    .map(
-      (m) =>
-        `<option value="${escapeHtml(m)}" ${m === selected ? "selected" : ""}>${escapeHtml(m)}</option>`
-    )
-    .join("");
-}
-
-function renderPagosMixtosV228(pagos = []) {
-  const cont = $("#mixed-payment-rows-v228");
-  if (!cont) return;
-
-  cont.innerHTML = pagos
-    .map(
-      (p, i) => `
-        <div class="mixed-pay-row-v228" data-pay-index="${i}">
-          <select class="select mixed-pay-method-v228">
-            ${pagoOptionsV228(p.medio_pago || "Efectivo")}
-          </select>
-          <div class="mixed-pay-amount-wrap-v228">
-            <span>$</span>
-            <input class="mixed-pay-amount-v228" type="number" min="0" step="0.01"
-                   value="${Number(p.monto || 0).toFixed(2)}" />
-          </div>
-          <button type="button" class="btn btn-ghost btn-sm mixed-pay-rest-v228"
-                  data-pay-rest title="Completar con el restante">Restante</button>
-          <button type="button" class="btn-icon danger mixed-pay-remove-v228"
-                  data-pay-remove title="Quitar">✕</button>
-        </div>
-      `
-    )
-    .join("");
-
-  actualizarRestantePagoMixtoV228();
-}
-
-function pagosMixtosDesdeDOMV228() {
-  return [...document.querySelectorAll(".mixed-pay-row-v228")].map((row) => ({
-    medio_pago: row.querySelector(".mixed-pay-method-v228")?.value || "Otro",
-    monto: Number(row.querySelector(".mixed-pay-amount-v228")?.value || 0),
-  }));
-}
-
-function agregarPagoMixtoV228() {
-  const pagos = pagosMixtosDesdeDOMV228();
-  pagos.push({ medio_pago: "Efectivo", monto: 0 });
-  renderPagosMixtosV228(pagos);
-}
-
-function actualizarRestantePagoMixtoV228() {
-  const el = $("#mixed-payment-remaining-v228");
-  if (!el) return;
-
-  const total = calcularTotalesVentaV228().total;
-  const pagos = pagosMixtosDesdeDOMV228();
-  const sum = pagos.reduce((a, p) => a + Number(p.monto || 0), 0);
-  const restante = Math.round((total - sum) * 100) / 100;
-
-  el.textContent =
-    Math.abs(restante) <= 0.01
-      ? "Pago completo"
-      : restante > 0
-        ? `Restante ${formatearPrecio(restante)}`
-        : `Excede ${formatearPrecio(Math.abs(restante))}`;
-
-  el.classList.toggle("ok", Math.abs(restante) <= 0.01);
-  el.classList.toggle("error", restante < -0.01);
-}
-
-function completarRestantePagoV228(row) {
-  const total = calcularTotalesVentaV228().total;
-  const rows = [...document.querySelectorAll(".mixed-pay-row-v228")];
-  let otros = 0;
-
-  rows.forEach((r) => {
-    if (r === row) return;
-    otros += Number(r.querySelector(".mixed-pay-amount-v228")?.value || 0);
-  });
-
-  const input = row.querySelector(".mixed-pay-amount-v228");
-  if (input) input.value = Math.max(0, total - otros).toFixed(2);
-
-  actualizarRestantePagoMixtoV228();
-}
-
-function obtenerPagosVentaV228(total) {
-  if (total <= 0.001) return [];
-
-  if (pagoModoV228 === "single") {
-    return [
-      {
-        medio_pago: $("#medio-pago")?.value || "Efectivo",
-        monto: Number(total.toFixed(2)),
-      },
-    ];
-  }
-
-  const pagos = pagosMixtosDesdeDOMV228()
-    .filter((p) => p.monto > 0)
-    .map((p) => ({ ...p, monto: Number(p.monto.toFixed(2)) }));
-
-  const suma = pagos.reduce((a, p) => a + p.monto, 0);
-
-  if (!pagos.length) {
-    throw new Error("Ingresá al menos un medio de pago");
-  }
-
-  if (Math.abs(suma - total) > 0.01) {
-    throw new Error(
-      suma < total
-        ? `Faltan ${formatearPrecio(total - suma)} para completar el pago`
-        : `Los pagos exceden el total por ${formatearPrecio(suma - total)}`
-    );
-  }
-
-  return pagos;
-}
-
-async function registrarVentaV3(items, pagos, totales, observacion) {
-  if (!exigirPermisoV2("sell", "Tu usuario no tiene permiso para registrar ventas")) return null;
-  if (!appContext.ready) throw new Error("El contexto del negocio todavía no está cargado");
-
-  const payload = (items || []).map((item) => ({
-    producto_id: item.id || item.producto_id,
-    cantidad: Number(item.cantidad),
-  }));
-
-  const { data, error } = await supabaseClient.rpc("registrar_venta_v4", {
-    p_items: payload,
-    p_pagos: pagos,
-    p_descuento_tipo: totales.tipo,
-    p_descuento_valor: Number(totales.valor || 0),
-    p_observacion: observacion || null,
-    p_sucursal_id: appContext.branch.id,
-    p_caja_id: appContext.cashRegister.id,
-    p_request_id: asegurarVentaRequestIdV23011(),
-  });
-
-  if (error) throw new Error(error.message || "No se pudo registrar la venta");
-  emitirCambioStockRealtime("venta_profesional");
-  refrescarVistasDependientesRealtimeVQA("venta_local");
-  return data;
-}
-
-function estadoVentaLabelV228(estado) {
-  const map = {
-    completada: "Completada",
-    parcialmente_devuelta: "Dev. parcial",
-    devuelta: "Devuelta",
-    anulada: "Anulada",
-    pendiente_sincronizacion: "Pendiente de sincronizar",
-  };
-  return map[estado] || "Completada";
-}
-
-function ventaNetaV228(v) {
-  return Math.max(0, Number(v?.total || 0) - Number(v?.total_devuelto || 0));
-}
-
-function pagosVentaTextoV228(pagos = [], operacion = "cobro") {
-  const list = (pagos || []).filter((p) => p.operacion === operacion);
-  if (!list.length) return "";
-  return list
-    .map((p) => `${p.medio_pago}: ${formatearPrecio(Number(p.monto || 0))}`)
-    .join(" · ");
-}
-
-function ticketNumeroV228(id) {
-  return String(id || "").replace(/-/g, "").slice(0, 8).toUpperCase();
-}
-
-function construirTicketHTMLV228(data) {
-  const venta = data?.venta || data || {};
-  const items = data?.items || venta.venta_items || [];
-  const pagos = data?.pagos || venta.venta_pagos || [];
-  const fecha = venta.creado ? new Date(venta.creado) : new Date();
-
-  const itemsHtml = items
-    .map((it) => {
-      const qty = Number(it.cantidad || 0);
-      const subtotalGross = Number(it.subtotal ?? (it.precio_unitario || 0) * qty);
-      return `
-        <div class="receipt-item-v228">
-          <div>
-            <strong>${qty}× ${escapeHtml(it.producto_nombre || "Producto")}</strong>
-            <small>${formatearPrecio(Number(it.precio_unitario || 0))} c/u</small>
-          </div>
-          <span>${formatearPrecio(subtotalGross)}</span>
-        </div>
-      `;
-    })
-    .join("");
-
-  const pagosHtml = pagos
-    .filter((p) => p.operacion !== "devolucion")
-    .map(
-      (p) => `
-        <div class="receipt-line-v228">
-          <span>${escapeHtml(p.medio_pago)}</span>
-          <span>${formatearPrecio(Number(p.monto || 0))}</span>
-        </div>`
-    )
-    .join("");
-
-  const estado = venta.estado || "completada";
-
-  return `
-    <div class="receipt-v228">
-      <div class="receipt-head-v228">
-        <div class="receipt-brand-v228">VENDIFY</div>
-        <strong>${escapeHtml(appContext.business?.nombre || "Negocio")}</strong>
-        <span>${escapeHtml(appContext.branch?.nombre || "")}${appContext.cashRegister?.nombre ? ` · ${escapeHtml(appContext.cashRegister.nombre)}` : ""}</span>
-      </div>
-
-      <div class="receipt-meta-v228">
-        <span>Ticket #${ticketNumeroV228(venta.id)}</span>
-        <span>${fecha.toLocaleString("es-AR")}</span>
-      </div>
-
-      ${estado !== "completada" ? `<div class="receipt-status-v228">${escapeHtml(estadoVentaLabelV228(estado))}</div>` : ""}
-
-      <div class="receipt-items-v228">${itemsHtml}</div>
-
-      <div class="receipt-totals-v228">
-        <div class="receipt-line-v228">
-          <span>Subtotal</span>
-          <span>${formatearPrecio(Number(venta.subtotal ?? venta.total ?? 0))}</span>
-        </div>
-        ${
-          Number(venta.descuento_total || 0) > 0
-            ? `<div class="receipt-line-v228">
-                 <span>Descuento</span>
-                 <span>−${formatearPrecio(Number(venta.descuento_total || 0))}</span>
-               </div>`
-            : ""
-        }
-        <div class="receipt-line-v228 total">
-          <span>Total</span>
-          <strong>${formatearPrecio(Number(venta.total || 0))}</strong>
-        </div>
-        ${
-          Number(venta.total_devuelto || 0) > 0
-            ? `<div class="receipt-line-v228 refund">
-                 <span>Devuelto</span>
-                 <span>−${formatearPrecio(Number(venta.total_devuelto || 0))}</span>
-               </div>`
-            : ""
-        }
-      </div>
-
-      ${
-        pagosHtml
-          ? `<div class="receipt-payment-v228">
-               <small>Pago</small>
-               ${pagosHtml}
-             </div>`
-          : ""
-      }
-
-      ${
-        venta.observacion
-          ? `<div class="receipt-note-v228">
-               <small>Observación</small>
-               <p>${escapeHtml(venta.observacion)}</p>
-             </div>`
-          : ""
-      }
-
-      <div class="receipt-footer-v228">
-        Gracias por tu compra
-        <small>Gestionado con Vendify</small>
-      </div>
-    </div>
-  `;
-}
-
-function mostrarTicketV228(data) {
-  ticketActualV228 = data;
-  const preview = $("#ticket-preview-v228");
-  if (preview) {
-    preview.innerHTML =
-      construirTicketHTMLV228(data);
-  }
-
-  $("#modal-ticket-v228")?.classList.remove("hidden");
-
-  if (
-    commercialConfigV231?.auto_imprimir_ticket ===
-    true
-  ) {
-    setTimeout(
-      () => imprimirTicketV228(),
-      120
-    );
-  }
-}
-
-function cerrarTicketV228() {
-  $("#modal-ticket-v228")?.classList.add("hidden");
-}
-
-function imprimirTicketV228() {
-  if (!ticketActualV228) return;
-
-  const htmlTicket =
-    construirTicketHTMLV228(ticketActualV228);
-
-  const ticketWidthV231 =
-    Number(
-      commercialConfigV231?.ancho_ticket_mm
-    ) === 58
-      ? 58
-      : 80;
-  const w = window.open("", "_blank", "width=420,height=720");
-
-  if (!w) {
-    mostrarToast("El navegador bloqueó la ventana de impresión", "error");
-    return;
-  }
-
-  w.document.write(`
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Ticket Vendify</title>
-        <style>
-          *{box-sizing:border-box}
-          body{font-family:Arial,sans-serif;margin:0;padding:16px;color:#111;background:#fff}
-          .receipt-v228{max-width:320px;margin:auto;font-size:12px}
-          .receipt-head-v228{text-align:center;display:flex;flex-direction:column;gap:3px}
-          .receipt-brand-v228{font-size:20px;font-weight:800;letter-spacing:1px}
-          .receipt-head-v228 span,.receipt-meta-v228,.receipt-footer-v228 small{font-size:10px;color:#555}
-          .receipt-meta-v228{display:flex;justify-content:space-between;border-top:1px dashed #aaa;border-bottom:1px dashed #aaa;padding:8px 0;margin:10px 0}
-          .receipt-item-v228{display:flex;justify-content:space-between;gap:10px;padding:5px 0}
-          .receipt-item-v228>div{display:flex;flex-direction:column}
-          .receipt-item-v228 small{color:#666}
-          .receipt-totals-v228,.receipt-payment-v228,.receipt-note-v228{border-top:1px dashed #aaa;margin-top:8px;padding-top:8px}
-          .receipt-line-v228{display:flex;justify-content:space-between;gap:12px;padding:2px 0}
-          .receipt-line-v228.total{font-size:15px;padding-top:6px}
-          .receipt-line-v228.refund{color:#b91c1c}
-          .receipt-status-v228{text-align:center;font-weight:700;border:1px solid #111;padding:4px;margin-bottom:8px}
-          .receipt-note-v228 p{margin:4px 0 0}
-          .receipt-footer-v228{text-align:center;border-top:1px dashed #aaa;margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:4px}
-          @media print{body{padding:0}.receipt-v228{max-width:none;width:${ticketWidthV231}mm}}
-        </style>
-      </head>
-      <body>${htmlTicket}<script>window.onload=()=>{window.print();}<\/script></body>
-    </html>
-  `);
-
-  w.document.close();
-}
-
-function abrirGestionVentaV228(venta, modo) {
-  if (!venta) return;
-
-  if (!cajaAbiertaMiaV227()) {
-    mostrarToast("Abrí una caja propia antes de realizar reintegros", "info");
-    abrirPanelCajaV227();
-    return;
-  }
-
-  gestionVentaV228 = { venta, modo };
-  const esAnular = modo === "anular";
-
-  $("#return-title-v228").textContent = esAnular ? "Anular venta" : "Devolver artículos";
-  $("#return-subtitle-v228").textContent = esAnular
-    ? "La venta quedará anulada, se restaurará el stock y se registrará el reintegro."
-    : "El stock seleccionado volverá a la sucursal original.";
-
-  $("#return-items-section-v228")?.classList.toggle("hidden", esAnular);
-  $("#return-warning-v228")?.classList.toggle("hidden", !esAnular);
-
-  if (esAnular) {
-    $("#return-warning-v228").innerHTML = `
-      <strong>Esta acción no borra la venta.</strong>
-      <span>Quedará registrada como anulada en el historial y en la auditoría.</span>
-    `;
-  }
-
-  const pagosCobro = (venta.venta_pagos || []).filter((p) => p.operacion === "cobro");
-  const method = pagosCobro[0]?.medio_pago || "Efectivo";
-  if ($("#return-method-v228")) $("#return-method-v228").value =
-    MEDIOS_PAGO_V228.includes(method) ? method : "Otro";
-
-  $("#return-reason-v228").value = "";
-  $("#return-error-v228").textContent = "";
-
-  const items = venta.venta_items || [];
-  const cont = $("#return-items-v228");
-
-  if (!esAnular) {
-    cont.innerHTML = items
-      .map((it) => {
-        const disponible = Math.max(
-          0,
-          Number(it.cantidad || 0) - Number(it.cantidad_devuelta || 0)
-        );
-
-        return `
-          <div class="return-item-v228 ${disponible <= 0 ? "disabled" : ""}"
-               data-return-item-id="${it.id}"
-               data-return-price="${Number(it.precio_neto_unitario || it.precio_unitario || 0)}">
-            <div class="return-item-copy-v228">
-              <strong>${escapeHtml(it.producto_nombre)}</strong>
-              <small>Disponible para devolver: ${disponible}</small>
-            </div>
-            <input type="number" class="return-item-qty-v228"
-                   min="0" max="${disponible}" step="1" value="0"
-                   ${disponible <= 0 ? "disabled" : ""} />
-          </div>
-        `;
-      })
-      .join("");
-  } else {
-    cont.innerHTML = "";
-  }
-
-  $("#btn-submit-return-v228").textContent =
-    esAnular ? "Anular y reintegrar" : "Confirmar devolución";
-  $("#btn-submit-return-v228").classList.toggle("btn-danger", esAnular);
-  $("#btn-submit-return-v228").classList.toggle("btn-primary", !esAnular);
-
-  actualizarTotalDevolucionV228();
-  $("#modal-return-v228").classList.remove("hidden");
-}
-
-function cerrarGestionVentaV228() {
-  $("#modal-return-v228")?.classList.add("hidden");
-  gestionVentaV228 = null;
-}
-
-function actualizarTotalDevolucionV228() {
-  const el = $("#return-total-v228");
-  if (!el || !gestionVentaV228) return;
-
-  if (gestionVentaV228.modo === "anular") {
-    el.textContent = formatearPrecio(ventaNetaV228(gestionVentaV228.venta));
-    return;
-  }
-
-  let total = 0;
-  document.querySelectorAll(".return-item-v228").forEach((row) => {
-    const qty = Number(row.querySelector(".return-item-qty-v228")?.value || 0);
-    const price = Number(row.dataset.returnPrice || 0);
-    total += qty * price;
-  });
-
-  const restante = ventaNetaV228(gestionVentaV228.venta);
-  total = Math.min(restante, Math.round(total * 100) / 100);
-  el.textContent = formatearPrecio(total);
-}
-
-async function guardarGestionVentaV228(e) {
-  e.preventDefault();
-  if (!gestionVentaV228) return;
-
-  const venta = gestionVentaV228.venta;
-  const modo = gestionVentaV228.modo;
-  const errorEl = $("#return-error-v228");
-  const motivo = $("#return-reason-v228").value.trim();
-  const medio = $("#return-method-v228").value;
-
-  errorEl.textContent = "";
-
-  if (motivo.length < 2) {
-    errorEl.textContent = "Ingresá el motivo.";
-    return;
-  }
-
-  let response;
-
-  if (modo === "anular") {
-    response = await supabaseClient.rpc("anular_venta_v1", {
-      p_venta_id: venta.id,
-      p_caja_id: appContext.cashRegister.id,
-      p_medio_reintegro: medio,
-      p_motivo: motivo,
-    });
-  } else {
-    const items = [...document.querySelectorAll(".return-item-v228")]
-      .map((row) => ({
-        item_id: row.dataset.returnItemId,
-        cantidad: Number(row.querySelector(".return-item-qty-v228")?.value || 0),
-      }))
-      .filter((x) => x.cantidad > 0);
-
-    if (!items.length) {
-      errorEl.textContent = "Seleccioná al menos un artículo.";
-      return;
-    }
-
-    response = await supabaseClient.rpc("devolver_venta_v1", {
-      p_venta_id: venta.id,
-      p_items: items,
-      p_caja_id: appContext.cashRegister.id,
-      p_medio_reintegro: medio,
-      p_motivo: motivo,
-    });
-  }
-
-  if (response.error) {
-    errorEl.textContent = response.error.message;
-    return;
-  }
-
-  cerrarGestionVentaV228();
-
-  emitirCambioStockRealtime(modo === "anular" ? "anulacion" : "devolucion");
-  await cargarProductos();
-  renderGrid();
-  await cargarEstadoCajaV227();
-  await renderHistorial();
-
-  mostrarToast(
-    modo === "anular" ? "Venta anulada y stock restaurado" : "Devolución registrada",
-    "success"
-  );
-}
-
-// =====================
-// Venta (POS) — carrito y cobro
-// =====================
 function abrirVenta() {
-  ventaRequestIdV23011 = nuevaRequestIdV23011();
-  ventaConfirmandoV23011 = false;
-
-  if (!appContext?.cashRegister?.id) {
-    mostrarToast("Seleccioná una caja antes de vender", "error");
-    return;
-  }
-
-  if (
-    !cajaAbiertaMiaV227() &&
-    !(
-      !navigator.onLine &&
-      restaurarPruebaCajaOfflineV2311?.()
-    )
-  ) {
-    mostrarToast(
-      !navigator.onLine
-        ? "Para vender offline, esta caja debe haber sido abierta previamente con internet"
-        : cashControllerV232.getState()?.sesion
-          ? "Esta caja está abierta por otro usuario"
-          : "Abrí la caja antes de comenzar a vender",
-      "info"
-    );
-
-    if (navigator.onLine) {
-      abrirPanelCajaV227();
-    }
-
-    return;
-  }
-
-  carrito = [];
-  $("#venta-buscador").value = "";
-  resetVentaProfesionalV228();
-  renderVentaProductos();
-  renderCarrito();
-  $("#modal-venta").classList.remove("hidden");
-  setTimeout(() => $("#venta-buscador").focus(), 50);
+  posControllerV232.open();
 }
-
 function cerrarVenta() {
-  $("#modal-venta").classList.add("hidden");
-  carrito = [];
+  posControllerV232.close();
 }
-
-/* QA: implementación legacy removida (renderVentaProductos) */
-
-
 function agregarAlCarrito(id) {
-  invalidarAutorizacionDescuento({ recalcular: false });
-  const p = productos.find((x) => x.id === id);
-  if (!p) return;
-  const item = carrito.find((c) => c.id === id);
-  const enCarrito = item?.cantidad || 0;
-  if (enCarrito >= p.stock) {
-    mostrarToast(`No queda más stock de "${p.nombre}"`, "error");
-    return;
-  }
-  if (item) {
-    item.cantidad += 1;
-  } else {
-    carrito.push({ id: p.id, nombre: p.nombre, precioVenta: p.precioVenta, stock: p.stock, cantidad: 1 });
-  }
-  renderVentaProductos();
-  renderCarrito();
+  posControllerV232.addToCart(id);
 }
-
 function cambiarCantidadCarrito(id, delta) {
-  invalidarAutorizacionDescuento({ recalcular: false });
-  const item = carrito.find((c) => c.id === id);
-  if (!item) return;
-  const p = productos.find((x) => x.id === id);
-  const max = p ? p.stock : item.stock;
-  item.cantidad = Math.max(1, Math.min(max, item.cantidad + delta));
-  renderVentaProductos();
-  renderCarrito();
+  posControllerV232.changeQuantity(id, delta);
 }
-
 function quitarDelCarrito(id) {
-  invalidarAutorizacionDescuento({ recalcular: false });
-  carrito = carrito.filter((c) => c.id !== id);
-  renderVentaProductos();
-  renderCarrito();
+  posControllerV232.removeFromCart(id);
 }
-
 function calcularTotalCarrito() {
-  return carrito.reduce((a, c) => a + c.precioVenta * c.cantidad, 0);
+  return posControllerV232.getTotal();
 }
-
 function renderCarrito() {
-  const cont = $("#carrito-items");
-  const countEl = $("#carrito-count-v210");
-  const unidadesCarrito = carrito.reduce(
-    (sum, item) => sum + Number(item.cantidad || 0),
-    0
-  );
-
-  if (countEl) {
-    countEl.textContent =
-      `${unidadesCarrito} ${unidadesCarrito === 1 ? "artículo" : "artículos"}`;
-  }
-
-  const btnCobrar = $("#btn-cobrar");
-
-  if (carrito.length === 0) {
-    cont.innerHTML =
-      `<p class="carrito-vacio" id="carrito-vacio">Tocá un producto para agregarlo</p>`;
-    actualizarTotalesVentaV228();
-    btnCobrar.disabled = true;
-    guardarCarritoV231?.();
-    aplicarEstadoOfflineVentaV231?.();
-    return;
-  }
-
-  cont.innerHTML = carrito
-    .map(
-      (c) => `
-        <div class="carrito-item" data-id="${c.id}">
-          <div class="carrito-item-info">
-            <div class="carrito-item-nombre">${escapeHtml(c.nombre)}</div>
-            <div class="carrito-item-sub">
-              ${formatearPrecio(c.precioVenta)} c/u ·
-              ${formatearPrecio(c.precioVenta * c.cantidad)}
-            </div>
-          </div>
-          <div class="carrito-item-qty">
-            <button type="button" data-qty="-1">−</button>
-            <span>${c.cantidad}</span>
-            <button type="button" data-qty="1">+</button>
-          </div>
-          <button type="button" class="carrito-item-quitar" data-quitar title="Quitar">🗑️</button>
-        </div>
-      `
-    )
-    .join("");
-
-  actualizarTotalesVentaV228();
-  btnCobrar.disabled = false;
-  guardarCarritoV231?.();
-  aplicarEstadoOfflineVentaV231?.();
+  posControllerV232.renderCart();
 }
-
-async function confirmarVenta() {
-  if (
-    carrito.length === 0 ||
-    ventaConfirmandoV23011
-  ) return;
-
-  const btn = $("#btn-cobrar");
-  const offline = !navigator.onLine;
-
-  const solicitudDescuento =
-    solicitudDescuentoActual();
-
-  if (
-    offline &&
-    solicitudDescuento.tipo &&
-    Number(solicitudDescuento.valor || 0) > 0
-  ) {
-    mostrarToast(
-      "Los descuentos requieren conexión para validar la autorización.",
-      "error"
-    );
-    return;
-  }
-
-  if (
-    !offline &&
-    solicitudDescuento.tipo &&
-    solicitudDescuento.valor > 0 &&
-    !autorizacionDescuentoCoincide()
-  ) {
-    mostrarToast(
-      "Autorizá el descuento con un PIN de administrador",
-      "error"
-    );
-    abrirAutorizacionDescuento();
-    return;
-  }
-
-  const totales =
-    calcularTotalesVentaV228();
-
-  let pagos;
-
-  try {
-    pagos =
-      obtenerPagosVentaV228(
-        totales.total
-      );
-
-    if (offline) {
-      validarPagosOfflineV2311(pagos);
-    }
-  } catch (error) {
-    mostrarToast(
-      error.message,
-      "error"
-    );
-    return;
-  }
-
-  ventaConfirmandoV23011 = true;
-  btn.disabled = true;
-  btn.textContent = offline
-    ? "Guardando..."
-    : "Cobrando...";
-
-  try {
-    if (offline) {
-      const localTicket =
-        registrarVentaOfflineV2311(
-          carrito,
-          pagos,
-          totales,
-          $("#venta-observacion-v228")
-            .value.trim()
-        );
-
-      mostrarToast(
-        "Venta guardada offline. Se sincronizará automáticamente.",
-        "success"
-      );
-
-      descuentoAutorizacion = null;
-      ventaRequestIdV23011 = null;
-
-      cerrarVenta();
-      mostrarTicketV228(localTicket);
-      actualizarUIVentasOfflineV2311();
-      return;
-    }
-
-    const data = await registrarVentaV3(
-      carrito,
-      pagos,
-      totales,
-      $("#venta-observacion-v228")
-        .value.trim()
-    );
-
-    if (!data) return;
-
-    // El servidor es la autoridad.
-    await cargarProductos();
-    renderGrid();
-    await cargarEstadoCajaV227();
-
-    const total = Number(
-      data?.venta?.total ??
-      totales.total
-    );
-
-    mostrarToast(
-      `Venta cobrada: ${formatearPrecio(total)}`,
-      "success"
-    );
-
-    descuentoAutorizacion = null;
-    ventaRequestIdV23011 = null;
-
-    try {
-      localStorage.removeItem(
-        safeBusinessKeyV231(
-          VENDIFY_CART_PREFIX_V231
-        )
-      );
-    } catch {}
-
-    cerrarVenta();
-    mostrarTicketV228(data);
-    refrescarOnboardingComercialV231?.();
-    cargarBadgeAlertasV231?.();
-
-  } catch (error) {
-    mostrarToast(
-      error.message ||
-      "No se pudo registrar la venta",
-      "error"
-    );
-
-  } finally {
-    ventaConfirmandoV23011 = false;
-
-    if (btn) {
-      aplicarEstadoOfflineVentaV231();
-    }
-  }
+function mostrarTicketV228(data) {
+  salesHistoryControllerV232.showTicket(data);
 }
-
-// =====================
 // Export CSV
 // =====================
 function exportarCSV() {
@@ -6495,235 +5379,17 @@ function exportarCSV() {
 }
 
 // =====================
-// Historial de ventas (tickets)
+// Historial de ventas (tickets) — runtime modular
 // =====================
-function rangoFechas(clave) {
-  const ahora = new Date();
-  const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-  let desde = null;
-  let hasta = null;
-
-  switch (clave) {
-    case "hoy":
-      desde = inicioHoy;
-      break;
-    case "ayer": {
-      desde = new Date(inicioHoy);
-      desde.setDate(desde.getDate() - 1);
-      hasta = new Date(inicioHoy);
-      break;
-    }
-    case "7dias":
-      desde = new Date(inicioHoy);
-      desde.setDate(desde.getDate() - 6);
-      break;
-    case "mes":
-      desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-      break;
-    case "todo":
-    default:
-      desde = null;
-  }
-  return { desde, hasta };
-}
-
 async function abrirHistorial() {
-  $("#modal-historial").classList.remove("hidden");
-  await renderHistorial();
+  await salesHistoryControllerV232.open();
 }
-
 function cerrarHistorial() {
-  $("#modal-historial").classList.add("hidden");
+  salesHistoryControllerV232.close();
 }
-
 async function renderHistorial() {
-  const cont = $("#historial-lista");
-  const vacio = $("#historial-vacio");
-  const resumen = $("#historial-resumen");
-
-  cont.innerHTML =
-    `<p class="hint" style="text-align:center;padding:1rem;">Cargando...</p>`;
-  vacio.classList.add("hidden");
-
-  const clave = $("#historial-rango").value;
-  const { desde, hasta } = rangoFechas(clave);
-
-  let query = supabaseClient
-    .from("ventas")
-    .select("*, venta_items(*), venta_pagos(*), venta_devoluciones(*)")
-    .order("creado", { ascending: false });
-
-  if (appContext?.branch?.id) {
-    query = query.eq("sucursal_id", appContext.branch.id);
-  }
-
-  if (desde) query = query.gte("creado", desde.toISOString());
-  if (hasta) query = query.lt("creado", hasta.toISOString());
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("[V2.28] historial:", error);
-    cont.innerHTML = "";
-    mostrarToast("No se pudo cargar el historial", "error");
-    return;
-  }
-
-  historialVentasV228 = data || [];
-
-  if (!historialVentasV228.length) {
-    cont.innerHTML = "";
-    resumen.innerHTML = "";
-    vacio.classList.remove("hidden");
-    return;
-  }
-
-  vacio.classList.add("hidden");
-
-  const ventasActivas = historialVentasV228.filter((v) => v.estado !== "anulada");
-  const totalPeriodo = historialVentasV228.reduce(
-    (a, v) => a + ventaNetaV228(v),
-    0
-  );
-
-  const devueltoPeriodo = historialVentasV228.reduce(
-    (a, v) => a + Number(v.total_devuelto || 0),
-    0
-  );
-
-  resumen.innerHTML = `
-    <span><strong>${ventasActivas.length}</strong> ticket${ventasActivas.length === 1 ? "" : "s"} netos</span>
-    <span><strong>${formatearPrecio(totalPeriodo)}</strong> vendido neto</span>
-    ${
-      devueltoPeriodo > 0
-        ? `<span><strong>${formatearPrecio(devueltoPeriodo)}</strong> devuelto</span>`
-        : ""
-    }
-  `;
-
-  const rol = appContext.membership?.role;
-  const puedeGestionar = ["owner", "admin", "manager"].includes(rol);
-
-  cont.innerHTML = historialVentasV228
-    .map((v) => {
-      const fecha = new Date(v.creado);
-      const fechaTexto = fecha.toLocaleDateString("es-AR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-      const horaTexto = fecha.toLocaleTimeString("es-AR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-      const items = (v.venta_items || []).sort((a, b) =>
-        a.producto_nombre.localeCompare(b.producto_nombre, "es")
-      );
-
-      const itemsHtml = items
-        .map((it) => {
-          const dev = Number(it.cantidad_devuelta || 0);
-          return `
-            <div class="ticket-item-row">
-              <span>
-                ${it.cantidad}× ${escapeHtml(it.producto_nombre)}
-                ${dev > 0 ? `<small class="ticket-returned-v228"> · ${dev} devuelto${dev === 1 ? "" : "s"}</small>` : ""}
-              </span>
-              <span>${formatearPrecio(it.subtotal)}</span>
-            </div>
-          `;
-        })
-        .join("");
-
-      const neto = ventaNetaV228(v);
-      const pagos = pagosVentaTextoV228(v.venta_pagos || [], "cobro");
-      const reintegros = pagosVentaTextoV228(v.venta_pagos || [], "devolucion");
-      const estado = v.estado || "completada";
-      const puedeDevolver =
-        puedeGestionar &&
-        !["devuelta", "anulada"].includes(estado) &&
-        neto > 0.01;
-
-      const puedeAnular =
-        puedeGestionar &&
-        estado === "completada" &&
-        Number(v.total_devuelto || 0) <= 0.01;
-
-      return `
-        <details class="ticket-card ticket-card-v228 ${estado}">
-          <summary>
-            <span class="ticket-fecha">${fechaTexto} · ${horaTexto}</span>
-            <span class="sale-status-v228 ${estado}">${estadoVentaLabelV228(estado)}</span>
-            ${v.medio_pago ? `<span class="ticket-medio">${escapeHtml(v.medio_pago)}</span>` : ""}
-            <span class="ticket-total">${formatearPrecio(neto)}</span>
-          </summary>
-
-          <div class="ticket-detail-v228">
-            <div class="ticket-items">${itemsHtml || '<p class="hint">Sin detalle de artículos</p>'}</div>
-
-            <div class="ticket-finance-v228">
-              <div><span>Subtotal</span><strong>${formatearPrecio(Number(v.subtotal ?? v.total ?? 0))}</strong></div>
-              ${
-                Number(v.descuento_total || 0) > 0
-                  ? `<div><span>Descuento</span><strong>−${formatearPrecio(Number(v.descuento_total))}</strong></div>`
-                  : ""
-              }
-              <div><span>Total original</span><strong>${formatearPrecio(Number(v.total || 0))}</strong></div>
-              ${
-                Number(v.total_devuelto || 0) > 0
-                  ? `<div class="refund"><span>Devuelto</span><strong>−${formatearPrecio(Number(v.total_devuelto))}</strong></div>`
-                  : ""
-              }
-              <div class="net"><span>Neto</span><strong>${formatearPrecio(neto)}</strong></div>
-            </div>
-
-            ${
-              pagos
-                ? `<p class="ticket-payment-note-v228"><strong>Cobro:</strong> ${escapeHtml(pagos)}</p>`
-                : ""
-            }
-            ${
-              reintegros
-                ? `<p class="ticket-payment-note-v228 refund"><strong>Reintegros:</strong> ${escapeHtml(reintegros)}</p>`
-                : ""
-            }
-            ${
-              v.observacion
-                ? `<p class="ticket-observation-v228">${escapeHtml(v.observacion)}</p>`
-                : ""
-            }
-
-            <div class="ticket-actions-row-v228">
-              <button type="button" class="btn btn-secondary btn-sm"
-                      data-sale-action-v228="ticket" data-id="${v.id}">
-                🖨 Ticket
-              </button>
-              ${
-                puedeDevolver
-                  ? `<button type="button" class="btn btn-secondary btn-sm"
-                             data-sale-action-v228="return" data-id="${v.id}">
-                       ↩ Devolver
-                     </button>`
-                  : ""
-              }
-              ${
-                puedeAnular
-                  ? `<button type="button" class="btn btn-danger btn-sm"
-                             data-sale-action-v228="void" data-id="${v.id}">
-                       Anular
-                     </button>`
-                  : ""
-              }
-            </div>
-          </div>
-        </details>
-      `;
-    })
-    .join("");
+  await salesHistoryControllerV232.render();
 }
-
-// =====================
 // Eventos
 // =====================
 function inicializarEventos() {
@@ -6749,11 +5415,6 @@ function inicializarEventos() {
   });
 
   $("#btn-cerrar-sesion")?.addEventListener("click", cerrarSesion);
-
-  $("#btn-vender").addEventListener("click", abrirVenta);
-  $("#btn-cerrar-venta").addEventListener("click", cerrarVenta);
-  $("#modal-venta .modal-backdrop").addEventListener("click", cerrarVenta);
-
 
   $("#btn-equipo")?.addEventListener("click", abrirEquipo);
   $("#btn-cerrar-equipo")?.addEventListener("click", cerrarEquipo);
@@ -6819,110 +5480,7 @@ function inicializarEventos() {
     }
   });
 
-  $("#btn-historial")?.addEventListener("click", abrirHistorial);
-  $("#btn-cerrar-historial")?.addEventListener("click", cerrarHistorial);
-  $("#modal-historial .modal-backdrop")?.addEventListener("click", cerrarHistorial);
-  $("#historial-rango")?.addEventListener("change", renderHistorial);
-  $("#venta-buscador").addEventListener("input", renderVentaProductos);
-  $("#venta-productos-lista").addEventListener("click", (e) => {
-    const item = e.target.closest(".venta-producto-item");
-    if (!item || item.classList.contains("sin-stock")) return;
-    agregarAlCarrito(item.dataset.id);
-  });
-  $("#carrito-items").addEventListener("click", (e) => {
-    const fila = e.target.closest(".carrito-item");
-    if (!fila) return;
-    const id = fila.dataset.id;
-    const qtyBtn = e.target.closest("[data-qty]");
-    if (qtyBtn) { cambiarCantidadCarrito(id, parseInt(qtyBtn.dataset.qty, 10)); return; }
-    if (e.target.closest("[data-quitar]")) quitarDelCarrito(id);
-  });
-  $("#btn-cobrar").addEventListener("click", confirmarVenta);
-
-  document.querySelectorAll("[data-pay-mode-v228]").forEach((btn) => {
-    btn.addEventListener("click", () => activarModoPagoV228(btn.dataset.payModeV228));
-  });
-
-  $("#venta-descuento-tipo-v228")?.addEventListener("change", (e) => {
-    const input = $("#venta-descuento-valor-v228");
-    descuentoAutorizacion = null;
-    input.disabled = !e.target.value;
-    if (!e.target.value) input.value = "0";
-    actualizarTotalesVentaV228();
-  });
-
-  $("#venta-descuento-valor-v228")?.addEventListener("input", () => {
-    descuentoAutorizacion = null;
-    actualizarTotalesVentaV228();
-  });
-
-  $("#btn-autorizar-descuento")?.addEventListener("click", abrirAutorizacionDescuento);
-
-  $("#form-discount-auth")?.addEventListener("submit", enviarAutorizacionDescuento);
-  $("#btn-close-discount-auth")?.addEventListener("click", cerrarAutorizacionDescuento);
-  $("#btn-cancel-discount-auth")?.addEventListener("click", cerrarAutorizacionDescuento);
-  $("#modal-discount-auth .modal-backdrop")?.addEventListener("click", cerrarAutorizacionDescuento);
-
-  $("#btn-configurar-pin-descuento")?.addEventListener("click", abrirConfigPinDescuento);
-  $("#form-config-discount-pin")?.addEventListener("submit", guardarConfigPinDescuento);
-  $("#btn-close-config-pin")?.addEventListener("click", cerrarConfigPinDescuento);
-  $("#btn-cancel-config-pin")?.addEventListener("click", cerrarConfigPinDescuento);
-  $("#modal-config-discount-pin .modal-backdrop")?.addEventListener("click", cerrarConfigPinDescuento);
-
-  $("#btn-add-payment-v228")?.addEventListener("click", agregarPagoMixtoV228);
-
-  $("#mixed-payment-rows-v228")?.addEventListener("input", actualizarRestantePagoMixtoV228);
-  $("#mixed-payment-rows-v228")?.addEventListener("change", actualizarRestantePagoMixtoV228);
-  $("#mixed-payment-rows-v228")?.addEventListener("click", (e) => {
-    const row = e.target.closest(".mixed-pay-row-v228");
-    if (!row) return;
-
-    if (e.target.closest("[data-pay-remove]")) {
-      const pagos = pagosMixtosDesdeDOMV228();
-      const index = Number(row.dataset.payIndex);
-      pagos.splice(index, 1);
-      renderPagosMixtosV228(pagos.length ? pagos : [{ medio_pago: "Efectivo", monto: 0 }]);
-      return;
-    }
-
-    if (e.target.closest("[data-pay-rest]")) {
-      completarRestantePagoV228(row);
-    }
-  });
-
-  $("#btn-close-ticket-v228")?.addEventListener("click", cerrarTicketV228);
-  $("#btn-close-ticket-bottom-v228")?.addEventListener("click", cerrarTicketV228);
-  $("#modal-ticket-v228 .modal-backdrop")?.addEventListener("click", cerrarTicketV228);
-  $("#btn-print-ticket-v228")?.addEventListener("click", imprimirTicketV228);
-
-  $("#historial-lista")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-sale-action-v228]");
-    if (!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const venta = historialVentasV228.find((v) => v.id === btn.dataset.id);
-    if (!venta) return;
-
-    if (btn.dataset.saleActionV228 === "ticket") {
-      mostrarTicketV228({
-        venta,
-        items: venta.venta_items || [],
-        pagos: venta.venta_pagos || [],
-      });
-    } else if (btn.dataset.saleActionV228 === "return") {
-      abrirGestionVentaV228(venta, "devolver");
-    } else if (btn.dataset.saleActionV228 === "void") {
-      abrirGestionVentaV228(venta, "anular");
-    }
-  });
-
-  $("#form-return-v228")?.addEventListener("submit", guardarGestionVentaV228);
-  $("#return-items-v228")?.addEventListener("input", actualizarTotalDevolucionV228);
-  $("#btn-close-return-v228")?.addEventListener("click", cerrarGestionVentaV228);
-  $("#btn-cancel-return-v228")?.addEventListener("click", cerrarGestionVentaV228);
-  $("#modal-return-v228 .modal-backdrop")?.addEventListener("click", cerrarGestionVentaV228);
+  // Ventas/POS, descuentos, tickets e historial se conectan desde sus controladores TypeScript.
 
   $("#btn-theme").addEventListener("click", toggleTema);
   $("#btn-export").addEventListener("click", exportarCSV);
@@ -7214,7 +5772,7 @@ function renderVentaProductos() {
     return;
   }
   cont.innerHTML = lista.map((p) => {
-    const item = carrito.find((candidate) => candidate.id === p.id);
+    const item = posControllerV232.getCart().find((candidate) => candidate.id === p.id);
     const disponible = p.stock - (item?.cantidad || 0);
     return `<div class="venta-producto-item ${disponible <= 0 ? "sin-stock" : ""}" data-id="${p.id}">
       <div class="venta-producto-thumb">${escapeHtml((p.marca || p.nombre).slice(0, 1).toUpperCase())}</div>
@@ -7250,8 +5808,8 @@ const cashControllerV232 = window.VendifyCashV232.createController({
     cashRegister: { id: appContext?.cashRegister?.id || null, name: appContext?.cashRegister?.nombre || "Caja" },
   }),
   setCashRegister: (cashRegister) => { appContext.cashRegister = cashRegister; },
-  getCartSize: () => carrito.length,
-  clearCart: () => { carrito = []; renderCarrito(); },
+  getCartSize: () => posControllerV232.getCart().length,
+  clearCart: () => { posControllerV232.clearCart(); renderCarrito(); },
   confirm: confirmar,
   showToast: mostrarToast,
   formatCurrency: formatearPrecio,
@@ -7342,7 +5900,7 @@ async function cambiarSucursalDesdeSelectorV226(e) {
 
   if (!nuevaId || nuevaId === anteriorId) return;
 
-  if (carrito.length) {
+  if (posControllerV232.getCart().length) {
     const ok = await confirmar(
       "Cambiar de sucursal",
       "El carrito actual se vaciará al cambiar de sucursal."
@@ -7809,6 +6367,9 @@ function init() {
   normalizarVistaProductosVQA();
   inicializarEventos();
   setupV29();
+  discountControllerV232.setup();
+  posControllerV232.setup();
+  salesHistoryControllerV232.setup();
   setupSucursalesV226();
   setupCajaV227();
   setupContextPickersV23013();

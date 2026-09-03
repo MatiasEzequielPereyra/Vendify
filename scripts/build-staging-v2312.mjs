@@ -54,29 +54,7 @@ for (const file of files) {
 }
 cpSync(resolve(root, "icons"), resolve(out, "icons"), { recursive: true });
 
-function replaceExactlyOnce(source, pattern, replacement, label) {
-  const matches = [...source.matchAll(pattern)];
-  if (matches.length !== 1) {
-    throw new Error(`Staging patch ${label} expected 1 match, found ${matches.length}`);
-  }
-  return source.replace(pattern, replacement);
-}
-
-let stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
-
-stagedApp = replaceExactlyOnce(
-  stagedApp,
-  /const localTicket =\s+registrarVentaOfflineV2311\(\s+carrito,\s+pagos,\s+totales,\s+\$\("#venta-observacion-v228"\)\s+\.value\.trim\(\)\s+\);/g,
-  `const localTicket =\n        window.VendifyOfflineV2312?.enabled &&\n        typeof window.registrarVentaOfflineIndexedDbV2312 === "function"\n          ? await window.registrarVentaOfflineIndexedDbV2312(\n              carrito,\n              pagos,\n              totales,\n              $("#venta-observacion-v228").value.trim()\n            )\n          : registrarVentaOfflineV2311(\n              carrito,\n              pagos,\n              totales,\n              $("#venta-observacion-v228").value.trim()\n            );`,
-  "offline checkout"
-);
-
-stagedApp = replaceExactlyOnce(
-  stagedApp,
-  /async function sincronizarVentasOfflineV2311\(\{\s+mostrarResumen = false,\s+incluirRevision = false,\s+\} = \{\}\) \{\s+if \(!navigator\.onLine\) \{/g,
-  `async function sincronizarVentasOfflineV2311({\n  mostrarResumen = false,\n  incluirRevision = false,\n} = {}) {\n  if (\n    window.VendifyOfflineV2312?.enabled &&\n    typeof window.sincronizarVentasOfflineIndexedDbV2312 === "function"\n  ) {\n    return window.sincronizarVentasOfflineIndexedDbV2312({\n      mostrarResumen,\n      incluirRevision,\n    });\n  }\n\n  if (!navigator.onLine) {`,
-  "offline sync routing"
-);
+const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
 
 const runtimeContent = stripSourceMapReference(readFileSync(runtimeFile, "utf8"));
 const bridgeContent = stripSourceMapReference(readFileSync(bridgeFile, "utf8"));
