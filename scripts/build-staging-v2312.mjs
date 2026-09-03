@@ -53,6 +53,7 @@ for (const file of files) {
   cpSync(resolve(root, file), resolve(out, file));
 }
 cpSync(resolve(root, "icons"), resolve(out, "icons"), { recursive: true });
+cpSync(resolve(root, "styles"), resolve(out, "styles"), { recursive: true });
 
 const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
 

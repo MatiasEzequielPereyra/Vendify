@@ -1,0 +1,533 @@
+/* ===== Login / Autenticación (Supabase) ===== */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1.25rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem 1.75rem;
+  text-align: center;
+}
+
+.auth-card h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.auth-form {
+  text-align: left;
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.auth-check-email {
+  margin-top: 1.25rem;
+  text-align: center;
+}
+
+.auth-email-destacado {
+  font-weight: 700;
+  color: var(--primary);
+  word-break: break-all;
+  margin: 0.35rem 0;
+}
+
+.sesion-badge {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+/* ===== Modo Venta (POS) ===== */
+.btn-vender {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.btn-vender:hover { background: #15803d; }
+
+.modal-venta-content {
+  max-width: 920px;
+  width: 95vw;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.venta-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.3rem 1.3rem;
+  min-height: 0;
+}
+
+.venta-productos-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.venta-productos-lista {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-right: 0.25rem;
+}
+
+.venta-producto-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: background 0.15s, border-color 0.15s;
+}
+.venta-producto-item:hover { border-color: var(--primary); background: var(--surface-hover, var(--surface)); }
+.venta-producto-item.sin-stock { opacity: 0.45; cursor: not-allowed; }
+
+.venta-producto-thumb {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.venta-producto-info { flex: 1; min-width: 0; }
+.venta-producto-nombre { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.venta-producto-meta { font-size: 0.78rem; color: var(--text-muted); }
+
+.venta-carrito-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  padding-left: 1rem;
+}
+
+.carrito-items {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.carrito-vacio {
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+.carrito-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.carrito-item-info { flex: 1; min-width: 0; }
+.carrito-item-nombre { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carrito-item-sub { font-size: 0.78rem; color: var(--text-muted); }
+
+.carrito-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.carrito-item-qty button {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+}
+.carrito-item-qty span { min-width: 1.4rem; text-align: center; font-weight: 600; }
+
+.carrito-item-quitar {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--danger, #ef4444);
+  font-size: 0.95rem;
+  padding: 0.2rem;
+}
+
+.venta-medio-pago {
+  margin-bottom: 0.75rem;
+}
+.venta-medio-pago label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.venta-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.btn-cobrar {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.btn-cobrar:hover:not(:disabled) { background: #15803d; }
+.btn-cobrar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .venta-body { grid-template-columns: 1fr; }
+  .venta-carrito-col { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 0.75rem; }
+  .modal-venta-content { height: 92vh; }
+}
+
+/* ===== Historial de ventas (tickets) ===== */
+.modal-historial-content {
+  max-width: 560px;
+}
+
+.historial-filtros {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.historial-resumen {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  background: var(--bg-soft, rgba(59, 130, 246, 0.08));
+  border-radius: var(--radius-sm, 10px);
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.historial-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.ticket-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--surface);
+  padding: 0.15rem 0.9rem;
+}
+
+.ticket-card summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  font-size: 0.9rem;
+}
+
+.ticket-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.ticket-fecha {
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.ticket-medio {
+  font-size: 0.78rem;
+  background: var(--chip-bg, rgba(148, 163, 184, 0.18));
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ticket-total {
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.ticket-items {
+  border-top: 1px dashed var(--border);
+  padding: 0.6rem 0 0.75rem;
+}
+
+.ticket-item-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  color: var(--text-muted);
+}
+
+
+/* ===== Ventas Kiosco v2: contexto SaaS y permisos ===== */
+.contexto-negocio {
+  display: flex;
+  flex-direction: column;
+  min-width: 130px;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  line-height: 1.2;
+}
+.contexto-negocio strong { font-size: 0.78rem; color: var(--text); }
+.contexto-negocio span { font-size: 0.68rem; color: var(--text-muted); }
+body.ocultar-costos #stat-costo,
+body.ocultar-costos .card-precio-row:first-child,
+body.ocultar-costos .card-margen { display: none !important; }
+[hidden] { display: none !important; }
+@media (max-width: 640px) {
+  .contexto-negocio { order: -1; width: 100%; }
+}
+
+
+/* ===== Vendify v2.1 — Auth ===== */
+.auth-card-vendify { max-width: 440px; text-align: left; }
+.vendify-brand { display:flex; align-items:center; gap:.85rem; margin-bottom:1.4rem; }
+.vendify-logo { width:48px; height:48px; border-radius:14px; display:grid; place-items:center; background:linear-gradient(135deg,var(--primary),#7c3aed); color:#fff; font-size:1.5rem; font-weight:800; box-shadow:0 10px 28px rgba(59,130,246,.28); }
+.vendify-brand h1 { margin:0; font-size:1.7rem; letter-spacing:-.04em; }
+.vendify-brand p { margin:0; color:var(--text-muted); font-size:.82rem; }
+.auth-card-vendify h2 { font-size:1.2rem; margin-bottom:.25rem; }
+.auth-subtitle { color:var(--text-muted); font-size:.86rem; margin-bottom:1.1rem; }
+.password-wrap { position:relative; }
+.password-wrap input { padding-right:3rem !important; }
+.password-toggle { position:absolute; right:.45rem; top:50%; transform:translateY(-50%); border:0; background:transparent; cursor:pointer; padding:.4rem; border-radius:8px; }
+.auth-link { border:0; background:transparent; color:var(--primary); cursor:pointer; font:inherit; font-size:.84rem; padding:.35rem 0; }
+.auth-link:hover { text-decoration:underline; }
+.auth-link.inline { padding:0; font-weight:650; }
+.auth-switch { text-align:center; color:var(--text-muted); font-size:.84rem; margin-top:.85rem; }
+.auth-divider { display:flex; align-items:center; gap:.7rem; color:var(--text-dim); font-size:.75rem; margin:1rem 0; }
+.auth-divider::before,.auth-divider::after { content:""; flex:1; height:1px; background:var(--border); }
+.auth-message { margin-top:1rem; border-radius:10px; padding:.75rem .85rem; font-size:.82rem; border:1px solid var(--border); background:var(--surface-2); }
+.auth-message.success { border-color:rgba(34,197,94,.45); background:rgba(34,197,94,.1); }
+.auth-message.error { border-color:rgba(239,68,68,.45); background:rgba(239,68,68,.1); }
+.auth-card-vendify input[type="email"], .auth-card-vendify input[type="password"] { width:100%; padding:.7rem .85rem; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:.9rem; outline:none; }
+.auth-card-vendify input:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+
+/* ===== Vendify v2.2 · Equipo ===== */
+.label-optional{font-weight:400;color:var(--text-dim);font-size:.72rem}
+.modal-equipo-content{max-width:760px}
+.equipo-invitar-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem}
+.equipo-hint{margin-bottom:.9rem}
+.equipo-invitar-form{padding:0;display:grid;grid-template-columns:minmax(220px,1.4fr) minmax(220px,1fr) auto;gap:.7rem;align-items:end}
+.equipo-invitar-form .form-group{margin-bottom:0}.equipo-invitar-form .field-error{grid-column:1/-1}
+.equipo-list-header{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.8rem}
+.equipo-lista{display:flex;flex-direction:column;gap:.65rem}
+.equipo-item{display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(150px,.8fr) auto;gap:.8rem;align-items:center;padding:.85rem .95rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.equipo-email{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.equipo-meta{display:flex;align-items:center;gap:.45rem;margin-top:.25rem;flex-wrap:wrap}
+.equipo-status{display:inline-flex;align-items:center;font-size:.72rem;padding:.18rem .5rem;border-radius:999px;border:1px solid var(--border);color:var(--text-muted)}
+.equipo-status.active{color:var(--success);border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)}
+.equipo-status.inactive{color:var(--danger);border-color:rgba(239,68,68,.35);background:var(--danger-soft)}
+.equipo-status.pending{color:var(--warning);border-color:rgba(245,158,11,.35);background:var(--warning-soft)}
+.equipo-role-owner{font-weight:600;font-size:.84rem}.equipo-actions{display:flex;gap:.4rem;justify-content:flex-end;flex-wrap:wrap}
+body[data-role="cashier"] #btn-historial{display:none!important}
+@media(max-width:720px){.equipo-invitar-form{grid-template-columns:1fr}.equipo-invitar-form .field-error{grid-column:auto}.equipo-item{grid-template-columns:1fr}.equipo-actions{justify-content:flex-start}}
+
+
+/* ===== Vendify v2.3 · Login dual ===== */
+.auth-card-v23 { max-width: 430px; }
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .4rem;
+  padding: .3rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+.auth-tab {
+  border: 0;
+  border-radius: 9px;
+  padding: .7rem .6rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 650;
+}
+.auth-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+.business-code-card {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.85rem 1rem;
+  margin-bottom:1rem;
+  border:1px solid var(--border);
+  background:var(--primary-soft);
+  border-radius:var(--radius-sm);
+}
+.business-code-card strong {
+  display:block;
+  font-size:1.15rem;
+  letter-spacing:.08em;
+}
+.equipo-create-form {
+  padding:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.7rem;
+}
+.equipo-create-form .form-group { margin-bottom:0; }
+.equipo-create-form #btn-crear-empleado,
+.equipo-create-form #equipo-error { grid-column:1 / -1; }
+.employee-username-badge {
+  display:inline-flex;
+  font-size:.72rem;
+  color:var(--primary);
+  background:var(--primary-soft);
+  padding:.14rem .45rem;
+  border-radius:999px;
+  margin-top:.25rem;
+}
+@media (max-width:640px) {
+  .equipo-create-form { grid-template-columns:1fr; }
+  .equipo-create-form #btn-crear-empleado,
+  .equipo-create-form #equipo-error { grid-column:auto; }
+}
+
+
+/* ===== Vendify v2.3.2 · Auth UI fix ===== */
+.auth-card-v23 { max-width: 440px; text-align: left; }
+.auth-card-v23 > .onboarding-logo,
+.auth-card-v23 > h1,
+.auth-card-v23 > .onboarding-lead { text-align:center; }
+.auth-card-v23 .auth-form { margin-top: 1rem; gap: .7rem; }
+.auth-card-v23 input[type="email"],
+.auth-card-v23 input[type="password"],
+.auth-card-v23 input[type="text"] {
+  width:100%;
+  padding:.72rem .85rem;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-size:.9rem;
+  outline:none;
+}
+.auth-card-v23 input:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+.auth-link-btn {
+  border:0; background:transparent; color:var(--primary); cursor:pointer;
+  font:inherit; font-size:.84rem; padding:.35rem 0; text-align:center;
+}
+.auth-link-btn:hover { text-decoration:underline; }
+.auth-card-v23 h2 { font-size:1.15rem; margin-bottom:.25rem; }
+.auth-card-v23 .field-error:empty { min-height:0; margin-top:0; }
+@media (max-width: 520px) {
+  .auth-screen { align-items:flex-start; overflow:auto; }
+  .auth-card-v23 { margin-top:1rem; padding:1.35rem 1rem; }
+}
+
+
+/* ===== Vendify v2.4 · identidad y gestión de empleados ===== */
+.contexto-negocio {
+  min-width: 120px;
+}
+
+.contexto-negocio strong {
+  display: block;
+  line-height: 1.15;
+}
+
+.contexto-negocio > span {
+  display: block;
+  margin-top: .12rem;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+.equipo-actions {
+  min-width: 225px;
+}
+
+
+/* ===== Vendify v2.5 · permisos de stock ===== */
+.card-stock-readonly {
+  margin-top: .45rem;
+  padding: .38rem .55rem;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: .78rem;
+}
+.card-stock-readonly strong {
+  color: var(--text);
+}
+
+
+/* ===== Vendify v2.6 · permisos estrictos UI ===== */
+[hidden],
+.permiso-hidden {
+  display: none !important;
+}
+
+/* Defensa visual adicional: un cajero nunca ve gestión. */
+body[data-role="cashier"] #btn-nuevo,
+body[data-role="cashier"] #btn-empty-nuevo,
+body[data-role="cashier"] #btn-cargar-ejemplos,
+body[data-role="cashier"] #btn-cargar-ejemplos-config,
+body[data-role="cashier"] #btn-config,
+body[data-role="cashier"] #btn-equipo,
+body[data-role="cashier"] #btn-export,
+body[data-role="cashier"] #btn-historial,
+body[data-role="cashier"] .card-acciones,
+body[data-role="cashier"] .card-stock-controls {
+  display: none !important;
+}
+
+

@@ -1,10 +1,20 @@
 /* Vendify v2.31.1 — safe app-shell offline cache */
-const CACHE = "vendify-shell-v2311";
+const CACHE = "vendify-shell-v232-css";
 const SHELL = [
   "./",
   "./index.html",
   "./app.js",
   "./styles.css",
+  "./styles/01-foundation.css",
+  "./styles/02-auth-team.css",
+  "./styles/03-products-scanner.css",
+  "./styles/04-navigation-settings.css",
+  "./styles/05-sales-cash.css",
+  "./styles/06-brand-realtime.css",
+  "./styles/07-pos-inventory.css",
+  "./styles/08-purchases-stock.css",
+  "./styles/09-stability-forms.css",
+  "./styles/10-commercial-offline.css",
 ];
 
 self.addEventListener("install", (event) => {

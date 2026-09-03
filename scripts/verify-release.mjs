@@ -8,6 +8,8 @@ const required = [
   "index.html",
   "app.js",
   "styles.css",
+  "styles/01-foundation.css",
+  "styles/10-commercial-offline.css",
   "sw.js",
   "supabase-config.js",
   "manifest.json",

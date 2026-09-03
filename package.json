@@ -14,9 +14,10 @@
     "build:offline-v2312": "vite build --config vite.offline-v2312.config.ts",
     "build:staging:v2312": "node scripts/build-staging-v2312.mjs",
     "verify:staging:v2312": "node scripts/verify-staging-v2312.mjs",
+    "verify:css": "node scripts/verify-modular-css.mjs",
     "preview:staging:v2312": "node scripts/serve-staging-v2312.mjs",
     "build:refactor:modular": "node scripts/build-refactor-modular.mjs",
-    "verify:refactor:modular": "node scripts/verify-refactor-modular.mjs && node scripts/verify-refactor-auth.mjs && node scripts/verify-refactor-team.mjs && node scripts/verify-refactor-dashboard.mjs && node scripts/verify-refactor-purchases.mjs && node scripts/verify-refactor-inventory.mjs && node scripts/verify-refactor-products.mjs && node scripts/verify-refactor-cash.mjs && node scripts/verify-refactor-sales.mjs && node scripts/verify-refactor-offline.mjs",
+    "verify:refactor:modular": "node scripts/verify-refactor-modular.mjs && node scripts/verify-refactor-auth.mjs && node scripts/verify-refactor-team.mjs && node scripts/verify-refactor-dashboard.mjs && node scripts/verify-refactor-purchases.mjs && node scripts/verify-refactor-inventory.mjs && node scripts/verify-refactor-products.mjs && node scripts/verify-refactor-cash.mjs && node scripts/verify-refactor-sales.mjs && node scripts/verify-refactor-offline.mjs && node scripts/verify-modular-css.mjs dist-refactor-modular",
     "qa:refactor:modular": "npm run build:refactor:modular && npm run verify:refactor:modular",
     "preview:refactor:modular": "node scripts/serve-refactor-modular.mjs",
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",
@@ -26,11 +27,11 @@
     "qa:secrets": "node scripts/scan-secrets.mjs",
     "qa:rpc-source": "node scripts/rpc-source-coverage.mjs",
     "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run typecheck && npm test",
-    "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312",
+    "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312 && node scripts/verify-modular-css.mjs dist-staging-v2312",
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run lint && npm run build && npm run verify:release && npm run qa:staging:v2312 && npm run qa:refactor:modular"
+    "ci": "npm run qa && npm run lint && npm run verify:css && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

@@ -134,9 +134,6 @@ try {
       "--quiet",
       "v2.31.1-production-baseline",
       "--",
-      "index.html",
-      "styles.css",
-      "sw.js",
       "supabase-config.js",
       "manifest.json",
       "vercel.json",
@@ -144,9 +141,9 @@ try {
     ],
     { cwd: root, stdio: "pipe" }
   );
-  pass("non-app production shell still matches frozen v2.31.1 baseline");
+  pass("backend configuration, manifest and icons still match the frozen baseline");
 } catch {
-  fail("non-app production shell changed during staging-only integration");
+  fail("protected backend configuration, manifest or icons changed");
 }
 
 console.log("PASS: Vendify v2.31.2 staging release verified");
