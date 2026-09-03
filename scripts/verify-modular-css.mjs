@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { normalizeLineEndings } from "./text-normalization.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const target = process.argv[2] ? resolve(projectRoot, process.argv[2]) : projectRoot;
@@ -47,11 +48,14 @@ if (JSON.stringify(linkedModules) !== JSON.stringify(modules)) {
 const combined = modules
   .map((file) => readFileSync(resolve(target, file), "utf8"))
   .join("");
-const combinedSha = createHash("sha256").update(combined).digest("hex");
+// Git may check text files out as CRLF on Windows. The cascade is unchanged,
+// so verify normalized text instead of platform-specific line-ending bytes.
+const normalizedCombined = normalizeLineEndings(combined);
+const combinedSha = createHash("sha256").update(normalizedCombined).digest("hex");
 if (combinedSha !== validatedMonolithSha256) {
   fail(`cascade content changed (${combinedSha})`);
 }
-if (!combined.includes("producto-row-v223")) fail("active product row styles are missing");
+if (!normalizedCombined.includes("producto-row-v223")) fail("active product row styles are missing");
 
 const serviceWorker = readFileSync(resolve(target, "sw.js"), "utf8");
 if (!serviceWorker.includes('vendify-shell-v232-html')) fail("service worker shell cache was not bumped");
