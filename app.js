@@ -89,41 +89,7 @@ async function mostrarAppSeguroVQA(session) {
 }
 
 
-// ============================================================
-// VENDIFY V2.3 - HELPERS LOGIN DUAL / EMPLEADOS
-// ============================================================
-
-function normalizarLoginInterno(valor) {
-  return window.VendifyAuthV232.normalizeInternalLogin(valor);
-}
-
-function emailInternoEmpleado(codigoNegocio, username) {
-  return window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username);
-}
-
-function mostrarPanelLogin(tipo) {
-  const esOwner = tipo === "owner";
-
-  $("#tab-owner")?.classList.toggle("active", esOwner);
-  $("#tab-employee")?.classList.toggle("active", !esOwner);
-
-  $("#auth-owner-panel")?.classList.toggle("hidden", !esOwner);
-  $("#auth-employee-panel")?.classList.toggle("hidden", esOwner);
-
-  $("#register-form")?.classList.add("hidden");
-  $("#forgot-form")?.classList.add("hidden");
-  $("#auth-message")?.classList.add("hidden");
-
-  const loginError = $("#login-error");
-  const employeeError = $("#employee-login-error");
-
-  if (loginError) loginError.textContent = "";
-  if (employeeError) employeeError.textContent = "";
-}
-
-
 let deferredInstallPrompt = null;
-let sesionActual = null;
 let realtimeChannel = null;
 
 // El catálogo inicial vive en src/products/catalog-data.ts.
@@ -268,7 +234,8 @@ function actualizarContextoUI() {
   const sesionEl = $("#sesion-email");
 
   const perfilEmpleado = appContext.employee;
-  const emailSesion = sesionActual?.user?.email || "";
+  const currentSession = authControllerV232.getSession();
+  const emailSesion = currentSession?.user?.email || "";
 
   let nombreVisible;
 
@@ -295,7 +262,7 @@ function actualizarContextoUI() {
   const roleName = nombreRolV2(appContext.membership?.role);
   const visibleName =
     appContext.employee?.nombre ||
-    (sesionActual?.user?.email ? sesionActual.user.email.split("@")[0] : "") ||
+    (currentSession?.user?.email ? currentSession.user.email.split("@")[0] : "") ||
     appContext.business?.nombre ||
     "Usuario";
 
@@ -505,60 +472,27 @@ async function ajustarStockV2(productoId, delta, tipo = "ajuste") {
   return data;
 }
 
-// =====================
-// Autenticación Vendify — email + contraseña
-// =====================
-let flujoRecuperacionActivo = false;
-
-function mostrarPanelAuth(panel) {
-  return window.VendifyAuthV232.showAuthPanel(panel);
-}
-
-function mostrarMensajeAuth(mensaje, tipo = "info") {
-  return window.VendifyAuthV232.showAuthMessage(mensaje, tipo);
-}
-
-async function initAuth() {
-  return window.VendifyAuthV232.initializeAuthLifecycle(
-    supabaseClient.auth,
-    {
-      setSession(session) {
-        sesionActual = session;
-      },
-      isRecoveryActive() {
-        return flujoRecuperacionActivo;
-      },
-      setRecoveryActive(active) {
-        flujoRecuperacionActivo = active;
-      },
-      showLogin: mostrarLogin,
-      showNewPasswordPanel() {
-        mostrarPanelAuth("auth-new-password-panel");
-      },
-      showApp(session) {
-        return mostrarAppSeguroVQA(session);
-      },
-      async handleSignedOut() {
-        appBootUserIdVQA = null;
-        appBootPromiseVQA = null;
-        limpiarContextoApp();
-        productos = [];
-        posControllerV232.clearCart();
-        mostrarLogin();
-        if (realtimeChannel) {
-          supabaseClient.removeChannel(realtimeChannel);
-          realtimeChannel = null;
-        }
-      }
+// ============================================================
+// Autenticación Vendify — controlador TypeScript
+// ============================================================
+const authControllerV232 = window.VendifyAuthV232.createController({
+  auth: supabaseClient.auth,
+  showApp: mostrarAppSeguroVQA,
+  beforeSignOut: limpiarContextoApp,
+  async handleSignedOut() {
+    appBootUserIdVQA = null;
+    appBootPromiseVQA = null;
+    limpiarContextoApp();
+    productos = [];
+    posControllerV232.clearCart();
+    if (realtimeChannel) {
+      supabaseClient.removeChannel(realtimeChannel);
+      realtimeChannel = null;
     }
-  );
-}
-
-function mostrarLogin() {
-  $("#auth-screen")?.classList.remove("hidden");
-  $(".app")?.classList.add("hidden");
-  if (!flujoRecuperacionActivo) mostrarPanelAuth("owner");
-}
+  },
+  showToast: mostrarToast,
+  icon: iconV23011,
+});
 
 async function mostrarApp() {
   $("#auth-screen")?.classList.add("hidden");
@@ -604,175 +538,6 @@ async function mostrarApp() {
   suscribirRealtime();
   await cargarCommercialFoundationV231?.();
 }
-
-async function iniciarSesionPassword(e) {
-  e.preventDefault();
-  const email = $("#login-email")?.value.trim();
-  const password = $("#login-password")?.value || "";
-  const btn = $("#btn-login");
-  const err = $("#login-error");
-  if (!btn || !err) return;
-
-  err.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Ingresando...";
-
-  const result = await window.VendifyAuthV232.signInOwner(
-    supabaseClient.auth,
-    email,
-    password
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Iniciar sesión";
-
-  if (!result.ok) err.textContent = result.errorMessage || "";
-}
-
-
-async function loginEmpleado(e) {
-  e.preventDefault();
-
-  const code = $("#employee-business-code")?.value.trim() || "";
-  const username = $("#employee-username")?.value.trim() || "";
-  const password = $("#employee-password")?.value || "";
-  const errorEl = $("#employee-login-error");
-  const btn = $("#btn-employee-login");
-  if (!errorEl || !btn) return;
-
-  errorEl.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Ingresando...";
-
-  const result = await window.VendifyAuthV232.signInEmployee(
-    supabaseClient.auth,
-    code,
-    username,
-    password
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Entrar a Vendify";
-
-  if (!result.ok) errorEl.textContent = result.errorMessage || "";
-}
-
-async function registrarCuenta(e) {
-  e.preventDefault();
-  const businessName = $("#register-business")?.value.trim();
-  const email = $("#register-email")?.value.trim();
-  const password = $("#register-password")?.value || "";
-  const err = $("#register-error");
-  const btn = $("#btn-register");
-  if (!err || !btn) return;
-
-  err.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Creando cuenta...";
-
-  const result = await window.VendifyAuthV232.registerOwner(
-    supabaseClient.auth,
-    {
-      businessName,
-      email,
-      password,
-      redirectTo: window.location.origin + window.location.pathname
-    }
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Crear cuenta";
-
-  if (!result.ok) {
-    err.textContent = result.errorMessage || "";
-    return;
-  }
-
-  if (result.requiresConfirmation) {
-    mostrarPanelAuth("owner");
-    mostrarMensajeAuth(
-      "Cuenta creada. Revisá tu email una sola vez para confirmarla y después ingresá con tu contraseña.",
-      "success"
-    );
-  }
-}
-
-async function solicitarResetPassword(e) {
-  e.preventDefault();
-  const email = $("#forgot-email")?.value.trim();
-  const btn = $("#btn-forgot-send");
-  const err = $("#forgot-error");
-  if (!btn || !err) return;
-
-  err.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Enviando...";
-
-  const result = await window.VendifyAuthV232.requestPasswordReset(
-    supabaseClient.auth,
-    email,
-    window.location.origin + window.location.pathname
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Enviar recuperación";
-
-  if (!result.ok) {
-    err.textContent = result.errorMessage || "";
-    return;
-  }
-
-  mostrarPanelAuth("owner");
-  mostrarMensajeAuth("Te enviamos un enlace para cambiar tu contraseña.", "success");
-}
-
-async function guardarNuevaPassword(e) {
-  e.preventDefault();
-  const password = $("#new-password")?.value || "";
-  const confirm = $("#new-password-confirm")?.value || "";
-  const err = $("#new-password-error");
-  const btn = $("#btn-new-password");
-  if (!err || !btn) return;
-
-  err.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
-
-  const result = await window.VendifyAuthV232.updatePassword(
-    supabaseClient.auth,
-    password,
-    confirm
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Guardar contraseña";
-
-  if (!result.ok) {
-    err.textContent = result.errorMessage || "";
-    return;
-  }
-
-  flujoRecuperacionActivo = false;
-  mostrarToast("Contraseña actualizada", "success");
-  await mostrarApp();
-}
-
-
-function togglePassword(inputId, button) {
-  const input = $("#" + inputId);
-  if (!input) return;
-
-  const mostrar = input.type === "password";
-  input.type = mostrar ? "text" : "password";
-
-  button.innerHTML = iconV23011(mostrar ? "eye-off" : "eye");
-  button.setAttribute(
-    "aria-label",
-    mostrar ? "Ocultar contraseña" : "Mostrar contraseña"
-  );
-  button.title = mostrar ? "Ocultar contraseña" : "Mostrar contraseña";
-}
-
 
 function posicionarPopoverAncladoV23012(
   menu,
@@ -859,14 +624,6 @@ function abrirCerrarMenuUsuarioV224(force) {
     limpiarPosicionMenuUsuario();
   }
 }
-
-async function cerrarSesion() {
-  flujoRecuperacionActivo = false;
-  limpiarContextoApp();
-  await window.VendifyAuthV232.signOut(supabaseClient.auth);
-}
-
-
 
 // ============================================================
 // V2.3 — EQUIPO / USUARIOS INTERNOS — controlador TypeScript
@@ -1921,7 +1678,7 @@ function registrarActividadSeguraV2301() {
 }
 
 async function verificarSesionInactivaV2301() {
-  if (securityLogoutRunningV2301 || !sesionActual?.user) return;
+  if (securityLogoutRunningV2301 || !authControllerV232.getSession()?.user) return;
 
   const last = Number(
     localStorage.getItem(SECURITY_ACTIVITY_KEY_V2301) || Date.now()
@@ -1936,7 +1693,7 @@ async function verificarSesionInactivaV2301() {
       "La sesión se cerró por inactividad. Volvé a ingresar para continuar.",
       "info"
     );
-    await cerrarSesion();
+    await authControllerV232.signOut();
   } finally {
     securityLogoutRunningV2301 = false;
   }
@@ -2785,7 +2542,7 @@ function esOwnerV231() {
 }
 
 function safeBusinessKeyV231(prefix) {
-  const uid = sesionActual?.user?.id || "anon";
+  const uid = authControllerV232.getSession()?.user?.id || "anon";
   const business = appContext.business?.id || "none";
   const branch = appContext.branch?.id || "none";
   return `${prefix}:${uid}:${business}:${branch}`;
@@ -2811,11 +2568,12 @@ function descargarBlobV231(contenido, tipo, nombre) {
 // Offline seguro
 // ---------------------
 function guardarContextoOfflineV231() {
-  if (!appContext?.ready || !sesionActual?.user?.id) return;
+  const uid = authControllerV232.getSession()?.user?.id;
+  if (!appContext?.ready || !uid) return;
 
   try {
     localStorage.setItem(
-      `${VENDIFY_CONTEXT_PREFIX_V231}:${sesionActual.user.id}`,
+      `${VENDIFY_CONTEXT_PREFIX_V231}:${uid}`,
       JSON.stringify({
         user: appContext.user,
         business: appContext.business,
@@ -2833,7 +2591,7 @@ function guardarContextoOfflineV231() {
 }
 
 function cargarContextoOfflineV231() {
-  const uid = sesionActual?.user?.id;
+  const uid = authControllerV232.getSession()?.user?.id;
   if (!uid) return null;
 
   try {
@@ -3044,7 +2802,7 @@ async function registrarErrorClienteV231(
 ) {
   if (
     !navigator.onLine ||
-    !sesionActual?.user ||
+    !authControllerV232.getSession()?.user ||
     !appContext?.business?.id
   ) {
     return;
@@ -4329,30 +4087,6 @@ async function renderHistorial() {
 // Eventos
 // =====================
 function inicializarEventos() {
-  $("#login-form")?.addEventListener("submit", iniciarSesionPassword);
-  $("#employee-login-form")?.addEventListener("submit", loginEmpleado);
-  $("#register-form")?.addEventListener("submit", registrarCuenta);
-  $("#forgot-form")?.addEventListener("submit", solicitarResetPassword);
-  $("#new-password-form")?.addEventListener("submit", guardarNuevaPassword);
-
-  $("#tab-owner")?.addEventListener("click", () => mostrarPanelAuth("owner"));
-  $("#tab-employee")?.addEventListener("click", () => mostrarPanelAuth("employee"));
-  $("#btn-show-register")?.addEventListener("click", () => mostrarPanelAuth("register"));
-  $("#btn-back-login")?.addEventListener("click", () => mostrarPanelAuth("owner"));
-  $("#btn-forgot")?.addEventListener("click", () => {
-    const email = $("#login-email")?.value.trim();
-    if ($("#forgot-email") && email) $("#forgot-email").value = email;
-    mostrarPanelAuth("forgot");
-  });
-  $("#btn-forgot-back")?.addEventListener("click", () => mostrarPanelAuth("owner"));
-
-  document.querySelectorAll("[data-toggle-password]").forEach((btn) => {
-    btn.addEventListener("click", () => togglePassword(btn.dataset.togglePassword, btn));
-  });
-
-  $("#btn-cerrar-sesion")?.addEventListener("click", cerrarSesion);
-
-
   // Ventas/POS, descuentos, tickets e historial se conectan desde sus controladores TypeScript.
 
   $("#btn-theme").addEventListener("click", toggleTema);
@@ -4699,7 +4433,7 @@ const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
   storage: localStorage,
   getContext: () => ({
     ready: Boolean(appContext?.ready),
-    userId: sesionActual?.user?.id || null,
+    userId: authControllerV232.getSession()?.user?.id || null,
     businessId: appContext?.business?.id || null,
     branchId: appContext?.branch?.id || null,
     cashRegisterId: appContext?.cashRegister?.id || null,
@@ -5276,6 +5010,7 @@ function init() {
   cargarTema();
   normalizarVistaProductosVQA();
   inicializarEventos();
+  authControllerV232.setup();
   teamControllerV232.setup();
   setupV29();
   discountControllerV232.setup();
@@ -5294,7 +5029,7 @@ function init() {
   iniciarWatchdogRealtime();
   setupInstallPrompt();
   setupOnboarding();
-  initAuth();
+  void authControllerV232.initialize();
 }
 
 if (document.readyState === "loading") {

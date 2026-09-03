@@ -19,6 +19,7 @@ const buildSource = readFileSync(
 
 for (const marker of [
   "VendifyAuthV232",
+  "createAuthController",
   "normalizeInternalLogin",
   "buildEmployeeInternalEmail",
   "resolveAuthPanel",
@@ -39,25 +40,30 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyAuthV232.normalizeInternalLogin(valor)",
-  "window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username)",
-  "window.VendifyAuthV232.showAuthPanel(panel)",
-  "window.VendifyAuthV232.showAuthMessage(mensaje, tipo)",
-  "window.VendifyAuthV232.initializeAuthLifecycle(",
-  "showLogin: mostrarLogin,",
-  "window.VendifyAuthV232.signInOwner(",
-  "window.VendifyAuthV232.signInEmployee(",
-  "window.VendifyAuthV232.registerOwner(",
-  "window.VendifyAuthV232.requestPasswordReset(",
-  "window.VendifyAuthV232.updatePassword(",
-  "window.VendifyAuthV232.signOut(supabaseClient.auth)"
+  "window.VendifyAuthV232.createController({",
+  "authControllerV232.setup();",
+  "authControllerV232.initialize()",
+  "authControllerV232.getSession()",
+  "authControllerV232.signOut()"
 ]) {
   if (!app.includes(marker)) throw new Error(`Compatibility app missing Auth delegation: ${marker}`);
   if (!sourceApp.includes(marker)) throw new Error(`Root app.js missing Auth delegation: ${marker}`);
 }
 
 for (const obsoleteMarker of [
-  "\n      showLogin,\n",
+  "let sesionActual",
+  "let flujoRecuperacionActivo",
+  "function mostrarPanelAuth",
+  "function mostrarMensajeAuth",
+  "function initAuth",
+  "function mostrarLogin",
+  "async function iniciarSesionPassword",
+  "async function loginEmpleado",
+  "async function registrarCuenta",
+  "async function solicitarResetPassword",
+  "async function guardarNuevaPassword",
+  "function togglePassword",
+  "async function cerrarSesion",
   "const map = {\n    \"auth-login-panel\"",
   "supabaseClient.auth.getSession(",
   "supabaseClient.auth.onAuthStateChange(",
