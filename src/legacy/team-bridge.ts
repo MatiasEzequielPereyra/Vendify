@@ -11,8 +11,10 @@ import {
   resetEmployeePassword,
   updateEmployee
 } from "../team/team-edge-service.js";
+import { createTeamController } from "../team/team-controller.js";
 
 export interface VendifyTeamV232Api {
+  readonly createController: typeof createTeamController;
   readonly getAdminBusiness: typeof getAdminBusiness;
   readonly listTeam: typeof listTeam;
   readonly updateStockPermission: typeof updateStockPermission;
@@ -31,6 +33,7 @@ declare global {
 }
 
 window.VendifyTeamV232 = Object.freeze({
+  createController: createTeamController,
   getAdminBusiness,
   listTeam,
   updateStockPermission,

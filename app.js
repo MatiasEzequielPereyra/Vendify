@@ -101,13 +101,6 @@ function emailInternoEmpleado(codigoNegocio, username) {
   return window.VendifyAuthV232.buildEmployeeInternalEmail(codigoNegocio, username);
 }
 
-function generarPasswordTemporal() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$";
-  const array = new Uint32Array(12);
-  crypto.getRandomValues(array);
-  return Array.from(array, (n) => chars[n % chars.length]).join("");
-}
-
 function mostrarPanelLogin(tipo) {
   const esOwner = tipo === "owner";
 
@@ -876,373 +869,17 @@ async function cerrarSesion() {
 
 
 // ============================================================
-// V2.3 — EQUIPO / USUARIOS INTERNOS
+// V2.3 — EQUIPO / USUARIOS INTERNOS — controlador TypeScript
 // ============================================================
-
-async function obtenerNegocioAdminV3() {
-  return window.VendifyTeamV232.getAdminBusiness(supabaseClient);
-}
-
-async function listarEquipoV3() {
-  const result = await window.VendifyTeamV232.listTeam(supabaseClient);
-  if (result.stockPermissionWarning) {
-    console.warn("[Equipo] permisos stock no disponibles:", result.stockPermissionWarning);
-  }
-  return result.members;
-}
-
-async function actualizarPermisoStockMiembroV23014(membershipId, permitir) {
-  const result = await window.VendifyTeamV232.updateStockPermission(
-    supabaseClient,
-    membershipId,
-    permitir
-  );
-  if (!result.ok) {
-    throw new Error(result.errorMessage || "No se pudo actualizar el permiso de stock");
-  }
-  return result.data;
-}
-
-async function abrirEquipo() {
-  if (!exigirPermisoV2("manageEmployees", "No tenés permiso para administrar el equipo")) return;
-
-  const ownerCanSetStock = appContext.membership?.role === "owner";
-  if ($("#equipo-permiso-stock")) {
-    $("#equipo-permiso-stock").disabled = !ownerCanSetStock;
-  }
-  $("#equipo-permiso-stock-hint")?.classList.toggle("hidden", ownerCanSetStock);
-
-  $("#modal-equipo")?.classList.remove("hidden");
-  try {
-    const negocio = await obtenerNegocioAdminV3();
-    $("#equipo-business-code").textContent = negocio.codigo_acceso || "—";
-  } catch (e) {
-    mostrarToast(e.message, "error");
-  }
-  await renderEquipo();
-}
-
-function cerrarEquipo() {
-  $("#modal-equipo")?.classList.add("hidden");
-}
-
-async function renderEquipo() {
-  const lista = $("#equipo-lista");
-  if (!lista) return;
-  lista.innerHTML = `<p class="hint" style="text-align:center;padding:1rem;">Cargando equipo...</p>`;
-
-  let personas;
-  try {
-    personas = await listarEquipoV3();
-  } catch (error) {
-    lista.innerHTML = "";
-    mostrarToast(error.message, "error");
-    return;
-  }
-
-  lista.innerHTML = personas.map((item) => {
-    const esOwner = item.rol === "owner";
-    const esYo = item.user_id === appContext.user?.id;
-    const username = item.username
-      ? `<span class="employee-username-badge">@${escapeHtml(item.username)}</span>`
-      : `<span class="employee-username-badge">Email</span>`;
-
-    const rolControl = esOwner
-      ? `<span class="equipo-role-owner">Propietario</span>`
-      : `
-        <select class="select equipo-role-select" data-membership-id="${item.membership_id}" ${esYo ? "disabled" : ""}>
-          <option value="cashier" ${item.rol === "cashier" ? "selected" : ""}>Cajero</option>
-          <option value="manager" ${item.rol === "manager" ? "selected" : ""}>Encargado</option>
-          <option value="admin" ${item.rol === "admin" ? "selected" : ""}>Administrador</option>
-        </select>`;
-
-    const acciones = (!esOwner && !esYo)
-      ? `
-         <button class="btn btn-ghost btn-sm"
-                 data-equipo-action="edit-member"
-                 data-id="${item.membership_id}"
-                 data-nombre="${escapeHtml(item.nombre || "")}"
-                 data-username="${escapeHtml(item.username || "")}"
-                 data-rol="${item.rol}"
-                 data-stock="${item.puede_gestionar_stock ? "1" : "0"}">
-           Editar
-         </button>
-         <button class="btn btn-ghost btn-sm"
-                 data-equipo-action="reset-password"
-                 data-id="${item.membership_id}"
-                 data-nombre="${escapeHtml(item.nombre || item.username || "Empleado")}">
-           Reiniciar clave
-         </button>
-         <button class="btn ${item.activo ? "btn-ghost" : "btn-secondary"} btn-sm"
-                 data-equipo-action="toggle-member"
-                 data-id="${item.membership_id}"
-                 data-activo="${item.activo ? "0" : "1"}">
-            ${item.activo ? "Desactivar" : "Activar"}
-         </button>
-         ${appContext.membership?.role === "owner" ? `
-           <button class="btn btn-danger btn-sm"
-                   data-equipo-action="delete-member"
-                   data-id="${item.membership_id}"
-                   data-nombre="${escapeHtml(item.nombre || item.username || "Empleado")}">
-             Eliminar
-           </button>` : ""}`
-      : "";
-
-    return `
-      <div class="equipo-item">
-        <div class="equipo-persona">
-          <div class="equipo-email">${escapeHtml(item.nombre || item.email || "Usuario")}${esYo ? " · Vos" : ""}</div>
-          <div class="equipo-meta">
-            ${username}
-            <span class="equipo-status ${item.activo ? "active" : "inactive"}">${item.activo ? "Activo" : "Inactivo"}</span>
-            ${
-              esOwner
-                ? `<span class="equipo-permission-badge-v23014 enabled">Stock manual</span>`
-                : `<span class="equipo-permission-badge-v23014 ${item.puede_gestionar_stock ? "enabled" : "disabled"}">
-                    Stock manual: ${item.puede_gestionar_stock ? "Sí" : "No"}
-                  </span>`
-            }
-          </div>
-        </div>
-        <div>${rolControl}</div>
-        <div class="equipo-actions">${acciones}</div>
-      </div>`;
-  }).join("");
-}
-
-async function crearEmpleadoV3(e) {
-  e.preventDefault();
-
-  if (!exigirPermisoV2("manageEmployees", "No tenés permiso para crear empleados")) return;
-
-  const nombre = $("#equipo-nombre").value.trim();
-  const username = normalizarLoginInterno($("#equipo-username").value);
-  const rol = $("#equipo-rol").value;
-  const password = $("#equipo-password").value;
-  const permisoStockSolicitado =
-    appContext.membership?.role === "owner" &&
-    $("#equipo-permiso-stock")?.checked === true;
-  const errorEl = $("#equipo-error");
-  const btn = $("#btn-crear-empleado");
-
-  errorEl.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Creando...";
-
-  const result = await window.VendifyTeamV232.createEmployee(
-    supabaseClient.functions,
-    { nombre, username, rol, password }
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Crear empleado";
-
-  if (!result.ok) {
-    errorEl.textContent = result.errorMessage || "No se pudo crear el empleado";
-    return;
-  }
-
-  if (appContext.membership?.role === "owner") {
-    try {
-      const people = await listarEquipoV3();
-      const created = people.find(
-        (person) =>
-          String(person.username || "").toLowerCase() === username.toLowerCase()
-      );
-
-      if (created?.membership_id) {
-        await actualizarPermisoStockMiembroV23014(
-          created.membership_id,
-          permisoStockSolicitado
-        );
-      }
-    } catch (permissionError) {
-      console.error("[Equipo] empleado creado, permiso stock pendiente:", permissionError);
-      mostrarToast(
-        "Empleado creado, pero revisá su permiso de stock desde Editar",
-        "info"
-      );
-    }
-  }
-
-  $("#equipo-nombre").value = "";
-  $("#equipo-username").value = "";
-  $("#equipo-password").value = "";
-  if ($("#equipo-permiso-stock")) $("#equipo-permiso-stock").checked = false;
-
-  mostrarToast(`Empleado @${username} creado`, "success");
-  await renderEquipo();
-}
-
-async function cambiarRolEquipo(membershipId, rol, selectEl) {
-  selectEl.disabled = true;
-  const result = await window.VendifyTeamV232.updateMemberRole(
-    supabaseClient,
-    membershipId,
-    rol
-  );
-  selectEl.disabled = false;
-
-  if (!result.ok) {
-    mostrarToast(result.errorMessage || "No se pudo actualizar el rol", "error");
-    await renderEquipo();
-    return;
-  }
-  mostrarToast(`Rol actualizado a ${nombreRolV2(rol)}`, "success");
-}
-
-async function cambiarEstadoEquipo(membershipId, activo) {
-  const result = await window.VendifyTeamV232.setMemberActive(
-    supabaseClient,
-    membershipId,
-    activo
-  );
-  if (!result.ok) {
-    mostrarToast(result.errorMessage || "No se pudo actualizar el usuario", "error");
-    return;
-  }
-  mostrarToast(activo ? "Usuario activado" : "Usuario desactivado", "success");
-  await renderEquipo();
-}
-
-
-
-
-async function eliminarEmpleadoDefinitivo(btn) {
-  if (appContext.membership?.role !== "owner") {
-    mostrarToast("Solo el propietario puede eliminar usuarios", "error");
-    return;
-  }
-
-  const nombre = btn.dataset.nombre || "este empleado";
-  const ok = await confirmar(
-    "Eliminar usuario",
-    `¿Eliminar definitivamente a ${nombre}? Esta acción elimina su acceso a Vendify.`
-  );
-
-  if (!ok) return;
-
-  const result = await window.VendifyTeamV232.deleteEmployee(
-    supabaseClient.functions,
-    btn.dataset.id
-  );
-
-  if (!result.ok) {
-    mostrarToast(result.errorMessage || "No se pudo eliminar el usuario", "error");
-    return;
-  }
-
-  mostrarToast("Usuario eliminado definitivamente", "success");
-  await renderEquipo();
-}
-
-function abrirEditarEmpleadoDesdeBoton(btn) {
-  $("#editar-membership-id").value = btn.dataset.id || "";
-  $("#editar-empleado-nombre").value = btn.dataset.nombre || "";
-  $("#editar-empleado-username").value = btn.dataset.username || "";
-  $("#editar-empleado-rol").value = btn.dataset.rol || "cashier";
-
-  const stockPermission = $("#editar-empleado-permiso-stock");
-  const ownerCanChangeStock = appContext.membership?.role === "owner";
-
-  if (stockPermission) {
-    stockPermission.checked = btn.dataset.stock === "1";
-    stockPermission.disabled = !ownerCanChangeStock;
-  }
-
-  $("#editar-stock-owner-hint")?.classList.toggle("hidden", ownerCanChangeStock);
-
-  $("#editar-empleado-error").textContent = "";
-  $("#modal-editar-empleado").classList.remove("hidden");
-}
-
-function cerrarEditarEmpleado() {
-  $("#modal-editar-empleado")?.classList.add("hidden");
-}
-
-async function guardarEdicionEmpleado(e) {
-  e.preventDefault();
-
-  const membershipId = $("#editar-membership-id").value;
-  const nombre = $("#editar-empleado-nombre").value.trim();
-  const username = normalizarLoginInterno($("#editar-empleado-username").value);
-  const rol = $("#editar-empleado-rol").value;
-  const permisoStock =
-    $("#editar-empleado-permiso-stock")?.checked === true;
-  const errorEl = $("#editar-empleado-error");
-  const btn = $("#btn-guardar-editar-empleado");
-
-  errorEl.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
-
-  const result = await window.VendifyTeamV232.updateEmployee(
-    supabaseClient.functions,
-    { membershipId, nombre, username, rol }
-  );
-
-  btn.disabled = false;
-  btn.textContent = "Guardar cambios";
-
-  if (!result.ok) {
-    errorEl.textContent = result.errorMessage || "No se pudo actualizar";
-    return;
-  }
-
-  if (appContext.membership?.role === "owner") {
-    try {
-      await actualizarPermisoStockMiembroV23014(
-        membershipId,
-        permisoStock
-      );
-    } catch (permissionError) {
-      errorEl.textContent = permissionError.message;
-      return;
-    }
-  }
-
-  cerrarEditarEmpleado();
-  mostrarToast("Empleado actualizado", "success");
-  await renderEquipo();
-}
-
-function abrirResetEmpleadoDesdeBoton(btn) {
-  $("#reset-membership-id").value = btn.dataset.id || "";
-  $("#reset-empleado-info").textContent =
-    `Nueva contraseña para ${btn.dataset.nombre || "el empleado"}.`;
-  $("#reset-empleado-password").value = generarPasswordTemporal();
-  $("#reset-empleado-error").textContent = "";
-  $("#modal-reset-empleado").classList.remove("hidden");
-}
-
-function cerrarResetEmpleado() {
-  $("#modal-reset-empleado")?.classList.add("hidden");
-}
-
-async function reiniciarPasswordEmpleado(e) {
-  e.preventDefault();
-
-  const membershipId = $("#reset-membership-id").value;
-  const password = $("#reset-empleado-password").value;
-  const errorEl = $("#reset-empleado-error");
-
-  errorEl.textContent = "";
-
-  const result = await window.VendifyTeamV232.resetEmployeePassword(
-    supabaseClient.functions,
-    membershipId,
-    password
-  );
-
-  if (!result.ok) {
-    errorEl.textContent = result.errorMessage || "No se pudo reiniciar la contraseña";
-    return;
-  }
-
-  cerrarResetEmpleado();
-  mostrarToast("Contraseña del empleado actualizada", "success");
-  await renderEquipo();
-}
+const teamControllerV232 = window.VendifyTeamV232.createController({
+  client: supabaseClient,
+  functions: supabaseClient.functions,
+  getContext: () => window.appContext,
+  requirePermission: exigirPermisoV2,
+  showToast: mostrarToast,
+  confirm: confirmar,
+  roleName: nombreRolV2,
+});
 
 
 // =====================
@@ -4336,7 +3973,7 @@ function setupCommercialFoundationV231() {
       } else if (action === "sale") {
         abrirVenta();
       } else if (action === "team") {
-        abrirEquipo();
+        void teamControllerV232.open();
       }
     });
 
@@ -4715,69 +4352,6 @@ function inicializarEventos() {
 
   $("#btn-cerrar-sesion")?.addEventListener("click", cerrarSesion);
 
-  $("#btn-equipo")?.addEventListener("click", abrirEquipo);
-  $("#btn-cerrar-equipo")?.addEventListener("click", cerrarEquipo);
-  $("#modal-equipo .modal-backdrop")?.addEventListener("click", cerrarEquipo);
-  $("#form-crear-empleado")?.addEventListener("submit", crearEmpleadoV3);
-
-  const createStockPermission = $("#equipo-permiso-stock");
-  const createRole = $("#equipo-rol");
-
-  if (createStockPermission) {
-    const ownerCanSet = appContext.membership?.role === "owner";
-    createStockPermission.disabled = !ownerCanSet;
-    $("#equipo-permiso-stock-hint")?.classList.toggle("hidden", ownerCanSet);
-  }
-
-  createRole?.addEventListener("change", () => {
-    if (!createStockPermission || appContext.membership?.role !== "owner") return;
-    createStockPermission.checked =
-      ["manager", "admin"].includes(createRole.value);
-  });
-
-  $("#btn-refrescar-equipo")?.addEventListener("click", renderEquipo);
-  $("#btn-generar-password")?.addEventListener("click", () => {
-    $("#equipo-password").value = generarPasswordTemporal();
-  });
-  $("#btn-copy-business-code")?.addEventListener("click", async () => {
-    const code = $("#equipo-business-code")?.textContent?.trim();
-    if (code && code !== "—") {
-      await navigator.clipboard.writeText(code);
-      mostrarToast("Código copiado", "success");
-    }
-  });
-
-  $("#form-editar-empleado")?.addEventListener("submit", guardarEdicionEmpleado);
-  $("#btn-cerrar-editar-empleado")?.addEventListener("click", cerrarEditarEmpleado);
-  $("#btn-cancelar-editar-empleado")?.addEventListener("click", cerrarEditarEmpleado);
-  $("#modal-editar-empleado .modal-backdrop")?.addEventListener("click", cerrarEditarEmpleado);
-
-  $("#form-reset-empleado")?.addEventListener("submit", reiniciarPasswordEmpleado);
-  $("#btn-cerrar-reset-empleado")?.addEventListener("click", cerrarResetEmpleado);
-  $("#btn-cancelar-reset-empleado")?.addEventListener("click", cerrarResetEmpleado);
-  $("#modal-reset-empleado .modal-backdrop")?.addEventListener("click", cerrarResetEmpleado);
-  $("#btn-generar-reset-password")?.addEventListener("click", () => {
-    $("#reset-empleado-password").value = generarPasswordTemporal();
-  });
-
-  $("#equipo-lista")?.addEventListener("change", (e) => {
-    const select=e.target.closest(".equipo-role-select"); if(!select)return;
-    cambiarRolEquipo(select.dataset.membershipId,select.value,select);
-  });
-  $("#equipo-lista")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-equipo-action]");
-    if (!btn) return;
-
-    if (btn.dataset.equipoAction === "toggle-member") {
-      cambiarEstadoEquipo(btn.dataset.id, btn.dataset.activo === "1");
-    } else if (btn.dataset.equipoAction === "edit-member") {
-      abrirEditarEmpleadoDesdeBoton(btn);
-    } else if (btn.dataset.equipoAction === "reset-password") {
-      abrirResetEmpleadoDesdeBoton(btn);
-    } else if (btn.dataset.equipoAction === "delete-member") {
-      eliminarEmpleadoDefinitivo(btn);
-    }
-  });
 
   // Ventas/POS, descuentos, tickets e historial se conectan desde sus controladores TypeScript.
 
@@ -4827,7 +4401,7 @@ function inicializarEventos() {
 
   $("#btn-config-equipo")?.addEventListener("click", () => {
     cerrarConfig();
-    abrirEquipo();
+    void teamControllerV232.open();
   });
 
 
@@ -4908,10 +4482,10 @@ function inicializarEventos() {
       if (!$("#modal").classList.contains("hidden")) cerrarModal();
       else if (!$("#modal-venta").classList.contains("hidden")) cerrarVenta();
       else if (!$("#modal-historial").classList.contains("hidden")) cerrarHistorial();
-      else if (!$("#modal-equipo").classList.contains("hidden")) cerrarEquipo();
+      else if (!$("#modal-equipo").classList.contains("hidden")) teamControllerV232.close();
       else if (!$("#modal-crop-foto").classList.contains("hidden")) cerrarEditorRecorte();
-      else if (!$("#modal-editar-empleado").classList.contains("hidden")) cerrarEditarEmpleado();
-      else if (!$("#modal-reset-empleado").classList.contains("hidden")) cerrarResetEmpleado();
+      else if (!$("#modal-editar-empleado").classList.contains("hidden")) teamControllerV232.closeEditor();
+      else if (!$("#modal-reset-empleado").classList.contains("hidden")) teamControllerV232.closePasswordReset();
       else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
       else if (!$("#modal-confirm").classList.contains("hidden")) {
         cerrarConfirm();
@@ -5702,6 +5276,7 @@ function init() {
   cargarTema();
   normalizarVistaProductosVQA();
   inicializarEventos();
+  teamControllerV232.setup();
   setupV29();
   discountControllerV232.setup();
   posControllerV232.setup();

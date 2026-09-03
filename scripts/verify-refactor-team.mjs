@@ -21,6 +21,8 @@ const buildSource = readFileSync(
 
 for (const marker of [
   "VendifyTeamV232",
+  "createTeamController",
+  "renderTeamMembers",
   "getAdminBusiness",
   "listTeam",
   "updateStockPermission",
@@ -37,21 +39,14 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyTeamV232.getAdminBusiness(supabaseClient)",
-  "window.VendifyTeamV232.listTeam(supabaseClient)",
-  "window.VendifyTeamV232.updateStockPermission(",
-  "window.VendifyTeamV232.updateMemberRole(",
-  "window.VendifyTeamV232.setMemberActive(",
-  "window.VendifyTeamV232.createEmployee(",
-  "window.VendifyTeamV232.updateEmployee(",
-  "window.VendifyTeamV232.deleteEmployee(",
-  "window.VendifyTeamV232.resetEmployeePassword("
+  "window.VendifyTeamV232.createController({",
+  "teamControllerV232.setup();",
+  "teamControllerV232.open()",
+  "teamControllerV232.closeEditor()",
+  "teamControllerV232.closePasswordReset()"
 ]) {
-  if (!app.includes(marker)) {
-    throw new Error(`Compatibility app missing Team delegation: ${marker}`);
-  }
-  if (!sourceApp.includes(marker)) {
-    throw new Error(`Root app.js missing Team delegation: ${marker}`);
+  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+    throw new Error(`Compatibility app missing Team controller delegation: ${marker}`);
   }
 }
 
@@ -63,10 +58,14 @@ for (const obsoleteMarker of [
   'supabaseClient.rpc("actualizar_rol_miembro_v2"',
   'supabaseClient.rpc("cambiar_estado_miembro_v3"',
   'supabaseClient.functions.invoke("crear-empleado"',
-  'supabaseClient.functions.invoke("gestionar-empleado"'
+  'supabaseClient.functions.invoke("gestionar-empleado"',
+  "async function renderEquipo",
+  "async function crearEmpleadoV3",
+  "function generarPasswordTemporal",
+  'data-equipo-action="delete-member"'
 ]) {
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
-    throw new Error(`Legacy app still contains migrated Team data access: ${obsoleteMarker}`);
+    throw new Error(`Legacy app still contains migrated Team implementation: ${obsoleteMarker}`);
   }
 }
 
@@ -81,4 +80,4 @@ if (existsSync(resolve(projectRoot, "scripts/patch-refactor-team.mjs"))) {
   throw new Error("Removed Team regex patcher still exists");
 }
 
-console.log("PASS: root and generated runtimes delegate Team without regex-patched duplicate logic");
+console.log("PASS: root and generated runtimes delegate Team UI and data access to TypeScript");
