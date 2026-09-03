@@ -32,7 +32,7 @@ for (const marker of [
 
 for (const marker of [
   "window.VendifyDashboardV232.createController({",
-  "window.VendifyDashboardV232.dashboardEmpty(text)",
+  "window.VendifyDashboardV232.dashboardEmpty(",
   "window.VendifyDashboardV232.renderDashboardRows(",
   "dashboardControllerV232.loadAlertBadge()",
   "dashboardControllerV232.setup()"
@@ -54,7 +54,10 @@ for (const obsoleteMarker of [
   "function abrirDashboardV231",
   "function cerrarDashboardV231",
   "function construirResumenDiarioV231",
-  "function copiarResumenDiarioV231"
+  "function copiarResumenDiarioV231",
+  "function dashboardEmptyV231",
+  "function renderDashboardRowsV231",
+  "function cargarBadgeAlertasV231"
 ]) {
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
     throw new Error(`Legacy app still contains migrated Dashboard data access: ${obsoleteMarker}`);

@@ -2878,27 +2878,6 @@ const dashboardControllerV232 =
     reportError: registrarErrorClienteV231,
   });
 
-function dashboardEmptyV231(text) {
-  return window.VendifyDashboardV232.dashboardEmpty(text);
-}
-
-function renderDashboardRowsV231(
-  container,
-  rows,
-  renderRow,
-  emptyText
-) {
-  window.VendifyDashboardV232.renderDashboardRows(
-    container,
-    rows,
-    renderRow,
-    emptyText
-  );
-}
-
-async function cargarBadgeAlertasV231() {
-  await dashboardControllerV232.loadAlertBadge();
-}
 // ---------------------
 // Onboarding comercial
 // ---------------------
@@ -3182,7 +3161,7 @@ async function guardarConfigOperativaV231(event) {
     }
 
     await cargarConfigOperativaV231();
-    await cargarBadgeAlertasV231();
+    await dashboardControllerV232.loadAlertBadge();
     mostrarToast(
       "Configuración operativa guardada",
       "success"
@@ -3529,7 +3508,7 @@ async function abrirPlatformAdminV231() {
     $("#platform-errors-v231").textContent =
       Number(data.errores_24h || 0);
 
-    renderDashboardRowsV231(
+    window.VendifyDashboardV232.renderDashboardRows(
       $("#platform-business-list-v231"),
       businesses.data || [],
       (row) => `
@@ -3578,7 +3557,7 @@ async function abrirPlatformAdminV231() {
       "Todavía no hay negocios."
     );
 
-    renderDashboardRowsV231(
+    window.VendifyDashboardV232.renderDashboardRows(
       $("#platform-error-list-v231"),
       errorsResult.data || [],
       (row) => `
@@ -3600,7 +3579,7 @@ async function abrirPlatformAdminV231() {
     );
   } catch (error) {
     $("#platform-business-list-v231").innerHTML =
-      dashboardEmptyV231(
+      window.VendifyDashboardV232.dashboardEmpty(
         error.message ||
           "No se pudo cargar el backoffice."
       );
@@ -3674,7 +3653,7 @@ async function cargarCommercialFoundationV231() {
     cargarConfigOperativaV231(),
     cargarPlanV231(),
     refrescarOnboardingComercialV231(),
-    cargarBadgeAlertasV231(),
+    dashboardControllerV232.loadAlertBadge(),
     verificarPlatformAdminV231(),
   ]);
 
@@ -3685,7 +3664,7 @@ async function cargarCommercialFoundationV231() {
       document.visibilityState === "visible" &&
       navigator.onLine
     ) {
-      cargarBadgeAlertasV231();
+      void dashboardControllerV232.loadAlertBadge();
     }
   }, 60000);
 }
@@ -4010,7 +3989,7 @@ const posControllerV232 =
     showTicket: (data) => salesHistoryControllerV232.showTicket(data),
     afterOnlineSale: () => {
       refrescarOnboardingComercialV231?.();
-      cargarBadgeAlertasV231?.();
+      void dashboardControllerV232.loadAlertBadge();
     },
   });
 
