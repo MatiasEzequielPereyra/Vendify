@@ -41,6 +41,7 @@ for (const file of [runtimeFile, bridgeFile, pendingUiFile]) {
 
 const files = [
   "index.html",
+  "html-loader.js",
   "app.js",
   "styles.css",
   "sw.js",
@@ -54,6 +55,7 @@ for (const file of files) {
 }
 cpSync(resolve(root, "icons"), resolve(out, "icons"), { recursive: true });
 cpSync(resolve(root, "styles"), resolve(out, "styles"), { recursive: true });
+cpSync(resolve(root, "html"), resolve(out, "html"), { recursive: true });
 
 const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
 
@@ -77,20 +79,16 @@ writeFileSync(resolve(out, pendingUiName), pendingUiContent, "utf8");
 
 const indexPath = resolve(out, "index.html");
 const index = readFileSync(indexPath, "utf8");
-const appScript = '<script src="app.js?v=2311"></script>';
-const runtimeScript = `<script src="${runtimeName}"></script>`;
-const stagedAppScript = `<script src="${stagedAppName}"></script>`;
-const bridgeScript = `<script src="${bridgeName}"></script>`;
-const pendingUiScript = `<script src="${pendingUiName}"></script>`;
+const appEntry = 'Object.freeze({ src: "app.js?v=2311" })';
+const stagedEntries = [runtimeName, stagedAppName, bridgeName, pendingUiName]
+  .map((name) => `Object.freeze({ src: "${name}" })`)
+  .join(",\n        ");
 
-if (!index.includes(appScript)) {
+if (!index.includes(appEntry)) {
   throw new Error("Cannot inject v2.31.2 runtime: expected app.js marker was not found");
 }
 
-const stagedIndex = index.replace(
-  appScript,
-  `${runtimeScript}\n  ${stagedAppScript}\n  ${bridgeScript}\n  ${pendingUiScript}`
-);
+const stagedIndex = index.replace(appEntry, stagedEntries);
 writeFileSync(indexPath, stagedIndex, "utf8");
 
 console.log("Vendify v2.31.2 staging release created in dist-staging-v2312/");

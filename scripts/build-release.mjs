@@ -8,6 +8,7 @@ mkdirSync(out, { recursive: true });
 
 const files = [
   "index.html",
+  "html-loader.js",
   "app.js",
   "styles.css",
   "sw.js",
@@ -21,6 +22,7 @@ for (const file of files) {
 }
 cpSync(resolve(root, "icons"), resolve(out, "icons"), { recursive: true });
 cpSync(resolve(root, "styles"), resolve(out, "styles"), { recursive: true });
+cpSync(resolve(root, "html"), resolve(out, "html"), { recursive: true });
 
 console.log("Baseline production release created in dist/");
-console.log("Classic filenames preserved: index.html, app.js, styles.css, sw.js; modular CSS copied.");
+console.log("Classic filenames preserved; modular HTML and CSS copied.");

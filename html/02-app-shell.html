@@ -1,0 +1,366 @@
+  <div class="app hidden">
+    <!-- Header -->
+    <header class="header header-vpro">
+      <div class="header-top-vpro">
+        <div class="header-left">
+          <div class="logo logo-vpro">
+            <span class="logo-icon logo-icon-vpro" aria-label="Vendify">V</span>
+            <div class="brand-copy-vpro">
+              <h1>Vendify</h1>
+              <p class="subtitle">Ventas, stock y caja. Todo bajo control.</p>
+            </div><span class="app-version-v23011" title="Versión de Vendify">v2.31.1</span>
+          </div>
+        </div>
+
+        <div class="user-menu-wrap user-menu-top-vpro">
+          <button id="btn-user-menu" class="user-menu-trigger" type="button" aria-expanded="false" aria-haspopup="menu">
+            <span class="user-avatar user-avatar-icon-v23012" id="user-avatar">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-user"></use></svg>
+            </span>
+            <span class="user-menu-copy">
+              <strong id="user-menu-name">Usuario</strong>
+              <small id="user-menu-role">Rol</small>
+            </span>
+            <svg class="vendify-icon vendify-chevron" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <div id="user-menu" class="user-menu hidden" role="menu">
+            <div class="user-menu-head">
+              <strong id="user-menu-name-popover">Usuario</strong>
+              <span id="sesion-email"></span>
+            </div>
+            <button type="button" class="user-menu-item" id="btn-user-settings">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-settings"></use></svg><span>Configuración</span>
+            </button>
+            <button type="button" class="user-menu-item hidden" id="btn-platform-admin-v231">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-server"></use></svg><span>Administración Vendify</span>
+            </button>
+            <button type="button" class="user-menu-item danger" id="btn-cerrar-sesion">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-logout"></use></svg><span>Cerrar sesión</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions header-actions-vpro">
+        <div class="contexto-negocio" title="Usuario activo">
+          <strong id="context-usuario">Usuario</strong>
+          <span id="context-rol">Rol</span>
+        </div>
+
+        <div class="branch-switcher-v226 context-picker-v23013" title="Sucursal activa">
+          <button id="branch-trigger-v23013"
+                  class="context-picker-trigger-v23013"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false">
+            <span class="context-picker-icon-v23013">
+              <svg class="vendify-context-icon" aria-hidden="true"><use href="#vi-store"></use></svg>
+            </span>
+            <span class="context-picker-copy-v23013">
+              <small>Sucursal</small>
+              <strong id="branch-current-label-v23013">Cargando...</strong>
+            </span>
+            <svg class="vendify-icon context-picker-chevron-v23013" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <select id="branch-selector-v226"
+                  class="context-native-select-v23013"
+                  aria-hidden="true"
+                  tabindex="-1">
+            <option value="">Cargando...</option>
+          </select>
+
+          <div id="branch-menu-v23013"
+               class="context-picker-menu-v23013 hidden"
+               role="listbox"
+               aria-label="Cambiar sucursal">
+            <div class="context-picker-menu-head-v23013">
+              <span>Sucursal activa</span>
+              <small>Elegí dónde estás trabajando</small>
+            </div>
+            <div id="branch-options-v23013" class="context-picker-options-v23013"></div>
+          </div>
+        </div>
+
+        <div class="cash-switcher-v227 context-picker-v23013" title="Caja activa">
+          <button id="cash-trigger-v23013"
+                  class="context-picker-trigger-v23013"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false">
+            <span class="context-picker-icon-v23013">
+              <svg class="vendify-context-icon" aria-hidden="true"><use href="#vi-register"></use></svg>
+            </span>
+            <span class="context-picker-copy-v23013">
+              <small>Caja</small>
+              <strong id="cash-current-label-v23013">Cargando...</strong>
+            </span>
+            <svg class="vendify-icon context-picker-chevron-v23013" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <select id="cash-selector-v227"
+                  class="context-native-select-v23013"
+                  aria-hidden="true"
+                  tabindex="-1">
+            <option value="">Cargando...</option>
+          </select>
+
+          <div id="cash-menu-v23013"
+               class="context-picker-menu-v23013 hidden"
+               role="listbox"
+               aria-label="Cambiar caja">
+            <div class="context-picker-menu-head-v23013">
+              <span>Caja activa</span>
+              <small>Elegí la caja de este turno</small>
+            </div>
+            <div id="cash-options-v23013" class="context-picker-options-v23013"></div>
+          </div>
+        </div>
+
+        <button id="btn-caja-v227" class="btn btn-ghost cash-status-btn-v227" type="button" title="Abrir panel de caja">
+          <span id="cash-status-dot-v227" class="cash-status-dot-v227 closed"></span>
+          <span id="cash-status-label-v227">Caja cerrada</span>
+        </button>
+
+        <button id="connection-status-v23011"
+                class="connection-status-v23011 online"
+                type="button"
+                title="Estado de sincronización"
+                aria-label="Estado de sincronización">
+          <span class="connection-icon-v23011"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-wifi"></use></svg></span>
+          <span id="connection-label-v23011">Online</span>
+        </button>
+
+        <button id="btn-alertas-v231"
+                class="header-icon-action-v231 hidden"
+                type="button"
+                title="Alertas del negocio"
+                aria-label="Alertas del negocio">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-bell"></use></svg>
+          <span id="alertas-badge-v231" class="header-alert-badge-v231 hidden">0</span>
+        </button>
+
+
+        <button id="btn-vender" class="btn btn-primary btn-vender header-primary" title="Nueva venta (V)">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-cart"></use></svg><span>Vender</span>
+        </button>
+
+        <button id="btn-nuevo" class="btn btn-primary header-primary">
+          <svg class="vendify-icon" aria-hidden="true"><use href="#vi-plus-box"></use></svg><span>Producto</span>
+        </button>
+
+        <div class="gestion-menu-wrap-v230">
+          <button id="btn-gestion-v230"
+                  class="btn btn-secondary header-action gestion-trigger-v230"
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded="false"
+                  title="Gestión del negocio">
+            <svg class="vendify-icon gestion-icon-v230" aria-hidden="true"><use href="#vi-grid"></use></svg>
+            <span class="header-action-label">Gestión</span>
+            <svg class="vendify-icon gestion-chevron-v230" aria-hidden="true"><use href="#vi-chevron-down"></use></svg>
+          </button>
+
+          <div id="gestion-menu-v230" class="gestion-menu-v230 hidden" role="menu">
+            <div class="gestion-menu-section-v23012">Control</div>
+            <button id="btn-dashboard-v231" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-dashboard"></use></svg></span>
+              <span><strong>Dashboard</strong><small>Ventas, alertas y rendimiento</small></span>
+            </button>
+            <div class="gestion-menu-divider-v23012"></div>
+            <div class="gestion-menu-section-v23012">Operación</div>
+            <button id="btn-historial" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-history"></use></svg></span>
+              <span>
+                <strong>Historial</strong>
+                <small>Ventas y tickets</small>
+              </span>
+            </button>
+
+            <button id="btn-inventario" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-inventory"></use></svg></span>
+              <span>
+                <strong>Inventario</strong>
+                <small>Stock y movimientos</small>
+              </span>
+            </button>
+
+            <button id="btn-compras" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-purchases"></use></svg></span>
+              <span>
+                <strong>Compras</strong>
+                <small>Proveedores y mercadería</small>
+              </span>
+            </button>
+
+            <div class="gestion-menu-divider-v23012"></div>
+            <div class="gestion-menu-section-v23012">Administración</div>
+            <button id="btn-equipo" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-team"></use></svg></span>
+              <span>
+                <strong>Equipo</strong>
+                <small>Usuarios y permisos</small>
+              </span>
+            </button>
+
+            <button id="btn-diagnostico-v23011" class="gestion-menu-item-v230" type="button" role="menuitem">
+              <span class="gestion-item-icon-v230"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-diagnostic"></use></svg></span>
+              <span>
+                <strong>Diagnóstico</strong>
+                <small>Estado, sincronización e integridad</small>
+              </span>
+            </button>
+
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section id="offline-sync-banner-v2311"
+             class="offline-sync-banner-v2311 hidden"
+             role="status"
+             aria-live="polite">
+      <div class="offline-sync-copy-v2311">
+        <svg class="vendify-icon" aria-hidden="true"><use href="#vi-wifi-off"></use></svg>
+        <span id="offline-sync-text-v2311">Ventas pendientes de sincronizar</span>
+      </div>
+      <button type="button"
+              class="btn btn-secondary btn-sm"
+              id="btn-sync-offline-sales-v2311">
+        Sincronizar
+      </button>
+    </section>
+
+    <section id="commercial-onboarding-v231" class="commercial-onboarding-v231 hidden">
+      <div class="commercial-onboarding-head-v231">
+        <div class="commercial-onboarding-title-v231">
+          <span class="commercial-onboarding-icon-v231"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-rocket"></use></svg></span>
+          <div>
+            <span class="commercial-eyebrow-v231">Primeros pasos</span>
+            <h2>Dejá Vendify listo para trabajar</h2>
+            <p id="commercial-onboarding-subtitle-v231">Completá la configuración inicial de tu negocio.</p>
+          </div>
+        </div>
+        <button type="button" id="btn-hide-commercial-onboarding-v231" class="btn-icon" aria-label="Ocultar">✕</button>
+      </div>
+      <div class="commercial-progress-v231"><div id="commercial-progress-bar-v231" class="commercial-progress-bar-v231"></div></div>
+      <div id="commercial-progress-label-v231" class="commercial-progress-label-v231">0% completo</div>
+      <div id="commercial-onboarding-steps-v231" class="commercial-onboarding-steps-v231"></div>
+    </section>
+
+<!-- Stats -->
+    <section class="stats">
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-box"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Productos</span>
+          <span class="stat-value" id="stat-productos">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-chart"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Unidades</span>
+          <span class="stat-value" id="stat-stock">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-money"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Costo inventario</span>
+          <span class="stat-value" id="stat-costo">$0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-money"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Valor venta</span>
+          <span class="stat-value" id="stat-venta">$0</span>
+        </div>
+      </div>
+      <div class="stat-card warning clickable stock-smart-card" id="stat-bajo-card"
+           title="Calculado según la velocidad de venta de cada producto">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-alert"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Stock bajo</span>
+          <span class="stat-value" id="stat-bajo">0</span>
+          <small class="stat-helper">Según ritmo de venta</small>
+        </div>
+      </div>
+
+      <div class="stat-card danger clickable stock-zero-card" id="stat-sin-card"
+           title="Productos sin unidades disponibles">
+        <div class="stat-icon"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-x"></use></svg></div>
+        <div class="stat-info">
+          <span class="stat-label">Sin stock</span>
+          <span class="stat-value" id="stat-sin">0</span>
+          <small class="stat-helper">0 unidades</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chip de filtro activo -->
+    <div id="filtro-activo" class="filtro-activo hidden">
+      <span id="filtro-activo-texto">Mostrando solo stock bajo</span>
+      <button type="button" id="btn-limpiar-filtro" class="btn-chip">✕ Quitar filtro</button>
+    </div>
+
+    <!-- Controles -->
+    <section class="controls">
+      <div class="search-box">
+        <input
+          type="search"
+          id="buscador"
+          placeholder="Buscar producto o categoría...  ( / )"
+          autocomplete="off"
+        />
+        <kbd class="shortcut-hint">/</kbd>
+      </div>
+      <select id="filtro-categoria" class="select">
+        <option value="">Todas las categorías</option>
+      </select>
+      <select id="filtro-stock-v29" class="select">
+        <option value="">Todo el stock</option>
+        <option value="bajo">Stock bajo</option>
+        <option value="sin">Sin stock</option>
+      </select>
+      <select id="orden" class="select">
+        <option value="nombre-asc">Nombre A-Z</option>
+        <option value="nombre-desc">Nombre Z-A</option>
+        <option value="stock-asc">Stock ↑</option>
+        <option value="stock-desc">Stock ↓</option>
+        <option value="precioVenta-asc">Precio venta ↑</option>
+        <option value="precioVenta-desc">Precio venta ↓</option>
+      </select>
+      <button type="button" class="btn btn-secondary" id="btn-catalogo-v29">📚 Catálogo inicial</button>
+</section>
+
+    <!-- Productos compactos -->
+    <section class="grid-section">
+      <div class="productos-list-shell">
+<div id="productos-grid" class="productos-grid productos-lista-v29"></div>
+      </div>
+
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-illustration">📦</div>
+        <h3>No hay productos todavía</h3>
+        <p>Agregá tu primer producto o cargá los de ejemplo.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="btn-empty-nuevo">+ Agregar producto</button>
+          <button class="btn btn-secondary" id="btn-cargar-ejemplos">Cargar ejemplos de kiosco</button>
+        </div>
+      </div>
+
+      <div id="no-results" class="empty-state hidden">
+        <div class="empty-illustration">🔍</div>
+        <h3>Sin resultados</h3>
+        <p>No encontramos productos con ese filtro.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Atajos: <kbd>N</kbd> nuevo · <kbd>V</kbd> vender · <kbd>/</kbd> buscar · <kbd>T</kbd> tema · <kbd>Esc</kbd> cerrar</span>
+    </footer>
+  </div>
+

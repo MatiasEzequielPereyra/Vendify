@@ -1,0 +1,395 @@
+  <!-- Modal Equipo -->
+  <div id="modal-equipo" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-equipo-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="title-with-icon-v23011"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-team"></use></svg><span>Equipo</span></h2>
+          <p class="hint">Creá usuarios internos. Los empleados no necesitan email.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-equipo" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="business-code-card">
+          <div>
+            <span class="hint">Código del negocio</span>
+            <strong id="equipo-business-code">—</strong>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-copy-business-code">Copiar</button>
+        </div>
+
+        <section class="equipo-invitar-card">
+          <h3 class="config-section-title">Crear empleado</h3>
+          <form id="form-crear-empleado" class="equipo-create-form">
+            <div class="form-group">
+              <label for="equipo-nombre">Nombre</label>
+              <input type="text" id="equipo-nombre" required maxlength="60" placeholder="Ej: Pedro Gómez" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="equipo-username">Usuario</label>
+              <input type="text" id="equipo-username" required maxlength="30" placeholder="Ej: pedro" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="equipo-rol">Rol</label>
+              <select id="equipo-rol" class="select select-full">
+                <option value="cashier">Cajero</option>
+                <option value="manager">Encargado</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="form-group equipo-permission-field-v23014">
+              <label>Permisos operativos</label>
+              <label class="permission-switch-v23014" for="equipo-permiso-stock">
+                <span class="permission-switch-copy-v23014">
+                  <strong>Modificar stock manualmente</strong>
+                  <small>Permite sumar/restar unidades, ajustes con motivo y conteos físicos. No habilita costos, compras ni transferencias.</small>
+                </span>
+                <span class="switch-control-v23014">
+                  <input type="checkbox" id="equipo-permiso-stock" />
+                  <span class="switch-track-v23014" aria-hidden="true"></span>
+                </span>
+              </label>
+              <small class="hint" id="equipo-permiso-stock-hint">Solo el propietario puede cambiar este permiso.</small>
+            </div>
+            <div class="form-group">
+              <label for="equipo-password">Contraseña temporal</label>
+              <div class="password-wrap">
+                <input type="text" id="equipo-password" required minlength="8" placeholder="Mínimo 8 caracteres" autocomplete="off" />
+                <button type="button" class="password-toggle" id="btn-generar-password" title="Generar contraseña"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-crear-empleado">Crear empleado</button>
+            <span class="field-error" id="equipo-error"></span>
+          </form>
+        </section>
+
+        <div class="config-divider"></div>
+
+        <div class="equipo-list-header">
+          <div>
+            <h3 class="config-section-title">Personas</h3>
+            <p class="hint">Cada venta queda asociada al usuario que la realizó.</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-refrescar-equipo"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg><span>Actualizar</span></button>
+        </div>
+
+        <div id="equipo-lista" class="equipo-lista"></div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- Modal editar empleado -->
+  <div id="modal-editar-empleado" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Editar empleado</h2>
+        <button class="btn-icon" id="btn-cerrar-editar-empleado" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-editar-empleado">
+        <input type="hidden" id="editar-membership-id" />
+        <div class="form-group">
+          <label for="editar-empleado-nombre">Nombre</label>
+          <input type="text" id="editar-empleado-nombre" required maxlength="60" />
+        </div>
+        <div class="form-group">
+          <label for="editar-empleado-username">Usuario</label>
+          <input type="text" id="editar-empleado-username" required maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label for="editar-empleado-rol">Rol</label>
+          <select id="editar-empleado-rol" class="select select-full">
+            <option value="cashier">Cajero</option>
+            <option value="manager">Encargado</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Permisos operativos</label>
+          <label class="permission-switch-v23014" for="editar-empleado-permiso-stock">
+            <span class="permission-switch-copy-v23014">
+              <strong>Modificar stock manualmente</strong>
+              <small>Sumar/restar, realizar ajustes auditados y aplicar conteos físicos.</small>
+            </span>
+            <span class="switch-control-v23014">
+              <input type="checkbox" id="editar-empleado-permiso-stock" />
+              <span class="switch-track-v23014" aria-hidden="true"></span>
+            </span>
+          </label>
+          <small class="hint" id="editar-stock-owner-hint">Solo el propietario puede cambiar este permiso.</small>
+        </div>
+        <span class="field-error" id="editar-empleado-error"></span>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-editar-empleado">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-editar-empleado">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal reiniciar contraseña -->
+  <div id="modal-reset-empleado" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Reiniciar contraseña</h2>
+        <button class="btn-icon" id="btn-cerrar-reset-empleado" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-reset-empleado">
+        <input type="hidden" id="reset-membership-id" />
+        <p class="hint" id="reset-empleado-info" style="margin-bottom:1rem;"></p>
+        <div class="form-group">
+          <label for="reset-empleado-password">Nueva contraseña</label>
+          <div class="password-wrap">
+            <input type="text" id="reset-empleado-password" required minlength="8" />
+            <button type="button" class="password-toggle" id="btn-generar-reset-password" title="Generar contraseña"><svg class="vendify-icon" aria-hidden="true"><use href="#vi-refresh"></use></svg></button>
+          </div>
+        </div>
+        <span class="field-error" id="reset-empleado-error"></span>
+        <p class="hint">Esta será la nueva contraseña del empleado.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-reset-empleado">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Reiniciar contraseña</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  
+  <!-- Modal sucursal -->
+  <div id="modal-sucursal-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="sucursal-modal-title-v226">Nueva sucursal</h2>
+          <p class="hint">Cada sucursal tiene stock y cajas independientes.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-sucursal-v226" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-sucursal-v226">
+        <input type="hidden" id="sucursal-id-v226" />
+
+        <div class="form-group">
+          <label for="sucursal-nombre-v226">Nombre</label>
+          <input id="sucursal-nombre-v226" required maxlength="60" placeholder="Ej: Bernal Centro" />
+        </div>
+
+        <div class="form-group">
+          <label for="sucursal-direccion-v226">Dirección</label>
+          <input id="sucursal-direccion-v226" maxlength="120" placeholder="Opcional" />
+        </div>
+
+        <div class="form-group">
+          <label for="sucursal-telefono-v226">Teléfono</label>
+          <input id="sucursal-telefono-v226" maxlength="40" placeholder="Opcional" />
+        </div>
+
+        <label class="switch-row-v226" id="sucursal-activa-row-v226">
+          <span>
+            <strong>Sucursal activa</strong>
+            <small>Las sucursales inactivas no aparecen en el selector.</small>
+          </span>
+          <input type="checkbox" id="sucursal-activa-v226" checked />
+        </label>
+
+        <span class="field-error" id="sucursal-error-v226"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-sucursal-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-sucursal-v226">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal nueva caja -->
+  <div id="modal-caja-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>Nueva caja</h2>
+          <p class="hint" id="caja-sucursal-label-v226"></p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-caja-v226" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-caja-v226">
+        <input type="hidden" id="caja-sucursal-id-v226" />
+        <div class="form-group">
+          <label for="caja-nombre-v226">Nombre de la caja</label>
+          <input id="caja-nombre-v226" required maxlength="50" placeholder="Ej: Caja 2" />
+        </div>
+        <span class="field-error" id="caja-error-v226"></span>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-caja-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear caja</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal transferencia stock -->
+  <div id="modal-transferencia-v226" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>Transferir stock</h2>
+          <p class="hint">El total del negocio no cambia; solo cambia la ubicación del stock.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-transferencia-v226" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-transferencia-v226">
+        <div class="form-group">
+          <label for="transfer-origen-v226">Origen</label>
+          <select id="transfer-origen-v226" class="select select-full" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-destino-v226">Destino</label>
+          <select id="transfer-destino-v226" class="select select-full" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-producto-v226">Producto</label>
+          <select id="transfer-producto-v226" class="select select-full" required></select>
+          <small class="hint" id="transfer-stock-disponible-v226"></small>
+        </div>
+
+        <div class="form-group">
+          <label for="transfer-cantidad-v226">Cantidad</label>
+          <input type="number" id="transfer-cantidad-v226" min="1" step="1" required />
+        </div>
+
+        <span class="field-error" id="transfer-error-v226"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar-transferencia-v226">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Transferir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  
+  <!-- Autorización de descuento -->
+  <div id="modal-discount-auth" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm discount-auth-modal">
+      <div class="modal-header">
+        <div>
+          <h2>Autorizar descuento</h2>
+          <p class="hint">Ingresá el PIN de un Propietario o Administrador.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-discount-auth" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-discount-auth">
+        <div class="discount-auth-summary">
+          <div>
+            <span>Subtotal</span>
+            <strong id="discount-auth-subtotal">$0</strong>
+          </div>
+          <div>
+            <span>Descuento solicitado</span>
+            <strong id="discount-auth-request">—</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="discount-admin-pin">PIN de autorización</label>
+          <input id="discount-admin-pin"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="one-time-code"
+                 placeholder="••••"
+                 required />
+        </div>
+
+        <span class="field-error" id="discount-auth-error"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-discount-auth">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-discount-auth">
+            Autorizar descuento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Configurar PIN personal -->
+  <div id="modal-config-discount-pin" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>PIN de descuentos</h2>
+          <p class="hint">
+            Solo Propietarios y Administradores pueden crear un PIN de autorización.
+          </p>
+        </div>
+        <button class="btn-icon" id="btn-close-config-pin" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="form-config-discount-pin">
+        <div class="security-note">
+          <strong>PIN personal</strong>
+          <span>No se guarda en texto plano y nunca se muestra después de configurarlo.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="config-discount-pin">Nuevo PIN</label>
+          <input id="config-discount-pin"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="new-password"
+                 placeholder="4 a 8 números"
+                 required />
+        </div>
+
+        <div class="form-group">
+          <label for="config-discount-pin-confirm">Repetir PIN</label>
+          <input id="config-discount-pin-confirm"
+                 type="password"
+                 inputmode="numeric"
+                 pattern="[0-9]*"
+                 minlength="4"
+                 maxlength="8"
+                 autocomplete="new-password"
+                 placeholder="Repetí el PIN"
+                 required />
+        </div>
+
+        <span class="field-error" id="config-discount-pin-error"></span>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-config-pin">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" id="btn-save-config-pin">
+            Guardar PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+

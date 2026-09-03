@@ -6,10 +6,22 @@ const root = resolve(import.meta.dirname, "..");
 const appPath = resolve(root, "app.js");
 const cssPath = resolve(root, "styles.css");
 const htmlPath = resolve(root, "index.html");
+const htmlFragmentPaths = [
+  "html/01-auth-shell.html",
+  "html/02-app-shell.html",
+  "html/03-product-stock-modals.html",
+  "html/04-inventory-purchases-modals.html",
+  "html/05-team-access-modals.html",
+  "html/06-dashboard-admin-modals.html",
+  "html/07-cash-sales-modals.html"
+];
 
 const appSource = readFileSync(appPath, "utf8");
 const cssSource = readFileSync(cssPath, "utf8");
 const htmlSource = readFileSync(htmlPath, "utf8");
+const htmlFragmentSource = htmlFragmentPaths
+  .map((path) => readFileSync(resolve(root, path), "utf8"))
+  .join("");
 const sourceFile = ts.createSourceFile(
   "app.js",
   appSource,
@@ -227,7 +239,7 @@ const cssSections = [...cssSource.matchAll(/\/\*\s*=+\s*([^*\n]+?)\s*=+\s*\*\//g
   .map((match) => match[1].trim());
 const cssRuleApprox = (cssSource.match(/\{/g) ?? []).length;
 const cssVariables = [...new Set([...cssSource.matchAll(/--([a-z0-9-]+)\s*:/gi)].map((match) => match[1]))];
-const htmlIds = [...new Set([...htmlSource.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]))];
+const htmlIds = [...new Set([...htmlFragmentSource.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]))];
 const scriptRefs = [...htmlSource.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)].map((match) => match[1]);
 
 const groupRows = [...groups.entries()]
@@ -253,7 +265,8 @@ const extractionCandidates = [...groupRows]
 console.log("\n=== Vendify legacy architecture map ===");
 console.log(`app.js: ${appSource.split(/\r?\n/).length.toLocaleString("en-US")} lines · ${Buffer.byteLength(appSource).toLocaleString("en-US")} bytes`);
 console.log(`styles.css: ${cssSource.split(/\r?\n/).length.toLocaleString("en-US")} lines · ${Buffer.byteLength(cssSource).toLocaleString("en-US")} bytes · ~${cssRuleApprox} blocks`);
-console.log(`index.html: ${htmlSource.split(/\r?\n/).length.toLocaleString("en-US")} lines · ${htmlIds.length} ids · ${scriptRefs.length} external scripts`);
+console.log(`index.html shell: ${htmlSource.split(/\r?\n/).length.toLocaleString("en-US")} lines · ${Buffer.byteLength(htmlSource).toLocaleString("en-US")} bytes`);
+console.log(`HTML fragments: ${htmlFragmentPaths.length} files · ${htmlIds.length} functional ids · ${scriptRefs.length} shell scripts`);
 console.log(`top-level functions: ${functionDetails.length}`);
 console.log(`top-level state/global bindings: ${globals.size}`);
 console.log(`RPCs referenced inside top-level functions: ${rpcNames.length}`);

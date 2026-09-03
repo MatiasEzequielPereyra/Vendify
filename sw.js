@@ -1,8 +1,16 @@
 /* Vendify v2.31.1 — safe app-shell offline cache */
-const CACHE = "vendify-shell-v232-css";
+const CACHE = "vendify-shell-v232-html";
 const SHELL = [
   "./",
   "./index.html",
+  "./html-loader.js",
+  "./html/01-auth-shell.html",
+  "./html/02-app-shell.html",
+  "./html/03-product-stock-modals.html",
+  "./html/04-inventory-purchases-modals.html",
+  "./html/05-team-access-modals.html",
+  "./html/06-dashboard-admin-modals.html",
+  "./html/07-cash-sales-modals.html",
   "./app.js",
   "./styles.css",
   "./styles/01-foundation.css",

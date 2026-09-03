@@ -29,7 +29,7 @@ const files = readdirSync(out);
 const indexPath = resolve(out, "index.html");
 let index = readFileSync(indexPath, "utf8");
 const stagedAppReferences = [
-  ...index.matchAll(/<script src="(app-staging-v2312-[0-9a-f]{12}\.js)"><\/script>/g)
+  ...index.matchAll(/Object\.freeze\(\{ src: "(app-staging-v2312-[0-9a-f]{12}\.js)" \}\)/g)
 ];
 if (stagedAppReferences.length !== 1) {
   throw new Error(`Expected one referenced v2.31.2 staged app, found ${stagedAppReferences.length}`);
@@ -54,13 +54,13 @@ writeFileSync(resolve(out, coreName), coreContent, "utf8");
 writeFileSync(resolve(out, appName), app, "utf8");
 unlinkSync(oldAppPath);
 
-const oldScript = `<script src="${oldAppName}"></script>`;
-if (!index.includes(oldScript)) {
-  throw new Error("Could not find staged app script in refactor index");
+const oldEntry = `Object.freeze({ src: "${oldAppName}" })`;
+if (!index.includes(oldEntry)) {
+  throw new Error("Could not find staged app entry in refactor index");
 }
 index = index.replace(
-  oldScript,
-  `<script src="${coreName}"></script>\n  <script src="${appName}"></script>`
+  oldEntry,
+  `Object.freeze({ src: "${coreName}" }),\n        Object.freeze({ src: "${appName}" })`
 );
 writeFileSync(indexPath, index, "utf8");
 

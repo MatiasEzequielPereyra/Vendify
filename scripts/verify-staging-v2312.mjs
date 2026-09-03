@@ -12,6 +12,9 @@ const pass = (message) => console.log(`PASS: ${message}`);
 
 const required = [
   "index.html",
+  "html-loader.js",
+  "html/01-auth-shell.html",
+  "html/07-cash-sales-modals.html",
   "app.js",
   "styles.css",
   "sw.js",
@@ -56,10 +59,10 @@ const stagedAppName = oneFingerprintMatch(
 pass("staging browser bundles use content-fingerprinted filenames");
 
 const html = readFileSync(resolve(target, "index.html"), "utf8");
-const runtimeMarker = `src="${runtimeName}"`;
-const appMarker = `src="${stagedAppName}"`;
-const bridgeMarker = `src="${bridgeName}"`;
-const pendingUiMarker = `src="${pendingUiName}"`;
+const runtimeMarker = `src: "${runtimeName}"`;
+const appMarker = `src: "${stagedAppName}"`;
+const bridgeMarker = `src: "${bridgeName}"`;
+const pendingUiMarker = `src: "${pendingUiName}"`;
 const runtimePosition = html.indexOf(runtimeMarker);
 const appPosition = html.indexOf(appMarker);
 const bridgePosition = html.indexOf(bridgeMarker);
@@ -72,7 +75,7 @@ if (pendingUiPosition < 0) fail("v2.31.2 pending sales UI script is not referenc
 if (!(runtimePosition < appPosition && appPosition < bridgePosition && bridgePosition < pendingUiPosition)) {
   fail("staging scripts must load runtime -> staging app -> POS bridge -> pending UI");
 }
-if (html.includes('src="app.js?v=2311"')) {
+if (html.includes('src: "app.js?v=2311"')) {
   fail("staging index still references cache-prone legacy app.js path");
 }
 pass("staging scripts load runtime -> fingerprinted app -> POS bridge -> pending UI");

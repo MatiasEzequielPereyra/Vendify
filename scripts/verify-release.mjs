@@ -6,6 +6,9 @@ const targetArg = process.argv[2] ?? "dist";
 const target = resolve(root, targetArg);
 const required = [
   "index.html",
+  "html-loader.js",
+  "html/01-auth-shell.html",
+  "html/07-cash-sales-modals.html",
   "app.js",
   "styles.css",
   "styles/01-foundation.css",

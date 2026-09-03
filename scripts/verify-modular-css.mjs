@@ -54,7 +54,7 @@ if (combinedSha !== validatedMonolithSha256) {
 if (!combined.includes("producto-row-v223")) fail("active product row styles are missing");
 
 const serviceWorker = readFileSync(resolve(target, "sw.js"), "utf8");
-if (!serviceWorker.includes('vendify-shell-v232-css')) fail("service worker CSS cache was not bumped");
+if (!serviceWorker.includes('vendify-shell-v232-html')) fail("service worker shell cache was not bumped");
 for (const file of modules) {
   if (!serviceWorker.includes(`./${file}`)) fail(`service worker does not cache ${file}`);
 }

@@ -19,8 +19,8 @@ if (core.length !== 1) fail(`expected one modular core bundle, found ${core.leng
 if (app.length !== 1) fail(`expected one refactor app bundle, found ${app.length}`);
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");
-const coreMarker = `src="${core[0]}"`;
-const appMarker = `src="${app[0]}"`;
+const coreMarker = `src: "${core[0]}"`;
+const appMarker = `src: "${app[0]}"`;
 const corePosition = index.indexOf(coreMarker);
 const appPosition = index.indexOf(appMarker);
 if (corePosition < 0 || appPosition < 0 || corePosition >= appPosition) {

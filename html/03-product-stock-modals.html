@@ -1,0 +1,581 @@
+  <!-- Modal Producto -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-product-v29">
+      <div class="modal-header">
+        <h2 id="modal-titulo">Nuevo producto</h2>
+          <p class="hint" id="producto-branch-hint-v226">Stock de sucursal</p>
+        <button class="btn-icon" id="btn-cerrar-modal" aria-label="Cerrar">✕</button>
+      </div>
+      <form id="form-producto" novalidate>
+        <input type="hidden" id="producto-id" />
+        <!-- IDs legacy ocultos para compatibilidad de la versión anterior -->
+        <input type="file" id="foto-input" accept="image/*" class="hidden" />
+        <input type="file" id="foto-camara" accept="image/*" capture="environment" class="hidden" />
+        <div id="foto-preview" class="hidden"><span id="foto-placeholder"></span><img id="foto-img" class="hidden" alt="" /></div>
+        <button type="button" id="btn-quitar-foto" class="hidden"></button>
+
+        <div class="form-group barcode-field-v225">
+          <label for="codigo-barras">Código de barras</label>
+          <input type="text" id="codigo-barras" inputmode="numeric" maxlength="32"
+                 placeholder="Escaneá o ingresá el código" autocomplete="off" />
+
+          <div class="barcode-actions-v225">
+            <button type="button" class="btn btn-primary" id="btn-scan-producto">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-scan"></use></svg>
+              <span>Escanear</span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-buscar-barcode">
+              <svg class="vendify-icon" aria-hidden="true"><use href="#vi-search"></use></svg>
+              <span>Buscar datos</span>
+            </button>
+          </div>
+
+          <p class="hint barcode-status-v225" id="barcode-status-v29"></p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="marca">Marca</label>
+            <input type="text" id="marca" maxlength="60" placeholder="Ej: Coca-Cola" />
+          </div>
+          <div class="form-group">
+            <label for="presentacion">Presentación</label>
+            <input type="text" id="presentacion" maxlength="50" placeholder="Ej: 500 ml" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre del producto *</label>
+          <input type="text" id="nombre" required maxlength="100" placeholder="Ej: Coca-Cola Original 500 ml" autocomplete="off" />
+          <span class="field-error" id="error-nombre"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" class="select select-full"><option value="">Sin categoría</option></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group"><label for="precio-compra">Costo ($)</label><input type="number" id="precio-compra" min="0" step="0.01" placeholder="0" /></div>
+          <div class="form-group"><label for="precio-venta">Precio venta ($)</label><input type="number" id="precio-venta" min="0" step="0.01" placeholder="0" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="stock">Stock actual</label><input type="number" id="stock" min="0" step="1" value="0" /></div>
+          <div class="form-group stock-smart-form">
+            <label>Stock bajo inteligente</label>
+            <div class="stock-smart-form-value" id="stock-smart-form-value">
+              Se calculará según las ventas
+            </div>
+            <small class="hint" id="stock-smart-form-hint">
+              Vendify ajusta este valor automáticamente.
+            </small>
+            <input type="hidden" id="stock-minimo" value="0" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="btn-cancelar">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Configuración -->
+  <div id="modal-config" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="config-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content config-modal-v224">
+      <div class="modal-header config-modal-header">
+        <div>
+          <h2 id="config-title">Configuración</h2>
+          <p class="hint">Administrá Vendify y los datos de tu negocio.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-config" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="config-layout-v224">
+        <nav class="config-tabs-v224" aria-label="Secciones de configuración">
+          <button type="button" class="config-tab-v224 active" data-config-tab="general">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-settings"></use></svg><span>General</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="sucursales">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-store"></use></svg><span>Sucursales</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="catalogo">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-inventory"></use></svg><span>Catálogo</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="datos">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-database"></use></svg><span>Datos</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="operacion">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-shield"></use></svg><span>Operación</span>
+          </button>
+          <button type="button" class="config-tab-v224" data-config-tab="apariencia">
+            <svg class="vendify-icon" aria-hidden="true"><use href="#vi-palette"></use></svg><span>Apariencia</span>
+          </button>
+        </nav>
+
+        <div class="config-content-v224">
+          <!-- General -->
+          <section class="config-panel-v224 active" data-config-panel="general">
+            <div class="config-welcome-v225">
+              <div class="config-welcome-icon-v225">V</div>
+              <div>
+                <span class="config-eyebrow-v225">Panel de administración</span>
+                <h3 id="config-welcome-business">Tu negocio</h3>
+                <p>Gestioná catálogo, datos, equipo y apariencia desde un solo lugar.</p>
+              </div>
+            </div>
+
+            <div class="config-section-head-v224 config-section-head-spaced-v225">
+              <h3>Resumen</h3>
+              <p>Información del contexto activo.</p>
+            </div>
+
+            <div class="config-info-grid-v224">
+              <div class="config-info-card-v224">
+                <span>Negocio</span>
+                <strong id="config-negocio">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Sucursal</span>
+                <strong id="config-sucursal">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Usuario</span>
+                <strong id="config-usuario">—</strong>
+              </div>
+              <div class="config-info-card-v224">
+                <span>Rol</span>
+                <strong id="config-rol">—</strong>
+              </div>
+            </div>
+
+            <div class="config-quick-grid-v225">
+              <button type="button" class="config-quick-card-v225" data-config-go="sucursales">
+                <span class="config-quick-icon-v225">⌂</span>
+                <span><strong>Sucursales</strong><small>Locales, cajas y transferencias</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="catalogo">
+                <span class="config-quick-icon-v225">▦</span>
+                <span><strong>Catálogo</strong><small>Categorías y productos iniciales</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="datos">
+                <span class="config-quick-icon-v225">⇩</span>
+                <span><strong>Datos</strong><small>Exportación y administración</small></span>
+              </button>
+              <button type="button" class="config-quick-card-v225" data-config-go="apariencia">
+                <span class="config-quick-icon-v225">◐</span>
+                <span><strong>Apariencia</strong><small>Tema y preferencias visuales</small></span>
+              </button>
+            </div>
+
+            <div class="settings-card-v224 plan-card-v231">
+              <div class="plan-card-main-v231">
+                <span class="plan-icon-v231"><svg class="vendify-icon"><use href="#vi-crown"></use></svg></span>
+                <div><span class="config-eyebrow-v225">Plan actual</span><h4 id="config-plan-name-v231">Cargando...</h4><p class="hint" id="config-plan-detail-v231">Consultando estado.</p></div>
+              </div>
+              <div id="config-plan-usage-v231" class="plan-usage-v231"></div>
+            </div>
+
+            <div class="config-callout-v224">
+              <div>
+                <strong>Equipo y accesos</strong>
+                <p>Usuarios, roles y contraseñas se administran desde Equipo.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-config-equipo">Abrir Equipo</button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224 discount-pin-config"
+                 id="config-discount-pin-card">
+              <div>
+                <div class="settings-title-row">
+                  <h4>PIN para autorizar descuentos</h4>
+                  <span class="security-badge">Seguridad</span>
+                </div>
+                <p class="hint">
+                  Tu PIN personal puede autorizar descuentos realizados por cualquier usuario del negocio.
+                </p>
+                <div class="pin-config-status" id="pin-config-status">
+                  Consultando estado...
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-secondary" id="btn-configurar-pin-descuento">
+                Configurar PIN
+              </button>
+            </div>
+          </section>
+
+
+          <!-- Sucursales -->
+          <section class="config-panel-v224 branch-config-panel-v227" data-config-panel="sucursales" hidden>
+            <div class="branch-panel-head-v227">
+              <div><h3>Sucursales</h3><p>Administrá locales, cajas y stock independiente por sucursal.</p></div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-nueva-sucursal-v226">＋ Nueva sucursal</button>
+            </div>
+            <div class="branch-panel-scroll-v227">
+              <div class="branch-info-v226"><span>El stock se administra por sucursal.</span><strong>La sucursal activa determina qué stock ves y qué stock descuenta una venta.</strong></div>
+              <div id="sucursales-list-v226" class="sucursales-list-v226"></div>
+            </div>
+            <div class="branch-panel-footer-v227">
+              <div><strong>Transferencias</strong><small>Mové mercadería entre locales sin alterar el stock total.</small></div>
+              <button type="button" class="btn btn-secondary" id="btn-transferir-stock-v226">⇄ Transferir stock</button>
+            </div>
+          </section>
+
+          <!-- Catálogo -->
+          <section class="config-panel-v224" data-config-panel="catalogo">
+            <div class="config-section-head-v224">
+              <h3>Catálogo</h3>
+              <p>Organizá categorías y prepará productos iniciales.</p>
+            </div>
+
+            <div class="settings-card-v224">
+              <h4>Categorías</h4>
+              <p class="hint">Creá categorías para mantener ordenado el inventario.</p>
+              <div class="config-add-row">
+                <input type="text" id="nueva-categoria" placeholder="Nueva categoría..." maxlength="40" autocomplete="off" />
+                <button type="button" class="btn btn-primary btn-sm" id="btn-add-categoria">Agregar</button>
+              </div>
+              <ul id="lista-categorias-config" class="lista-categorias-config"></ul>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Catálogo inicial</h4>
+                <p class="hint">Elegí productos sugeridos de kiosco, almacén o minimercado.</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-config-catalogo">Abrir catálogo</button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Datos de prueba</h4>
+                <p class="hint">Carga productos de ejemplo para probar funciones.</p>
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-cargar-ejemplos-config">
+                Cargar ejemplos
+              </button>
+            </div>
+          </section>
+
+          <!-- Datos -->
+          <section class="config-panel-v224" data-config-panel="datos">
+            <div class="config-section-head-v224">
+              <h3>Datos</h3>
+              <p>Exportación y acciones administrativas del catálogo.</p>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Exportar inventario</h4>
+                <p class="hint">Descargá productos, precios y stock en formato CSV.</p>
+              </div>
+              <button id="btn-export" type="button" class="btn btn-secondary">
+                ⇩ Exportar CSV
+              </button>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div><h4>Importar productos desde CSV</h4><p class="hint">Migrá un catálogo completo sin cargarlo uno por uno.</p></div>
+              <div class="settings-inline-actions-v231">
+                <button type="button" class="btn btn-secondary" id="btn-template-csv-v231"><svg class="vendify-icon"><use href="#vi-download"></use></svg><span>Plantilla</span></button>
+                <button type="button" class="btn btn-primary" id="btn-import-csv-v231"><svg class="vendify-icon"><use href="#vi-upload"></use></svg><span>Importar CSV</span></button>
+                <input type="file" id="input-import-csv-v231" accept=".csv,text/csv" class="hidden" />
+              </div>
+            </div>
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div><h4>Respaldo operativo JSON</h4><p class="hint">Catálogo, stock, proveedores, ventas, compras y configuración.</p></div>
+              <button type="button" class="btn btn-secondary" id="btn-backup-json-v231"><svg class="vendify-icon"><use href="#vi-backup"></use></svg><span>Descargar respaldo</span></button>
+            </div>
+
+            <div class="settings-danger-v224">
+              <div>
+                <h4>Zona de peligro</h4>
+                <p>Elimina todos los productos actuales del negocio. Las ventas históricas se conservan.</p>
+              </div>
+              <button type="button" class="btn btn-danger" id="btn-eliminar-todos-productos">
+                Eliminar todos los productos
+              </button>
+            </div>
+          </section>
+
+          <!-- Operación -->
+          <section class="config-panel-v224" data-config-panel="operacion">
+            <div class="config-section-head-v224"><h3>Operación y seguridad</h3><p>Alertas, impresión y criterios de control.</p></div>
+            <form id="form-operacion-v231">
+              <div class="settings-card-v224">
+                <h4>Alertas del propietario</h4>
+                <div class="form-row">
+                  <div class="form-group"><label for="config-stock-days-v231">Cobertura crítica (días)</label><input type="number" id="config-stock-days-v231" min="1" max="30" value="3" /></div>
+                  <div class="form-group"><label for="config-adjust-threshold-v231">Ajuste grande (unidades)</label><input type="number" id="config-adjust-threshold-v231" min="1" max="10000" value="10" /></div>
+                </div>
+                <div class="form-group"><label for="config-cash-diff-v231">Diferencia de caja a alertar ($)</label><input type="number" id="config-cash-diff-v231" min="0" step="100" value="10000" /></div>
+                <label class="permission-switch-v23014" for="config-daily-summary-v231">
+                  <span class="permission-switch-copy-v23014"><strong>Preparar resumen diario</strong><small>Deja un resumen listo para copiar.</small></span>
+                  <span class="switch-control-v23014"><input type="checkbox" id="config-daily-summary-v231" checked /><span class="switch-track-v23014"></span></span>
+                </label>
+              </div>
+              <div class="settings-card-v224">
+                <h4>Tickets e impresión</h4>
+                <div class="form-row">
+                  <div class="form-group"><label for="config-ticket-width-v231">Ancho de ticket</label><select id="config-ticket-width-v231"><option value="80">80 mm</option><option value="58">58 mm</option></select></div>
+                  <div class="form-group">
+                    <label>Impresión</label>
+                    <label class="permission-switch-v23014" for="config-auto-print-v231">
+                      <span class="permission-switch-copy-v23014"><strong>Abrir impresión al finalizar</strong><small>Depende de la política de popups del navegador.</small></span>
+                      <span class="switch-control-v23014"><input type="checkbox" id="config-auto-print-v231" /><span class="switch-track-v23014"></span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-actions config-inline-footer-v231"><button type="submit" class="btn btn-primary" id="btn-save-operacion-v231">Guardar configuración</button></div>
+            </form>
+          </section>
+
+          <!-- Apariencia -->
+          <section class="config-panel-v224" data-config-panel="apariencia">
+            <div class="config-section-head-v224">
+              <h3>Apariencia</h3>
+              <p>Personalizá cómo se ve Vendify en este dispositivo.</p>
+            </div>
+
+            <div class="settings-card-v224 settings-action-row-v224">
+              <div>
+                <h4>Tema de la aplicación</h4>
+                <p class="hint">Alterná entre modo claro y oscuro.</p>
+              </div>
+              <button id="btn-theme" type="button" class="btn btn-secondary">
+                <span id="theme-icon">☀️</span>
+                Cambiar tema
+              </button>
+            </div>
+
+            <div class="settings-card-v224">
+              <h4>Vista de productos</h4>
+              <p class="hint">La preferencia Lista/Cuadrícula se guarda automáticamente en cada dispositivo.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="modal-actions config-footer-v224">
+        <button type="button" class="btn btn-primary" id="btn-cerrar-config-ok">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Editor de foto / recorte -->
+  <div id="modal-crop-foto" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-crop-content">
+      <div class="modal-header">
+        <div>
+          <h2>Recortar foto</h2>
+          <p class="hint">Mové la imagen y ajustá el zoom para dejar solo el producto.</p>
+        </div>
+        <button class="btn-icon" id="btn-cerrar-crop" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="crop-stage" id="crop-stage">
+          <canvas id="crop-canvas" width="800" height="800"></canvas>
+          <div class="crop-guide" aria-hidden="true"></div>
+        </div>
+
+        <div class="crop-controls">
+          <div class="crop-control-row">
+            <label for="crop-zoom">Zoom</label>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-crop-reset">Restablecer</button>
+          </div>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" />
+        </div>
+
+        <p class="hint crop-help">Arrastrá con un dedo. La imagen final se guardará cuadrada y optimizada.</p>
+      </div>
+
+      <div class="modal-actions crop-actions">
+        <button type="button" class="btn btn-secondary" id="btn-cancelar-crop">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-aplicar-crop">Usar esta foto</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Scanner Pro -->
+  <div id="modal-scanner-v29" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-scanner-v29 scanner-pro-modal">
+      <div class="modal-header scanner-pro-header">
+        <div>
+          <div class="scanner-pro-title-row">
+            <h2>Scanner Pro</h2>
+            <span id="scanner-engine-vpro" class="scanner-engine-vpro">Auto</span>
+          </div>
+          <p class="hint" id="scanner-mode-label-v29">Apuntá la cámara al código de barras.</p>
+        </div>
+        <button class="btn-icon" id="btn-close-scanner-v29" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body scanner-pro-body">
+        <div class="scanner-video-wrap-v29 scanner-pro-video">
+          <video id="scanner-video-v29" playsinline muted autoplay></video>
+
+          <div class="scanner-focus-frame-vpro" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="scanner-line-v29"></div>
+
+          <div class="scanner-camera-badges-vpro">
+            <span id="scanner-focus-badge-vpro" class="scanner-camera-badge-vpro">AF</span>
+            <span id="scanner-resolution-badge-vpro" class="scanner-camera-badge-vpro">HD</span>
+          </div>
+        </div>
+
+        <div class="scanner-status-v29 scanner-status-pro" id="scanner-status-v29">
+          Preparando cámara...
+        </div>
+
+        <div id="scanner-hint-vpro" class="scanner-hint-vpro hidden"></div>
+
+        <div class="scanner-tools-vpro">
+          <button type="button" class="scanner-tool-vpro hidden" id="btn-scanner-torch-vpro" title="Linterna">
+            <span>🔦</span><small>Linterna</small>
+          </button>
+
+          <div class="scanner-zoom-vpro hidden" id="scanner-zoom-wrap-vpro">
+            <button type="button" id="btn-scanner-zoom-out-vpro" aria-label="Alejar">−</button>
+            <span id="scanner-zoom-value-vpro">1.0×</span>
+            <button type="button" id="btn-scanner-zoom-in-vpro" aria-label="Acercar">＋</button>
+          </div>
+
+          <button type="button" class="scanner-tool-vpro scanner-capture-vpro" id="btn-scanner-capture-vpro" title="Capturar un frame nítido y analizarlo">
+            <span>◉</span><small>Capturar</small>
+          </button>
+        </div>
+
+        <div class="scanner-adaptive-vpro">
+          <span class="scanner-adaptive-dot-vpro"></span>
+          <span id="scanner-adaptive-text-vpro">Optimizando para este dispositivo</span>
+        </div>
+
+        <div id="scanner-not-found-actions-v214" class="scanner-not-found-actions-v214 hidden">
+          <p id="scanner-not-found-text-v214" class="hint"></p>
+          <div class="scanner-not-found-buttons-v214">
+            <button type="button" class="btn btn-primary" id="btn-register-scanned-v214">
+              Registrar producto
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-register-scanned-v214">
+              Seguir escaneando
+            </button>
+          </div>
+        </div>
+
+        <div class="scanner-manual-v29">
+          <input type="text" id="scanner-manual-code-v29" inputmode="numeric" placeholder="O ingresá el código manualmente" />
+          <button type="button" class="btn btn-secondary" id="btn-use-manual-code-v29">Usar código</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catálogo inicial -->
+  <div id="modal-catalogo-v29" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-catalogo-v29">
+      <div class="modal-header">
+        <div><h2>📚 Catálogo inicial</h2><p class="hint">Elegí una base y dejá marcados solo los productos que vendés.</p></div>
+        <button class="btn-icon" id="btn-close-catalogo-v29" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="catalog-tabs-v29">
+          <button type="button" class="catalog-tab-v29 active" data-catalog="kiosco">Kiosco</button>
+          <button type="button" class="catalog-tab-v29" data-catalog="almacen">Almacén</button>
+          <button type="button" class="catalog-tab-v29" data-catalog="minimercado">Minimercado</button>
+        </div>
+        <div class="catalog-tools-v29">
+          <input type="search" id="catalog-search-v29" placeholder="Buscar marca, producto o presentación..." />
+          <button type="button" class="btn btn-ghost btn-sm" id="catalog-select-all-v29">Seleccionar visibles</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="catalog-clear-v29">Quitar visibles</button>
+        </div>
+        <div class="catalog-summary-v29"><strong id="catalog-selected-count-v29">0</strong> seleccionados</div>
+        <div id="catalog-list-v29" class="catalog-list-v29"></div>
+      </div>
+      <div class="modal-actions catalog-actions-v29">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-catalogo-v29">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-import-catalogo-v29">Importar seleccionados</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Modal Confirmación -->
+  <div id="modal-confirm" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm modal-confirm-content">
+      <div class="modal-header">
+        <h2 id="confirm-titulo">Confirmar</h2>
+        <button class="btn-icon" id="btn-cerrar-confirm" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-mensaje"></p>
+      </div>
+      <div class="modal-actions modal-confirm-actions">
+        <button type="button" class="btn btn-secondary" id="btn-confirm-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-ok">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajuste de stock -->
+  <div id="modal-stock" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h2>Ajustar stock</h2>
+        <button class="btn-icon" id="btn-cerrar-stock" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="stock-producto-nombre" id="stock-nombre"></p>
+        <div class="stock-adjust">
+          <button type="button" class="btn-stock-big" data-delta="-10">−10</button>
+          <button type="button" class="btn-stock-big" data-delta="-5">−5</button>
+          <button type="button" class="btn-stock-big" data-delta="-1">−1</button>
+          <span class="stock-actual" id="stock-actual">0</span>
+          <button type="button" class="btn-stock-big" data-delta="1">+1</button>
+          <button type="button" class="btn-stock-big" data-delta="5">+5</button>
+          <button type="button" class="btn-stock-big" data-delta="10">+10</button>
+        </div>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label for="stock-manual">O ingresá un valor exacto</label>
+          <input type="number" id="stock-manual" min="0" step="1" />
+        </div>
+
+        <div class="inventory-adjust-meta">
+          <div class="form-group">
+            <label for="stock-motivo">Motivo *</label>
+            <select id="stock-motivo" class="select select-full">
+              <option value="correccion">Corrección de stock</option>
+              <option value="reposicion">Reposición / ingreso</option>
+              <option value="rotura">Rotura</option>
+              <option value="vencimiento">Vencimiento</option>
+              <option value="perdida">Pérdida / merma</option>
+              <option value="inventario">Conteo físico</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-nota">Observación</label>
+            <input id="stock-nota" maxlength="180"
+                   placeholder="Ej: 2 botellas rotas en depósito" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="btn-stock-cancel">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-stock-ok">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+
+

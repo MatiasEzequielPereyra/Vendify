@@ -12,6 +12,14 @@ const pass = (message) => console.log(`PASS: ${message}`);
 
 const required = [
   "index.html",
+  "html-loader.js",
+  "html/01-auth-shell.html",
+  "html/02-app-shell.html",
+  "html/03-product-stock-modals.html",
+  "html/04-inventory-purchases-modals.html",
+  "html/05-team-access-modals.html",
+  "html/06-dashboard-admin-modals.html",
+  "html/07-cash-sales-modals.html",
   "app.js",
   "styles.css",
   "sw.js",
@@ -37,7 +45,8 @@ try {
   fail("app.js syntax");
 }
 
-const html = readFileSync(resolve(root, "index.html"), "utf8");
+const htmlFiles = required.filter((file) => file.endsWith(".html"));
+const html = htmlFiles.map((file) => readFileSync(resolve(root, file), "utf8")).join("\n");
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]);
 const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 if (duplicates.length) fail(`duplicate HTML ids: ${[...new Set(duplicates)].join(", ")}`);
@@ -52,7 +61,8 @@ if (duplicateFns.length) fail(`duplicate JS function declarations: ${[...new Set
 else pass("JS function declarations unique");
 
 const localRefs = [];
-for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
+const indexHtml = readFileSync(resolve(root, "index.html"), "utf8");
+for (const match of indexHtml.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
   const ref = match[1];
   if (/^(?:https?:|data:|blob:|#)/.test(ref)) continue;
   const cleaned = ref.split(/[?#]/, 1)[0].replace(/^\.\//, "");
