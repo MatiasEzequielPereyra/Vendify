@@ -1,8 +1,8 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 70,
+  "rpcCount": 68,
   "definitionsFound": 53,
-  "missingCount": 17,
+  "missingCount": 15,
   "missing": [
     "actualizar_rol_miembro_v2",
     "actualizar_sucursal_v1",
@@ -15,12 +15,10 @@
     "diagnostico_integridad_v1",
     "estado_pin_descuento_v1",
     "listar_equipo_v3",
-    "listar_productos_sucursal_v1",
     "listar_sucursales_admin_v1",
     "obtener_negocio_admin_actual",
     "obtener_perfil_empleado_actual",
-    "registrar_venta_v4",
-    "transferir_stock_v1"
+    "registrar_venta_v4"
   ],
   "rows": [
     {
@@ -343,11 +341,6 @@
       ]
     },
     {
-      "rpc": "listar_productos_sucursal_v1",
-      "sourceFound": false,
-      "files": []
-    },
-    {
       "rpc": "listar_proveedores_v1",
       "sourceFound": true,
       "files": [
@@ -474,11 +467,6 @@
     },
     {
       "rpc": "registrar_venta_v4",
-      "sourceFound": false,
-      "files": []
-    },
-    {
-      "rpc": "transferir_stock_v1",
       "sourceFound": false,
       "files": []
     },

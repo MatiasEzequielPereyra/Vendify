@@ -3809,6 +3809,24 @@ const inventoryControllerV232 =
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
   });
+
+const branchTransferControllerV232 =
+  window.VendifyInventoryV232.createBranchTransferController({
+    client: supabaseClient,
+    canManage: () =>
+      ["owner", "admin", "manager"].includes(
+        appContext.membership?.role
+      ),
+    getActiveBranchId: () => appContext.branch?.id || null,
+    listBranches: listarSucursalesV2,
+    mapProduct: mapearProductoDB,
+    productLabel: productoEtiquetaV29,
+    showToast: mostrarToast,
+    emitStockChange: emitirCambioStockRealtime,
+    reloadProducts: cargarProductos,
+    renderProducts: renderGrid,
+    refreshBranchSettings: renderSucursalesConfigV226,
+  });
 // ============================================================
 // Vendify v2.30 — Compras y proveedores
 // ============================================================
@@ -4351,7 +4369,6 @@ async function inicializarCajaV227(){await cashControllerV232.initialize();}
 function setupCajaV227(){cashControllerV232.setup();}
 
 let sucursalesV226 = [];
-let productosTransferV226 = [];
 
 async function inicializarSucursalActivaV226() {
   let lista;
@@ -4688,120 +4705,6 @@ async function refrescarSucursalesV226() {
   }
 }
 
-async function abrirTransferenciaV226() {
-  if (!["owner", "admin", "manager"].includes(appContext.membership?.role)) {
-    mostrarToast("No tenés permiso para transferir stock", "error");
-    return;
-  }
-
-  const activas = (await listarSucursalesV2()) || [];
-
-  if (activas.length < 2) {
-    mostrarToast("Necesitás al menos dos sucursales activas", "info");
-    return;
-  }
-
-  const origen = $("#transfer-origen-v226");
-  const destino = $("#transfer-destino-v226");
-
-  const options = activas
-    .map((s) => `<option value="${s.id}">${escapeHtml(s.nombre)}</option>`)
-    .join("");
-
-  origen.innerHTML = options;
-  destino.innerHTML = options;
-
-  origen.value = appContext.branch?.id || activas[0].id;
-  destino.value =
-    activas.find((s) => s.id !== origen.value)?.id || activas[0].id;
-
-  $("#transfer-cantidad-v226").value = 1;
-  $("#transfer-error-v226").textContent = "";
-
-  await cargarProductosTransferV226();
-  $("#modal-transferencia-v226").classList.remove("hidden");
-}
-
-function cerrarTransferenciaV226() {
-  $("#modal-transferencia-v226")?.classList.add("hidden");
-}
-
-async function cargarProductosTransferV226() {
-  const origenId = $("#transfer-origen-v226")?.value;
-  const productoSel = $("#transfer-producto-v226");
-  if (!origenId || !productoSel) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "listar_productos_sucursal_v1",
-    { p_sucursal_id: origenId }
-  );
-
-  if (error) {
-    mostrarToast(error.message, "error");
-    return;
-  }
-
-  productosTransferV226 = (data || []).map(mapearProductoDB);
-
-  productoSel.innerHTML = productosTransferV226
-    .map(
-      (p) =>
-        `<option value="${p.id}">${escapeHtml(productoEtiquetaV29(p))} · stock ${p.stock}</option>`
-    )
-    .join("");
-
-  actualizarDisponibleTransferV226();
-}
-
-function actualizarDisponibleTransferV226() {
-  const id = $("#transfer-producto-v226")?.value;
-  const p = productosTransferV226.find((x) => x.id === id);
-  const el = $("#transfer-stock-disponible-v226");
-  if (el) {
-    el.textContent = p ? `Disponible en origen: ${p.stock}` : "";
-  }
-}
-
-async function transferirStockV226(e) {
-  e.preventDefault();
-
-  const origen = $("#transfer-origen-v226").value;
-  const destino = $("#transfer-destino-v226").value;
-  const producto = $("#transfer-producto-v226").value;
-  const cantidad = Number($("#transfer-cantidad-v226").value);
-  const errorEl = $("#transfer-error-v226");
-
-  errorEl.textContent = "";
-
-  if (origen === destino) {
-    errorEl.textContent = "Origen y destino deben ser distintos.";
-    return;
-  }
-
-  const { error } = await supabaseClient.rpc("transferir_stock_v1", {
-    p_producto_id: producto,
-    p_origen_id: origen,
-    p_destino_id: destino,
-    p_cantidad: cantidad,
-  });
-
-  if (error) {
-    errorEl.textContent = error.message;
-    return;
-  }
-
-  cerrarTransferenciaV226();
-  emitirCambioStockRealtime("transferencia");
-
-  if ([origen, destino].includes(appContext.branch?.id)) {
-    await cargarProductos();
-    renderGrid();
-  }
-
-  await renderSucursalesConfigV226();
-  mostrarToast("Stock transferido", "success");
-}
-
 function setupSucursalesV226() {
   $("#branch-selector-v226")?.addEventListener(
     "change",
@@ -4829,32 +4732,7 @@ function setupSucursalesV226() {
     cerrarModalCajaV226
   );
 
-  $("#btn-transferir-stock-v226")?.addEventListener(
-    "click",
-    abrirTransferenciaV226
-  );
-  $("#form-transferencia-v226")?.addEventListener("submit", transferirStockV226);
-  $("#btn-cerrar-transferencia-v226")?.addEventListener(
-    "click",
-    cerrarTransferenciaV226
-  );
-  $("#btn-cancelar-transferencia-v226")?.addEventListener(
-    "click",
-    cerrarTransferenciaV226
-  );
-  $("#modal-transferencia-v226 .modal-backdrop")?.addEventListener(
-    "click",
-    cerrarTransferenciaV226
-  );
-
-  $("#transfer-origen-v226")?.addEventListener(
-    "change",
-    cargarProductosTransferV226
-  );
-  $("#transfer-producto-v226")?.addEventListener(
-    "change",
-    actualizarDisponibleTransferV226
-  );
+  branchTransferControllerV232.setup();
 
   document
     .querySelector('[data-config-tab="sucursales"]')

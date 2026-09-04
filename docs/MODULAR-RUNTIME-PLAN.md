@@ -121,6 +121,10 @@ Move suppliers and purchases as a bounded feature, separating RPC/service logic 
 
 Move stock adjustments, counts and transfers. Treat `transferir_stock_v1` and `transferir_stock_v2` as an explicit legacy cleanup item rather than silently choosing one.
 
+Status: completed on `refactor/modular-runtime`. Both the professional inventory view and the
+branch-settings transfer modal now delegate to the typed Inventory service and
+`transferir_stock_v2`; the direct `app.js` calls to the v1 list/transfer RPCs were removed.
+
 ### Phase 7 — products and scanner
 
 Large shared state surface. Introduce a typed products store before moving `renderGrid`, scanner and product editing.

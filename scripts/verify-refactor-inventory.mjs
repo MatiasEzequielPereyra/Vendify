@@ -18,6 +18,7 @@ const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
 for (const marker of [
   "VendifyInventoryV232",
   "createInventoryController",
+  "createBranchTransferController",
   "listInventoryMovements",
   "adjustInventoryStock",
   "applyPhysicalCount",
@@ -36,11 +37,13 @@ for (const marker of [
 
 for (const marker of [
   "window.VendifyInventoryV232.createController({",
+  "window.VendifyInventoryV232.createBranchTransferController({",
   "window.VendifyInventoryV232.adjustStock(",
   "inventoryControllerV232.refreshOpenView(false)",
   "inventoryControllerV232.refreshOpenView()",
   "inventoryControllerV232.openAdjustmentFromProduct(id, delta)",
   "inventoryControllerV232.setup()",
+  "branchTransferControllerV232.setup()",
   "listBranches: listarSucursalesV2",
   "reloadProducts: cargarProductos",
   "emitStockChange: emitirCambioStockRealtime"
@@ -55,12 +58,15 @@ for (const obsoleteMarker of [
   '"ajustar_stock_inventario_v2",',
   '"aplicar_conteo_fisico_v2",',
   '"transferir_stock_v2",',
+  '"listar_productos_sucursal_v1",',
+  '"transferir_stock_v1",',
   "let inventoryMovements",
   "let inventoryCountDraft",
   "let inventoryTransferProducts",
   "let inventoryActiveTab",
   "let conteoOperacionEnCursoV23011",
   "let transferenciaOperacionEnCursoV23011",
+  "let productosTransferV226",
   "function abrirInventario",
   "function refrescarInventarioProfesional",
   "function renderResumenInventario",
@@ -68,7 +74,12 @@ for (const obsoleteMarker of [
   "function aplicarAjusteInventario",
   "function aplicarConteoFisico",
   "function transferirStockInventario",
-  "function setupInventarioProfesional"
+  "function setupInventarioProfesional",
+  "function abrirTransferenciaV226",
+  "function cerrarTransferenciaV226",
+  "function cargarProductosTransferV226",
+  "function actualizarDisponibleTransferV226",
+  "function transferirStockV226"
 ]) {
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
     throw new Error(`Legacy app still contains migrated Inventory logic: ${obsoleteMarker}`);

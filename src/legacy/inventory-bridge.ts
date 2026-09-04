@@ -1,3 +1,4 @@
+import { createBranchTransferController } from "../inventory/branch-transfer-controller.js";
 import { createInventoryController } from "../inventory/inventory-controller.js";
 import {
   adjustInventoryStock,
@@ -9,6 +10,7 @@ import {
 
 export interface VendifyInventoryV232Api {
   readonly createController: typeof createInventoryController;
+  readonly createBranchTransferController: typeof createBranchTransferController;
   readonly listMovements: typeof listInventoryMovements;
   readonly adjustStock: typeof adjustInventoryStock;
   readonly applyPhysicalCount: typeof applyPhysicalCount;
@@ -24,6 +26,7 @@ declare global {
 
 window.VendifyInventoryV232 = Object.freeze({
   createController: createInventoryController,
+  createBranchTransferController,
   listMovements: listInventoryMovements,
   adjustStock: adjustInventoryStock,
   applyPhysicalCount,

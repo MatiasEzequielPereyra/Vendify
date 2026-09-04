@@ -115,11 +115,21 @@ export async function transferInventoryStock(
   client: InventoryRpcClientPort,
   input: StockTransferInput
 ): Promise<InventoryRecord> {
+  const { quantity } = input;
+  if (!input.productId || !input.originId || !input.destinationId) {
+    throw new Error("Revisá producto y sucursales");
+  }
+  if (input.originId === input.destinationId) {
+    throw new Error("Origen y destino deben ser distintos");
+  }
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new Error("La cantidad debe ser un número entero mayor a cero");
+  }
   const { data, error } = await client.rpc("transferir_stock_v2", {
     p_producto_id: input.productId,
     p_origen_id: input.originId,
     p_destino_id: input.destinationId,
-    p_cantidad: input.quantity,
+    p_cantidad: quantity,
     p_motivo: input.reason
   });
   fail(error, "No se pudo transferir el stock");

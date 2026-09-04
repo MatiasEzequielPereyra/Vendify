@@ -101,6 +101,35 @@ test("stock transfer preserves origin, destination and reason", async () => {
   });
 });
 
+test("stock transfer rejects invalid or ambiguous requests before calling the backend", async () => {
+  const client = makeClient({});
+  const valid = {
+    productId: "product-1",
+    originId: "branch-1",
+    destinationId: "branch-2",
+    quantity: 3,
+    reason: "Transferencia QA"
+  };
+
+  await assert.rejects(
+    () => transferInventoryStock(client, { ...valid, destinationId: "branch-1" }),
+    /Origen y destino deben ser distintos/
+  );
+  await assert.rejects(
+    () => transferInventoryStock(client, { ...valid, quantity: 0 }),
+    /entero mayor a cero/
+  );
+  await assert.rejects(
+    () => transferInventoryStock(client, { ...valid, quantity: 1.5 }),
+    /entero mayor a cero/
+  );
+  await assert.rejects(
+    () => transferInventoryStock(client, { ...valid, productId: "" }),
+    /Revisá producto y sucursales/
+  );
+  assert.deepEqual(client.calls, []);
+});
+
 test("inventory services keep backend error messages", async () => {
   const client = makeClient({
     ajustar_stock_inventario_v2: { data: null, error: { message: "Sin permiso" } }

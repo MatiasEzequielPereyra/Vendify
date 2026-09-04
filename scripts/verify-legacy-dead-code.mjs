@@ -26,7 +26,12 @@ const removedLegacySymbols = [
   "abrirScannerV29",
   "cerrarScannerV29",
   "renderEstadoCajaHeaderV227",
-  "abrirConfigSucursalesV226"
+  "abrirConfigSucursalesV226",
+  "abrirTransferenciaV226",
+  "cerrarTransferenciaV226",
+  "cargarProductosTransferV226",
+  "actualizarDisponibleTransferV226",
+  "transferirStockV226"
 ];
 
 for (const symbol of removedLegacySymbols) {
