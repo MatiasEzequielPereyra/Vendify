@@ -19,7 +19,6 @@ function iconV23011(name, className = "vendify-icon") {
 const THEME_KEY = "kiosco_theme";
 const ONBOARDING_KEY = "kiosco_onboarding_done";
 const INSTALL_DISMISS_KEY = "kiosco_install_dismiss";
-const MAX_IMG_SIZE = 400;
 
 
 // ============================================================
@@ -439,36 +438,6 @@ async function cambiarSucursalV2(sucursalId, { recargar = true } = {}) {
   }
 
   suscribirRealtime();
-  return data;
-}
-
-async function registrarVentaV2(items, medioPago) {
-  if (!exigirPermisoV2("sell", "Tu usuario no tiene permiso para registrar ventas")) return null;
-  if (!appContext.ready) throw new Error("El contexto del negocio todavía no está cargado");
-  const data = await window.VendifySalesV232.registerLegacySale(
-    supabaseClient,
-    items || [],
-    medioPago || null,
-    appContext.branch.id,
-    appContext.cashRegister.id
-  );
-  emitirCambioStockRealtime("venta");
-  return data;
-}
-
-async function ajustarStockV2(productoId, delta, tipo = "ajuste") {
-  if (!exigirPermisoV2("adjustStock", "Tu usuario no tiene permiso para modificar stock")) return null;
-  if (!appContext?.branch?.id) throw new Error("No hay una sucursal activa");
-
-  const { data, error } = await supabaseClient.rpc("ajustar_stock_sucursal_v1", {
-    p_producto_id: productoId,
-    p_sucursal_id: appContext.branch.id,
-    p_delta: Number(delta),
-    p_tipo: tipo,
-  });
-
-  if (error) throw new Error(error.message || "No se pudo ajustar el stock");
-  emitirCambioStockRealtime("ajuste_stock");
   return data;
 }
 
@@ -1005,10 +974,6 @@ function iniciarWatchdogRealtime() {
 }
 
 
-function aplicarCambioRemoto(payload) {
-  productsControllerV232.applyRemoteChange(payload);
-}
-
 /* QA: implementación legacy removida (mapearProductoDB) */
 
 
@@ -1128,10 +1093,6 @@ function formatearPrecio(valor) {
 }
 
 
-function nombreCompletoProducto(p) {
-  return window.VendifyCoreV232.productDisplayName(p);
-}
-
 function escapeHtml(texto) {
   return window.VendifyCoreV232.escapeHtml(texto);
 }
@@ -1147,41 +1108,6 @@ function mostrarToast(mensaje, tipo = "success") {
     setTimeout(() => toast.remove(), 250);
   }, 2600);
 }
-
-function comprimirImagen(file) {
-  return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith("image/")) {
-      reject(new Error("Archivo no válido"));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        let { width, height } = img;
-        if (width > MAX_IMG_SIZE || height > MAX_IMG_SIZE) {
-          if (width > height) {
-            height = Math.round((height * MAX_IMG_SIZE) / width);
-            width = MAX_IMG_SIZE;
-          } else {
-            width = Math.round((width * MAX_IMG_SIZE) / height);
-            height = MAX_IMG_SIZE;
-          }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
-      };
-      img.onerror = () => reject(new Error("No se pudo leer la imagen"));
-      img.src = e.target.result;
-    };
-    reader.onerror = () => reject(new Error("Error al leer el archivo"));
-    reader.readAsDataURL(file);
-  });
-}
-
 
 async function leerArchivoImagen(file) {
   if (!file) throw new Error("No se recibió ninguna imagen");
@@ -1464,10 +1390,6 @@ function cerrarConfirm() {
 // =====================
 // Categorías delegadas a TypeScript
 // =====================
-function renderSelectCategorias(selected = "") {
-  productsControllerV232.renderCategorySelect(selected);
-}
-
 function actualizarFiltroCategorias() {
   productsControllerV232.renderCategoryFilter();
 }
@@ -3996,12 +3918,6 @@ const posControllerV232 =
 function actualizarEstadoPinDescuento() {
   return discountControllerV232.updatePinState();
 }
-function calcularTotalesVentaV228() {
-  return posControllerV232.calculateTotals();
-}
-function actualizarTotalesVentaV228() {
-  return posControllerV232.updateTotals();
-}
 function abrirVenta() {
   posControllerV232.open();
 }
@@ -4011,20 +3927,8 @@ function cerrarVenta() {
 function agregarAlCarrito(id) {
   posControllerV232.addToCart(id);
 }
-function cambiarCantidadCarrito(id, delta) {
-  posControllerV232.changeQuantity(id, delta);
-}
-function quitarDelCarrito(id) {
-  posControllerV232.removeFromCart(id);
-}
-function calcularTotalCarrito() {
-  return posControllerV232.getTotal();
-}
 function renderCarrito() {
   posControllerV232.renderCart();
-}
-function mostrarTicketV228(data) {
-  salesHistoryControllerV232.showTicket(data);
 }
 // Export CSV
 // =====================
@@ -4054,9 +3958,6 @@ function exportarCSV() {
 // =====================
 // Historial de ventas (tickets) — runtime modular
 // =====================
-async function abrirHistorial() {
-  await salesHistoryControllerV232.open();
-}
 function cerrarHistorial() {
   salesHistoryControllerV232.close();
 }
@@ -4319,24 +4220,12 @@ function cerrarModal({ preservarFlujoScanner = false } = {}) {
   productsControllerV232.closeEditor(preservarFlujoScanner);
 }
 
-async function buscarDatosBarcodeV29(code) {
-  return productsControllerV232.lookupBarcode(String(code || ""));
-}
-
 function abrirCatalogoV29() {
   productsControllerV232.openCatalog();
 }
 
 async function cargarEjemplos() {
   productsControllerV232.openCatalog();
-}
-
-async function abrirScannerV29(mode) {
-  return scannerControllerV232.open(mode);
-}
-
-function cerrarScannerV29() {
-  scannerControllerV232.close();
 }
 
 function renderVentaProductos() {
@@ -4455,7 +4344,6 @@ async function cargarEstadoCajaV227() {
   await cashControllerV232.loadState();
 }
 function cajaAbiertaMiaV227(){return cashControllerV232.isOpenByCurrentUser();}
-function renderEstadoCajaHeaderV227(){cashControllerV232.renderHeader();}
 async function abrirPanelCajaV227(){await cashControllerV232.openPanel();}
 async function renderPanelCajaV227(){await cashControllerV232.renderPanel();}
 function formatearFechaHoraV227(v){if(!v)return"—";try{return new Intl.DateTimeFormat("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(v));}catch{return String(v);}}
@@ -4912,11 +4800,6 @@ async function transferirStockV226(e) {
 
   await renderSucursalesConfigV226();
   mostrarToast("Stock transferido", "success");
-}
-
-async function abrirConfigSucursalesV226() {
-  activarTabConfigV224("sucursales");
-  await renderSucursalesConfigV226();
 }
 
 function setupSucursalesV226() {

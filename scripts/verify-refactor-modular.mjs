@@ -55,12 +55,11 @@ for (const marker of [
   "const $ = (sel) => window.VendifyCoreV232.queryOne(sel);",
   "const $$ = (sel) => window.VendifyCoreV232.queryAll(sel);",
   "window.VendifyCoreV232.formatArs(valor)",
-  "window.VendifyCoreV232.productDisplayName(p)",
   "window.VendifyCoreV232.escapeHtml(texto)"
 ]) {
   if (!appSource.includes(marker)) fail(`compatibility app missing modular delegation ${marker}`);
 }
-pass("legacy runtime delegates extracted helpers to modular core");
+pass("legacy runtime delegates active extracted helpers to modular core");
 
 for (const obsoleteCoreImplementation of [
   "const $ = (sel) => document.querySelector(sel);",

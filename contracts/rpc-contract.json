@@ -1,7 +1,7 @@
 {
   "generatedFrom": "app.js + src/**/*.ts",
   "baselineVersion": "2.31.1",
-  "rpcCount": 71,
+  "rpcCount": 70,
   "critical": [
     "ajustar_stock_inventario_v2",
     "aplicar_conteo_fisico_v2",
@@ -21,7 +21,6 @@
     "actualizar_sucursal_v1",
     "ajustar_stock_inicial_rapido_v2",
     "ajustar_stock_inventario_v2",
-    "ajustar_stock_sucursal_v1",
     "alertas_operativas_v1",
     "anular_compra_borrador_v1",
     "anular_venta_v1",

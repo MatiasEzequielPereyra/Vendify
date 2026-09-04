@@ -1,12 +1,11 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 71,
+  "rpcCount": 70,
   "definitionsFound": 53,
-  "missingCount": 18,
+  "missingCount": 17,
   "missing": [
     "actualizar_rol_miembro_v2",
     "actualizar_sucursal_v1",
-    "ajustar_stock_sucursal_v1",
     "autorizar_descuento_v1",
     "cambiar_estado_caja_v1",
     "cambiar_estado_miembro_v3",
@@ -68,11 +67,6 @@
       "files": [
         "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
       ]
-    },
-    {
-      "rpc": "ajustar_stock_sucursal_v1",
-      "sourceFound": false,
-      "files": []
     },
     {
       "rpc": "alertas_operativas_v1",
