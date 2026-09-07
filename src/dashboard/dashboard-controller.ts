@@ -62,6 +62,14 @@ function formatCompactNumber(value: unknown): string {
   }).format(numberValue(value));
 }
 
+function marginQualityText(data: DashboardRow): string {
+  const quality = textValue(data.margen_calidad);
+  const coverage = Math.max(0, Math.min(100, numberValue(data.margen_cobertura_pct)));
+  if (quality === "sin_ventas") return "Sin ventas en el período";
+  if (quality === "completo") return "Costo histórico disponible en toda la venta";
+  return `Costo histórico disponible en ${coverage.toFixed(1)}% de la venta`;
+}
+
 function setText(selector: string, value: string | number): void {
   const element = queryOne(selector);
   if (element) element.textContent = String(value);
@@ -131,6 +139,7 @@ export function createDashboardController(
     setText("#dash-tickets-v231", numberValue(data.tickets));
     setText("#dash-average-v231", `Ticket promedio ${formatArs(numberValue(data.ticket_promedio))}`);
     setText("#dash-margin-v231", formatArs(numberValue(data.margen_estimado)));
+    setText("#dash-margin-quality-v231", marginQualityText(data));
     setText("#dash-refunds-v231", formatArs(numberValue(data.devoluciones_total)));
     setText(
       "#dash-refund-count-v231",
