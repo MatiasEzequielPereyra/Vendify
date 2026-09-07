@@ -81,6 +81,20 @@ test("tenant client only permits audited read operations", async () => {
   ]);
 });
 
+test("tenant client exposes the staging host and network cause without credentials", async () => {
+  const client = createTenantTestClient(
+    loadTenantIsolationConfig(validEnv),
+    async () => {
+      throw new TypeError("fetch failed", { cause: new Error("getaddrinfo ENOTFOUND") });
+    }
+  );
+
+  await assert.rejects(
+    () => client.select("access-token", "negocios", "id", "business-id"),
+    /vendify-staging\.supabase\.co\/rest\/v1\/negocios.*ENOTFOUND/
+  );
+});
+
 test("denied plan checks must not disclose commercial limits", () => {
   assert.doesNotThrow(() => assertDeniedWithoutPlanDisclosure(
     { ok: false, status: 403, data: { message: "permission denied" } },

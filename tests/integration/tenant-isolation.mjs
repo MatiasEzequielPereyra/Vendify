@@ -89,6 +89,20 @@ function failureMessage(result) {
   return result.data?.message ?? result.data?.error_description ?? `HTTP ${result.status}`;
 }
 
+function networkFailureMessage(url, error) {
+  const endpoint = new URL(url);
+  const cause = error instanceof Error && error.cause instanceof Error
+    ? error.cause.message
+    : error instanceof Error
+      ? error.message
+      : String(error);
+  return [
+    `No se pudo conectar con ${endpoint.host}${endpoint.pathname}`,
+    "Revisá que VENDIFY_TEST_SUPABASE_URL sea la URL HTTPS del proyecto de staging",
+    `Causa de red: ${cause}`
+  ].join(". ");
+}
+
 export function createTenantTestClient(config, fetchImpl = globalThis.fetch) {
   if (typeof fetchImpl !== "function") throw new Error("Fetch no está disponible");
 
@@ -99,13 +113,16 @@ export function createTenantTestClient(config, fetchImpl = globalThis.fetch) {
     };
     if (body !== undefined) headers["Content-Type"] = "application/json";
 
-    return parseResponse(
-      await fetchImpl(`${config.baseUrl}${path}`, {
+    const url = `${config.baseUrl}${path}`;
+    try {
+      return await parseResponse(await fetchImpl(url, {
         method,
         headers,
         body: body === undefined ? undefined : JSON.stringify(body)
-      })
-    );
+      }));
+    } catch (error) {
+      throw new Error(networkFailureMessage(url, error), { cause: error });
+    }
   }
 
   return {
