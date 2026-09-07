@@ -37,7 +37,7 @@ test("critical sales RPC cannot be invoked by anon", () => {
   assert.match(executeHardeningMigration, /revoke execute[\s\S]*from public/i);
   assert.match(executeHardeningMigration, /revoke execute[\s\S]*from anon/i);
   assert.match(executeHardeningMigration, /to authenticated, service_role/i);
-  assert.match(exeuteHardeningMigration, /has_function_privilege\('anon',[\s\S]*'execute'\)/);
+  assert.match(executeHardeningMigration, /has_function_privilege\('anon',[\s\S]*'execute'\)/);
   assert.match(executeHardeningMigration, /has_function_privilege\('authenticated',[\s\S]*'execute'\)/);
 });
 
