@@ -13,7 +13,7 @@ const migration = fs.readFileSync(
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
     migration,
-    /registrar_venta_v4\(jsonb,jsonb,text,numeric,text,uuid,uuid,uuid\)/
+    /registrar_venta_v4\(jsonb,jsonb,text,numeric,text,uuid,uuid,text\)/
   );
   assert.match(migration, /No publicar el POS ni habilitar sincronización offline/);
 });

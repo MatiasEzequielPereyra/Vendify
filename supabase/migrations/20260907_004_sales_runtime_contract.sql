@@ -10,12 +10,12 @@ begin;
 do $$
 declare
     v_registrar_venta regprocedure := to_regprocedure(
-      'public.registrar_venta_v4(jsonb,jsonb,text,numeric,text,uuid,uuid,uuid)'
+      'public.registrar_venta_v4(jsonb,jsonb,text,numeric,text,uuid,uuid,text)'
     );
 begin
     if v_registrar_venta is null then
         raise exception
-          'Falta registrar_venta_v4(jsonb,jsonb,text,numeric,text,uuid,uuid,uuid). No publicar el POS ni habilitar sincronización offline.';
+          'Falta registrar_venta_v4(jsonb,jsonb,text,numeric,text,uuid,uuid,text). No publicar el POS ni habilitar sincronización offline.';
     end if;
 
     if not has_function_privilege(
