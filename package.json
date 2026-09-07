@@ -23,6 +23,7 @@
     "preview:refactor:modular": "node scripts/serve-refactor-modular.mjs",
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",
     "test": "npm run build:ts && node --test tests/unit/*.test.mjs",
+    "test:integration:tenant": "node --env-file-if-exists=.env.tenant-tests tests/integration/tenant-isolation.mjs",
     "qa:static": "node scripts/qa-baseline.mjs",
     "qa:rpc": "node scripts/check-rpc-contract.mjs",
     "qa:secrets": "node scripts/scan-secrets.mjs",
