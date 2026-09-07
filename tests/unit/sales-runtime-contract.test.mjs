@@ -13,6 +13,10 @@ const executeHardeningMigration = fs.readFileSync(
   path.resolve(currentDirectory, "../../supabase/migrations/20260907_005_sales_rpc_execute_hardening.sql"),
   "utf8"
 );
+const v3InternalMigration = fs.readFileSync(
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907_006_sales_v3_internal_only.sql"),
+  "utf8"
+);
 
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
@@ -33,6 +37,14 @@ test("critical sales RPC cannot be invoked by anon", () => {
   assert.match(executeHardeningMigration, /revoke execute[\s\S]*from public/i);
   assert.match(executeHardeningMigration, /revoke execute[\s\S]*from anon/i);
   assert.match(executeHardeningMigration, /to authenticated, service_role/i);
-  assert.match(executeHardeningMigration, /has_function_privilege\('anon',[\s\S]*'execute'\)/);
+  assert.match(exeuteHardeningMigration, /has_function_privilege\('anon',[\s\S]*'execute'\)/);
   assert.match(executeHardeningMigration, /has_function_privilege\('authenticated',[\s\S]*'execute'\)/);
+});
+
+test("only idempotent v4 remains callable by authenticated clients", () => {
+  assert.match(v3InternalMigration, /v3\.proowner = v4\.proowner/);
+  assert.match(v3InternalMigration, /revoke all[\s\S]*from public/i);
+  assert.match(v3InternalMigration, /revoke all[\s\S]*from anon/i);
+  assert.match(v3InternalMigration, /revoke all[\s\S]*from authenticated/i);
+  assert.match(v3InternalMigration, /registrar_venta_v3 sigue expuesta a clientes/);
 });
