@@ -9,6 +9,7 @@ import {
   salesDateRange,
   ticketNumber
 } from "../../dist-ts/sales/sales-model.js";
+import { normalizeCartQuantity } from "../../dist-ts/sales/pos-controller.js";
 
 test("discount requests clamp percentage and amount values", () => {
   assert.deepEqual(normalizeDiscountRequest(1000, "porcentaje", 150), {
@@ -55,4 +56,13 @@ test("sales helpers preserve net total, ticket and date ranges", () => {
   const range = salesDateRange("ayer", new Date(2026, 8, 3, 12));
   assert.equal(range.desde?.getDate(), 2);
   assert.equal(range.hasta?.getDate(), 3);
+});
+
+test("manual POS quantity stays whole and within available stock", () => {
+  assert.equal(normalizeCartQuantity(1, 100), 1);
+  assert.equal(normalizeCartQuantity(100, 100), 100);
+  assert.equal(normalizeCartQuantity(101, 100), 100);
+  assert.equal(normalizeCartQuantity(2.9, 100), 2);
+  assert.equal(normalizeCartQuantity(0, 100), 1);
+  assert.equal(normalizeCartQuantity(Number.NaN, 100), 1);
 });
