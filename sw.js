@@ -1,8 +1,13 @@
 /* Vendify v2.31.1 — atomic app-shell offline cache */
-const CACHE = "vendify-shell-v233-atomic";
+const CACHE = "vendify-shell-v234-local-assets";
 const SHELL = [
   "./",
   "./index.html",
+  "./manifest.json",
+  "./supabase-config.js",
+  "./icons/apple-touch-icon.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
   "./html-loader.js",
   "./html/01-auth-shell.html",
   "./html/02-app-shell.html",
