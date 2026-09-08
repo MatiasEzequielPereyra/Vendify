@@ -1,5 +1,9 @@
 /* Vendify v2.31.1 — atomic app-shell offline cache */
-const CACHE = "vendify-shell-v234-local-assets";
+const CACHE = "vendify-shell-v235-pinned-runtime";
+const PINNED_RUNTIME_ASSETS = [
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js",
+  "https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js",
+];
 const SHELL = [
   "./",
   "./index.html",
@@ -28,6 +32,7 @@ const SHELL = [
   "./styles/08-purchases-stock.css",
   "./styles/09-stability-forms.css",
   "./styles/10-commercial-offline.css",
+  ...PINNED_RUNTIME_ASSETS,
 ];
 
 self.addEventListener("install", (event) => {
@@ -60,9 +65,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Supabase, ZXing, Google Fonts y APIs externas no son responsabilidad
-  // del cache transaccional de Vendify.
-  if (url.origin !== self.location.origin) return;
+  const isPinnedRuntimeAsset = PINNED_RUNTIME_ASSETS.includes(url.href);
+  // Solo se cachean los dos runtimes con versión fija. APIs, fuentes y otros
+  // recursos externos permanecen fuera del cache transaccional de Vendify.
+  if (url.origin !== self.location.origin && !isPinnedRuntimeAsset) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(
