@@ -19,6 +19,10 @@ test("sales runtime diagnostic is read-only and exposes the deployed v4 definiti
   assert.match(diagnostic, /pg_get_functiondef\(p\.oid\)/);
   assert.match(diagnostic, /has_function_privilege\('authenticated', p\.oid, 'execute'\)/);
   assert.match(diagnostic, /has_function_privilege\('anon', p\.oid, 'execute'\)/);
+  assert.match(diagnostic, /idempotency_payload_integrity/);
+  assert.match(diagnostic, /payload_hash_column_exists/);
+  assert.match(diagnostic, /venta_idempotencia_v23011_payload_hash_sha256/);
+  assert.match(diagnostic, /function_binds_payload_hash/);
   assert.doesNotMatch(diagnostic, /\b(insert|update|delete|alter|create|drop|grant|revoke)\b/i);
 });
 
