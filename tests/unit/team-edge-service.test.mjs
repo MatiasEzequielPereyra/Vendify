@@ -65,6 +65,28 @@ test("createEmployee prioritizes backend data.error message", async () => {
   });
 });
 
+test("createEmployee exposes the JSON error returned by a non-2xx Edge Function", async () => {
+  const client = functionsClient(() => ({
+    data: null,
+    error: {
+      message: "Edge Function returned a non-2xx status code",
+      context: new Response(JSON.stringify({ error: "El empleado ya no existe en este negocio" }), {
+        headers: { "content-type": "application/json" }
+      })
+    }
+  }));
+
+  const result = await createEmployee(client, {
+    nombre: "Ana",
+    username: "ana",
+    rol: "cashier",
+    password: "Clave123!"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.errorMessage, "El empleado ya no existe en este negocio");
+});
+
 test("updateEmployee preserves gestionar-empleado update contract", async () => {
   const client = functionsClient(() => ({ data: { ok: true }, error: null }));
 

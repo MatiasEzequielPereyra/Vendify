@@ -1,5 +1,6 @@
 export interface TeamErrorLike {
   message?: string;
+  context?: unknown;
 }
 
 export interface TeamRpcResult {

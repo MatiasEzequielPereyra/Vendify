@@ -26,10 +26,37 @@ export interface UpdateEmployeeInput {
   rol: string;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function dataErrorMessage(data: unknown): string | null {
-  if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
-  const value = (data as Record<string, unknown>).error;
-  return typeof value === "string" && value.length > 0 ? value : null;
+  if (!isRecord(data)) return null;
+
+  for (const key of ["error", "message"]) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  }
+
+  return null;
+}
+
+interface ResponseContextLike {
+  clone(): { json(): Promise<unknown> };
+}
+
+function isResponseContext(value: unknown): value is ResponseContextLike {
+  return isRecord(value) && typeof value.clone === "function";
+}
+
+async function errorContextMessage(error: TeamErrorLike | null): Promise<string | null> {
+  if (!isResponseContext(error?.context)) return null;
+
+  try {
+    return dataErrorMessage(await error.context.clone().json());
+  } catch {
+    return null;
+  }
 }
 
 async function invokeTeamFunction(
@@ -40,11 +67,12 @@ async function invokeTeamFunction(
 ): Promise<TeamActionResult> {
   const { data, error } = await functions.invoke(name, { body });
   const backendMessage = dataErrorMessage(data);
+  const contextMessage = await errorContextMessage(error);
 
   if (error || backendMessage) {
     return {
       ok: false,
-      errorMessage: backendMessage ?? error?.message ?? fallback,
+      errorMessage: backendMessage ?? contextMessage ?? error?.message ?? fallback,
       data
     };
   }
