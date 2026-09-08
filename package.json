@@ -24,6 +24,7 @@
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",
     "test": "npm run build:ts && node --test tests/unit/*.test.mjs",
     "test:integration:tenant": "node --env-file-if-exists=.env.tenant-tests tests/integration/tenant-isolation.mjs",
+    "test:integration:sales-concurrency": "node --env-file-if-exists=.env.tenant-tests tests/integration/sales-concurrency.mjs",
     "qa:static": "node scripts/qa-baseline.mjs",
     "qa:rpc": "node scripts/check-rpc-contract.mjs",
     "qa:secrets": "node scripts/scan-secrets.mjs",

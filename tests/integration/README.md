@@ -34,3 +34,20 @@ The test verifies:
 - cross-tenant branch-context RPC calls fail;
 - the internal plan-limit primitive cannot be called from the client;
 - anonymous context and business access fail or return no rows.
+
+## Sales concurrency (writes staging data)
+
+`sales-concurrency.mjs` is intentionally separate from the read-only suite. It
+creates two permanent sales in staging with the same two products in reversed
+cart order. The two authenticated users must belong to the same business and
+use separate open cash registers in the same branch.
+
+Set the `VENDIFY_TEST_SALES_*` variables from `tenant-tests.env.example` with
+dedicated QA users, registers and products. Each product needs at least two
+units of stock; `VENDIFY_TEST_SALES_PAYMENT_AMOUNT` is the exact sum of both
+product prices. The runner refuses the known production host and only writes
+when `VENDIFY_TEST_CONFIRM_STAGING_SALES=RUN_SALES_CONCURRENCY`.
+
+```bash
+npm run test:integration:sales-concurrency
+```
