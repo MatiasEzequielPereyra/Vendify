@@ -96,7 +96,7 @@ pass("HTML loader mounts fragments before loading the runtime sequentially");
 for (const file of ["html-loader.js", ...fragments]) {
   if (!serviceWorker.includes(`./${file}`)) fail(`service worker does not cache ${file}`);
 }
-if (!serviceWorker.includes('vendify-shell-v232-html')) fail("service worker HTML cache was not bumped");
+if (!serviceWorker.includes('vendify-shell-v233-atomic')) fail("service worker HTML cache was not bumped");
 pass("offline shell caches the complete modular HTML");
 
 const app = readFileSync(resolve(target, "app.js"), "utf8");

@@ -1,5 +1,5 @@
-/* Vendify v2.31.1 — safe app-shell offline cache */
-const CACHE = "vendify-shell-v232-html";
+/* Vendify v2.31.1 — atomic app-shell offline cache */
+const CACHE = "vendify-shell-v233-atomic";
 const SHELL = [
   "./",
   "./index.html",
@@ -29,7 +29,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
       .then((cache) => cache.addAll(SHELL))
-      .catch(() => null)
       .then(() => self.skipWaiting())
   );
 });
