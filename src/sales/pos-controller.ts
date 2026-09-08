@@ -64,6 +64,7 @@ export interface PosController {
   readonly close: () => void;
   readonly addToCart: (id: string) => void;
   readonly changeQuantity: (id: string, delta: number) => void;
+  readonly setQuantity: (id: string, quantity: number) => void;
   readonly removeFromCart: (id: string) => void;
   readonly getCart: () => CartItem[];
   readonly isConfirming: () => boolean;
@@ -90,6 +91,12 @@ function field(selector: string): Field | null {
 
 function number(value: unknown): number {
   return Number(value ?? 0);
+}
+
+export function normalizeCartQuantity(value: number, maximum: number): number {
+  const safeMaximum = Math.max(1, Math.floor(Number.isFinite(maximum) ? maximum : 1));
+  const safeValue = Math.floor(Number.isFinite(value) ? value : 1);
+  return Math.max(1, Math.min(safeMaximum, safeValue));
 }
 
 function text(value: unknown, fallback = ""): string {
@@ -285,9 +292,7 @@ export function createPosController(dependencies: PosControllerDependencies): Po
         escapeHtml(item.nombre)
       }</div><div class="carrito-item-sub">${dependencies.formatCurrency(item.precioVenta)} c/u · ${
         dependencies.formatCurrency(item.precioVenta * item.cantidad)
-      }</div></div><div class="carrito-item-qty"><button type="button" data-qty="-1">−</button><span>${
-        String(item.cantidad)
-      }</span><button type="button" data-qty="1">+</button></div><button type="button" class="carrito-item-quitar" data-quitar title="Quitar">🗑️</button></div>`
+      }</div></div><div class="carrito-item-qty"><button type="button" data-qty="-1" aria-label="Restar una unidad">−</button><input type="number" inputmode="numeric" min="1" max="${String(Math.max(1, item.stock))}" step="1" value="${String(item.cantidad)}" data-qty-input aria-label="Cantidad de ${escapeHtml(item.nombre)}"/><button type="button" data-qty="1" aria-label="Sumar una unidad">+</button></div><button type="button" class="carrito-item-quitar" data-quitar title="Quitar">🗑️</button></div>`
     ).join("");
     updateTotals();
     if (charge instanceof HTMLButtonElement) charge.disabled = false;
@@ -326,7 +331,22 @@ export function createPosController(dependencies: PosControllerDependencies): Po
     if (!item) return;
     const product = dependencies.getProducts().find((candidate) => candidate.id === id);
     const maximum = product ? number(product.stock) : item.stock;
-    item.cantidad = Math.max(1, Math.min(maximum, item.cantidad + delta));
+    item.cantidad = normalizeCartQuantity(item.cantidad + delta, maximum);
+    dependencies.renderSaleProducts();
+    renderCart();
+  }
+
+  function setQuantity(id: string, quantity: number): void {
+    dependencies.discount.invalidate({ recalculate: false });
+    const item = cart.find((candidate) => candidate.id === id);
+    if (!item) return;
+    const product = dependencies.getProducts().find((candidate) => candidate.id === id);
+    const maximum = product ? number(product.stock) : item.stock;
+    const normalized = normalizeCartQuantity(quantity, maximum);
+    if (quantity > maximum) {
+      dependencies.showToast(`Stock máximo disponible: ${String(Math.max(0, maximum))}`, "info");
+    }
+    item.cantidad = normalized;
     dependencies.renderSaleProducts();
     renderCart();
   }
@@ -491,6 +511,14 @@ export function createPosController(dependencies: PosControllerDependencies): Po
         changeQuantity(row.dataset.id, Number.parseInt(quantityButton.dataset.qty ?? "0", 10));
       } else if (target.closest("[data-quitar]")) removeFromCart(row.dataset.id);
     });
+    queryOne("#carrito-items")?.addEventListener("change", (event) => {
+      const target = event.target;
+      const row = target instanceof Element ? target.closest(".carrito-item") : null;
+      if (!(row instanceof HTMLElement) || !row.dataset.id || !(target instanceof HTMLInputElement)) return;
+      if (target.matches("[data-qty-input]")) {
+        setQuantity(row.dataset.id, Number.parseInt(target.value, 10));
+      }
+    });
     queryOne("#btn-cobrar")?.addEventListener("click", () => void confirmSale());
     queryAll("[data-pay-mode-v228]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -519,6 +547,7 @@ export function createPosController(dependencies: PosControllerDependencies): Po
     close,
     addToCart,
     changeQuantity,
+    setQuantity,
     removeFromCart,
     getCart: () => cart,
     isConfirming: () => confirming,
