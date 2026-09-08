@@ -68,7 +68,9 @@ test("concurrent sales take product locks in deterministic order before v3", () 
 
 test("an idempotency key cannot be reused with a different sale payload", () => {
   assert.match(idempotencyIntegrityMigration, /add column if not exists payload_hash text/i);
-  assert.match(idempotencyIntegrityMigration, /public\.digest\([\s\S]*'sha256'/);
+  assert.match(idempotencyIntegrityMigration, /create extension if not exists pgcrypto/i);
+  assert.match(idempotencyIntegrityMigration, /from pg_extension e/);
+  assert.match(idempotencyIntegrityMigration, /%1\$I\.digest\([\s\S]*'sha256'/);
   assert.match(idempotencyIntegrityMigration, /negocio_id, user_id, request_id, payload_hash/);
   assert.match(idempotencyIntegrityMigration, /select vi\.respuesta, vi\.payload_hash/);
   assert.match(idempotencyIntegrityMigration, /v_payload_hash_existente <> v_payload_hash/);
