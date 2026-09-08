@@ -109,11 +109,11 @@ Y un script debe fallar el build si falta cualquier referencia local.
 
 ---
 
-### H-02 — El arranque offline frío no está garantizado
+### H-02 — El arranque offline queda mitigado, pero la dependencia de CDN persiste
 
 **Archivo:** `sw.js`, líneas 3–8 y 41–43.
 
-El Service Worker solo cachea:
+La versión inicial solo cacheaba:
 
 - `/`
 - `index.html`
@@ -126,19 +126,19 @@ Pero el HTML depende de Supabase JS desde CDN:
 
 y también carga ZXing desde CDN.
 
-El Service Worker excluye correctamente orígenes externos, pero eso significa que un arranque frío sin red puede no disponer de la librería Supabase.
+El shell ahora fija y cachea Supabase JS y ZXing durante la instalación. Esto permite reabrir la PWA sin red después de una instalación online exitosa. Aun así, la primera instalación requiere CDN y por eso no equivale a autohospedado.
 
-**Riesgo:** “la PWA funciona offline” depende del cache HTTP del navegador y no del app-shell controlado por Vendify.
+**Riesgo residual:** una caída del CDN impide una primera instalación o actualización del shell; no afecta a una instalación cuyo cache se haya completado.
 
 **Solución:**
 
-Para la release comercial:
+Pendiente para la release comercial:
 
 - self-host de la versión exacta de `supabase-js`;
 - self-host de ZXing;
 - incluirlas en el app-shell;
-- pin de versión exacta;
-- eliminar dependencia de CDN para el arranque POS.
+- las versiones ya están fijadas y cacheadas;
+- eliminar completamente la dependencia de CDN para el arranque POS.
 
 Google Fonts pueden tener fallback local/system.
 
