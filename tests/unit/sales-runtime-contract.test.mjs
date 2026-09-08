@@ -21,6 +21,10 @@ const stockLockMigration = fs.readFileSync(
   path.resolve(currentDirectory, "../../supabase/migrations/20260907_007_sales_stock_lock_order.sql"),
   "utf8"
 );
+const idempotencyIntegrityMigration = fs.readFileSync(
+  path.resolve(currentDirectory, "../../supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql"),
+  "utf8"
+);
 
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
@@ -60,4 +64,13 @@ test("concurrent sales take product locks in deterministic order before v3", () 
   assert.match(stockLockMigration, /hashtextextended\(v_lock_producto_id::text, 0\)/);
   assert.match(stockLockMigration, /v_respuesta := public\.registrar_venta_v3/);
   assert.match(stockLockMigration, /on conflict \(negocio_id, user_id, request_id\) do nothing/);
+});
+
+test("an idempotency key cannot be reused with a different sale payload", () => {
+  assert.match(idempotencyIntegrityMigration, /add column if not exists payload_hash text/i);
+  assert.match(idempotencyIntegrityMigration, /public\.digest\([\s\S]*'sha256'/);
+  assert.match(idempotencyIntegrityMigration, /negocio_id, user_id, request_id, payload_hash/);
+  assert.match(idempotencyIntegrityMigration, /select vi\.respuesta, vi\.payload_hash/);
+  assert.match(idempotencyIntegrityMigration, /v_payload_hash_existente <> v_payload_hash/);
+  assert.match(idempotencyIntegrityMigration, /ya fue usado con una venta distinta/);
 });
