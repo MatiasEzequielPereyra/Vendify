@@ -25,6 +25,10 @@ const idempotencyIntegrityMigration = fs.readFileSync(
   path.resolve(currentDirectory, "../../supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql"),
   "utf8"
 );
+const accessReassertionMigration = fs.readFileSync(
+  path.resolve(currentDirectory, "../../supabase/migrations/20260908_009_sales_rpc_access_reassertion.sql"),
+  "utf8"
+);
 
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
@@ -75,4 +79,13 @@ test("an idempotency key cannot be reused with a different sale payload", () => 
   assert.match(idempotencyIntegrityMigration, /select vi\.respuesta, vi\.payload_hash/);
   assert.match(idempotencyIntegrityMigration, /v_payload_hash_existente <> v_payload_hash/);
   assert.match(idempotencyIntegrityMigration, /ya fue usado con una venta distinta/);
+});
+
+test("only v4 remains callable by API roles after access reassertion", () => {
+  assert.match(accessReassertionMigration, /revoke all[\s\S]*registrar_venta_v3[\s\S]*service_role/i);
+  assert.match(accessReassertionMigration, /revoke all[\s\S]*registrar_venta_v4[\s\S]*from public, anon/i);
+  assert.match(accessReassertionMigration, /grant execute[\s\S]*registrar_venta_v4[\s\S]*authenticated, service_role/i);
+  assert.match(accessReassertionMigration, /has_function_privilege\('anon', v_v3, 'execute'\)/);
+  assert.match(accessReassertionMigration, /has_function_privilege\('service_role', v_v3, 'execute'\)/);
+  assert.match(accessReassertionMigration, /v3 y v4 no tienen el mismo owner/);
 });
