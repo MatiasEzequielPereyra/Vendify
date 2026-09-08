@@ -12,12 +12,10 @@ begin
   if to_regclass('public.venta_idempotencia_v23011') is null then
     raise exception 'Falta venta_idempotencia_v23011; no es seguro actualizar registrar_venta_v4.';
   end if;
-
-  if to_regprocedure('public.digest(bytea,text)') is null then
-    raise exception 'Falta pgcrypto.digest(bytea,text); no es seguro verificar la integridad idempotente.';
-  end if;
 end;
 $$;
+
+create extension if not exists pgcrypto;
 
 alter table public.venta_idempotencia_v23011
   add column if not exists payload_hash text;
@@ -37,6 +35,21 @@ begin
 end;
 $$;
 
+do $migration$
+declare
+  v_digest_schema text;
+begin
+  select n.nspname
+    into v_digest_schema
+    from pg_extension e
+    join pg_namespace n on n.oid = e.extnamespace
+   where e.extname = 'pgcrypto';
+
+  if v_digest_schema is null then
+    raise exception 'No se encontró el esquema de pgcrypto; no es seguro verificar la integridad idempotente.';
+  end if;
+
+  execute format($function$
 create or replace function public.registrar_venta_v4(
   p_items jsonb,
   p_pagos jsonb,
@@ -51,7 +64,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path to 'public'
-as $$
+as $body$
 declare
   v_negocio_id uuid;
   v_request_id text;
@@ -81,7 +94,7 @@ begin
   end if;
 
   v_payload_hash := encode(
-    public.digest(
+    %1$I.digest(
       convert_to(
         jsonb_build_object(
           'items', p_items,
@@ -153,7 +166,10 @@ begin
 
   return v_respuesta;
 end;
-$$;
+$body$;
+$function$, v_digest_schema);
+end;
+$migration$;
 
 do $$
 declare
