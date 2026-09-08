@@ -17,6 +17,10 @@ const v3InternalMigration = fs.readFileSync(
   path.resolve(currentDirectory, "../../supabase/migrations/20260907_006_sales_v3_internal_only.sql"),
   "utf8"
 );
+const stockLockMigration = fs.readFileSync(
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907_007_sales_stock_lock_order.sql"),
+  "utf8"
+);
 
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
@@ -47,4 +51,13 @@ test("only idempotent v4 remains callable by authenticated clients", () => {
   assert.match(v3InternalMigration, /revoke all[\s\S]*from anon/i);
   assert.match(v3InternalMigration, /revoke all[\s\S]*from authenticated/i);
   assert.match(v3InternalMigration, /registrar_venta_v3 sigue expuesta a clientes/);
+});
+
+test("concurrent sales take product locks in deterministic order before v3", () => {
+  assert.match(stockLockMigration, /select distinct \(item->>'producto_id'\)::uuid/);
+  assert.match(stockLockMigration, /order by 1/);
+  assert.match(stockLockMigration, /pg_advisory_xact_lock/);
+  assert.match(stockLockMigration, /hashtextextended\(v_lock_producto_id::text, 0\)/);
+  assert.match(stockLockMigration, /v_respuesta := public\.registrar_venta_v3/);
+  assert.match(stockLockMigration, /on conflict \(negocio_id, user_id, request_id\) do nothing/);
 });
