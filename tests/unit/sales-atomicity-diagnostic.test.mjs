@@ -10,11 +10,13 @@ const diagnostic = fs.readFileSync(
   "utf8"
 );
 
-test("sales atomicity diagnostic is read-only and checks deployed v3/v4 semantics", () => {
+test("sales atomicity diagnostic is read-only and checks deployed v2/v3/v4 semantics", () => {
   assert.match(diagnostic, /^with functions as \(/im);
   assert.match(diagnostic, /pg_get_functiondef\(p\.oid\)/);
   assert.match(diagnostic, /registrar_venta_v3\(jsonb,jsonb,text,numeric,text,uuid,uuid\)/);
   assert.match(diagnostic, /registrar_venta_v4\(jsonb,jsonb,text,numeric,text,uuid,uuid,text\)/);
+  assert.match(diagnostic, /registrar_venta_v2\(jsonb,text,uuid,uuid\)/);
+  assert.match(diagnostic, /authenticated_can_execute_v2/);
   assert.match(diagnostic, /v3_has_exception_handler/);
   assert.match(diagnostic, /v4_has_exception_handler/);
   assert.match(diagnostic, /v3_contains_sale_write_set/);
