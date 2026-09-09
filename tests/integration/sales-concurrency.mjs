@@ -105,17 +105,17 @@ export function loadSalesConcurrencyConfig(env = process.env) {
 export function createSalesConcurrencyClient(config, fetchImpl = globalThis.fetch) {
   if (typeof fetchImpl !== "function") throw new Error("Fetch no está disponible");
 
-  async function request(path, { token = null, body } = {}) {
+  async function request(path, { token = null, body, method = "POST" } = {}) {
     const url = `${config.baseUrl}${path}`;
     try {
       return await parseResponse(await fetchImpl(url, {
-        method: "POST",
+        method,
         headers: {
           apikey: config.anonKey,
           Authorization: `Bearer ${token ?? config.anonKey}`,
-          "Content-Type": "application/json"
+          ...(body === undefined ? {} : { "Content-Type": "application/json" })
         },
-        body: JSON.stringify(body ?? {})
+        ...(body === undefined ? {} : { body: JSON.stringify(body) })
       }));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -133,8 +133,25 @@ export function createSalesConcurrencyClient(config, fetchImpl = globalThis.fetc
     },
     rpc(token, name, args = {}) {
       return request(`/rest/v1/rpc/${name}`, { token, body: args });
+    },
+    stock(token, branchId, productId) {
+      const query = new URLSearchParams({
+        select: "producto_id,stock",
+        sucursal_id: `eq.${branchId}`,
+        producto_id: `eq.${productId}`
+      });
+      return request(`/rest/v1/producto_stock_sucursal?${query}`, { token, method: "GET" });
     }
   };
+}
+
+function stockValue(result, productId, label) {
+  assert.equal(result.ok, true, `${label}: ${responseMessage(result)}`);
+  assert.ok(Array.isArray(result.data), `${label} devolvió un formato inválido`);
+  assert.equal(result.data.length, 1, `${label} debe devolver un único stock para ${productId}`);
+  const stock = Number(result.data[0]?.stock);
+  assert.ok(Number.isFinite(stock), `${label} devolvió un stock no numérico`);
+  return stock;
 }
 
 function contextIdentity(context, label) {
@@ -176,6 +193,15 @@ export async function runSalesConcurrency(config, fetchImpl = globalThis.fetch, 
   assert.equal(a.branchId, config.branchId, "La sucursal configurada no coincide con el contexto de A");
   assert.equal(b.branchId, config.branchId, "La sucursal configurada no coincide con el contexto de B");
 
+  const [stockABeforeResult, stockBBeforeResult] = await Promise.all([
+    client.stock(tokenA, config.branchId, config.productA),
+    client.stock(tokenA, config.branchId, config.productB)
+  ]);
+  const stockABefore = stockValue(stockABeforeResult, config.productA, "Stock inicial A");
+  const stockBBefore = stockValue(stockBBeforeResult, config.productB, "Stock inicial B");
+  assert.ok(stockABefore >= 2, "El producto A requiere al menos 2 unidades para la prueba concurrente");
+  assert.ok(stockBBefore >= 2, "El producto B requiere al menos 2 unidades para la prueba concurrente");
+
   const payloadA = salePayload(
     config, [config.productA, config.productB], config.userA.cashId, requestId("a")
   );
@@ -194,7 +220,22 @@ export async function runSalesConcurrency(config, fetchImpl = globalThis.fetch, 
   assert.equal(retryA.ok, true, `Reintento idempotente A: ${responseMessage(retryA)}`);
   assert.deepEqual(retryA.data, saleA.data, "El reintento creó o devolvió una venta distinta");
 
-  log("PASS: reversed concurrent carts and idempotent retry completed through registrar_venta_v4");
+  const [stockAAfterResult, stockBAfterResult] = await Promise.all([
+    client.stock(tokenA, config.branchId, config.productA),
+    client.stock(tokenA, config.branchId, config.productB)
+  ]);
+  assert.equal(
+    stockValue(stockAAfterResult, config.productA, "Stock final A"),
+    stockABefore - 2,
+    "El producto A no se descontó exactamente una vez por venta"
+  );
+  assert.equal(
+    stockValue(stockBAfterResult, config.productB, "Stock final B"),
+    stockBBefore - 2,
+    "El producto B no se descontó exactamente una vez por venta"
+  );
+
+  log("PASS: concurrent sales, idempotent retry and exact stock decrements verified through registrar_venta_v4");
 }
 
 async function main() {
