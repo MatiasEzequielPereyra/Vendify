@@ -45,6 +45,7 @@ test("sales concurrency harness refuses production and unconfirmed writes", () =
 test("sales concurrency harness sends reversed carts to v4 with separate users and cash registers", async () => {
   const config = loadSalesConcurrencyConfig(validEnv);
   const calls = [];
+  const saleResults = new Map();
   const fetchImpl = async (url, request) => {
     const body = JSON.parse(request.body);
     calls.push({ url, request, body });
@@ -54,20 +55,26 @@ test("sales concurrency harness sends reversed carts to v4 with separate users a
     if (url.endsWith("/obtener_contexto_app")) {
       return response({ business: { id: "business-1" }, branch: { id: "branch-1" } });
     }
-    if (url.endsWith("/registrar_venta_v4")) return response({ venta: { id: crypto.randomUUID() } });
+    if (url.endsWith("/registrar_venta_v4")) {
+      if (!saleResults.has(body.p_request_id)) {
+        saleResults.set(body.p_request_id, { venta: { id: crypto.randomUUID() } });
+      }
+      return response(saleResults.get(body.p_request_id));
+    }
     return response({ error: "unexpected" }, 500);
   };
 
   await runSalesConcurrency(config, fetchImpl, () => {});
 
   const sales = calls.filter((call) => call.url.endsWith("/registrar_venta_v4"));
-  assert.equal(sales.length, 2);
-  assert.deepEqual(sales.map((call) => call.body.p_items), [
+  assert.equal(sales.length, 3);
+  assert.deepEqual(sales.slice(0, 2).map((call) => call.body.p_items), [
     [{ producto_id: "product-a", cantidad: 1 }, { producto_id: "product-b", cantidad: 1 }],
     [{ producto_id: "product-b", cantidad: 1 }, { producto_id: "product-a", cantidad: 1 }]
   ]);
   assert.notEqual(sales[0].body.p_request_id, sales[1].body.p_request_id);
-  assert.deepEqual(sales.map((call) => call.body.p_caja_id), ["cash-a", "cash-b"]);
+  assert.equal(sales[2].body.p_request_id, sales[0].body.p_request_id);
+  assert.deepEqual(sales.slice(0, 2).map((call) => call.body.p_caja_id), ["cash-a", "cash-b"]);
 });
 
 test("sales concurrency client includes an authenticated bearer token", async () => {
