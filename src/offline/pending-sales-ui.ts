@@ -4,6 +4,7 @@ import {
   type PendingSaleRow,
   type PendingSalesSummary
 } from "./pending-sales-view-model.js";
+import type { OfflineSale } from "../types/offline.js";
 
 interface SyncOptions {
   readonly mostrarResumen?: boolean;
@@ -22,6 +23,7 @@ type SyncFunction = (options?: SyncOptions) => Promise<SyncSummary>;
 
 type WindowWithOfflineSync = Window & {
   readonly sincronizarVentasOfflineIndexedDbV2312?: SyncFunction;
+  readonly listarVentasOfflineIndexedDbV2312?: () => Promise<readonly OfflineSale[]>;
 };
 
 const STYLE_ID = "vendify-pending-sales-v2312-style";
@@ -43,6 +45,10 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 
 function syncFunction(): SyncFunction | undefined {
   return (window as WindowWithOfflineSync).sincronizarVentasOfflineIndexedDbV2312;
+}
+
+function listSalesFunction(): (() => Promise<readonly OfflineSale[]>) | undefined {
+  return (window as WindowWithOfflineSync).listarVentasOfflineIndexedDbV2312;
 }
 
 function statusLabel(status: PendingSaleRow["status"]): string {
@@ -207,7 +213,9 @@ async function refresh(): Promise<void> {
   const runtime = window.VendifyOfflineV2312;
   if (!runtime?.enabled || !button || !panel) return;
 
-  const sales = await runtime.listSales();
+  const listSales = listSalesFunction();
+  if (!listSales) return;
+  const sales = await listSales();
   const summary = summarizePendingSales(sales);
   const rows = pendingSaleRows(sales);
 
