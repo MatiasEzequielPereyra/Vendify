@@ -19,6 +19,7 @@ export { VendifyOfflineDb } from "./indexeddb-store.js";
 export { classifyOfflineSyncError } from "./sync-error.js";
 export {
   OfflineQueueSynchronizer,
+  createScopedOfflineQueueStore,
   recoverInterruptedOfflineSales,
   syncOfflineQueue
 } from "./sync-engine.js";
@@ -32,6 +33,7 @@ export type {
 } from "./sync-error.js";
 export type {
   OfflineQueueStore,
+  OfflineQueueScope,
   OfflineSaleTransport,
   OfflineSyncOptions,
   OfflineSyncSummary,
