@@ -176,18 +176,25 @@ export async function runSalesConcurrency(config, fetchImpl = globalThis.fetch, 
   assert.equal(a.branchId, config.branchId, "La sucursal configurada no coincide con el contexto de A");
   assert.equal(b.branchId, config.branchId, "La sucursal configurada no coincide con el contexto de B");
 
+  const payloadA = salePayload(
+    config, [config.productA, config.productB], config.userA.cashId, requestId("a")
+  );
+  const payloadB = salePayload(
+    config, [config.productB, config.productA], config.userB.cashId, requestId("b")
+  );
   const [saleA, saleB] = await Promise.all([
-    client.rpc(tokenA, "registrar_venta_v4", salePayload(
-      config, [config.productA, config.productB], config.userA.cashId, requestId("a")
-    )),
-    client.rpc(tokenB, "registrar_venta_v4", salePayload(
-      config, [config.productB, config.productA], config.userB.cashId, requestId("b")
-    ))
+    client.rpc(tokenA, "registrar_venta_v4", payloadA),
+    client.rpc(tokenB, "registrar_venta_v4", payloadB)
   ]);
 
   assert.equal(saleA.ok, true, `Venta concurrente A: ${responseMessage(saleA)}`);
   assert.equal(saleB.ok, true, `Venta concurrente B: ${responseMessage(saleB)}`);
-  log("PASS: two concurrent reversed carts completed through registrar_venta_v4");
+
+  const retryA = await client.rpc(tokenA, "registrar_venta_v4", payloadA);
+  assert.equal(retryA.ok, true, `Reintento idempotente A: ${responseMessage(retryA)}`);
+  assert.deepEqual(retryA.data, saleA.data, "El reintento creó o devolvió una venta distinta");
+
+  log("PASS: reversed concurrent carts and idempotent retry completed through registrar_venta_v4");
 }
 
 async function main() {
