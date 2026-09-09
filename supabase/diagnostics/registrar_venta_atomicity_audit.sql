@@ -1,7 +1,7 @@
 -- ============================================================
 -- Vendify — diagnóstico de atomicidad de registrar_venta
 -- ============================================================
--- Sólo lectura. Verifica las definiciones desplegadas de v3 y v4.
+-- Sólo lectura. Verifica las definiciones desplegadas de v2, v3 y v4.
 -- En PostgreSQL, una excepción no capturada aborta la transacción RPC;
 -- por eso no deben existir handlers EXCEPTION que oculten un fallo parcial.
 
@@ -16,14 +16,21 @@ with functions as (
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and p.oid in (
+      to_regprocedure('public.registrar_venta_v2(jsonb,text,uuid,uuid)'),
       to_regprocedure('public.registrar_venta_v3(jsonb,jsonb,text,numeric,text,uuid,uuid)'),
       to_regprocedure('public.registrar_venta_v4(jsonb,jsonb,text,numeric,text,uuid,uuid,text)')
     )
 ), checks as (
   select
-    count(*) = 2 as functions_present,
-    coalesce(bool_and(security_definer), false) as all_security_definer,
+    count(*) filter (where signature like 'registrar_venta_v3(%' or signature like 'registrar_venta_v4(%') = 2
+      as functions_present,
+    coalesce(bool_and(security_definer) filter (
+      where signature like 'registrar_venta_v3(%' or signature like 'registrar_venta_v4(%'
+    ), false) as all_security_definer,
     coalesce(bool_or(anon_can_execute), false) as anon_can_execute_any,
+    coalesce(bool_or(
+      signature like 'registrar_venta_v2(%' and authenticated_can_execute
+    ), false) as authenticated_can_execute_v2,
     coalesce(bool_or(
       signature like 'registrar_venta_v3(%' and authenticated_can_execute
     ), false) as authenticated_can_execute_v3,
@@ -57,6 +64,7 @@ select jsonb_build_object(
   'functions_present', functions_present,
   'all_security_definer', all_security_definer,
   'anon_can_execute_any', anon_can_execute_any,
+  'authenticated_can_execute_v2', authenticated_can_execute_v2,
   'authenticated_can_execute_v3', authenticated_can_execute_v3,
   'authenticated_can_execute_v4', authenticated_can_execute_v4,
   'v3_has_exception_handler', v3_has_exception_handler,
@@ -67,6 +75,7 @@ select jsonb_build_object(
     functions_present
     and all_security_definer
     and not anon_can_execute_any
+    and not authenticated_can_execute_v2
     and not authenticated_can_execute_v3
     and authenticated_can_execute_v4
     and not v3_has_exception_handler
