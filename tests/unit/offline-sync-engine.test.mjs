@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  createScopedOfflineQueueStore,
   recoverInterruptedOfflineSales,
   syncOfflineQueue
 } from "../../dist-ts/offline/sync-engine.js";
@@ -39,6 +40,11 @@ class MemoryStore {
 
   async listSales() {
     return [...this.sales.values()].map((item) => ({ ...item }));
+  }
+
+  async getSale(requestId) {
+    const item = this.sales.get(requestId);
+    return item ? { ...item } : null;
   }
 
   async transitionSale(requestId, nextStatus, options = {}) {
@@ -134,4 +140,32 @@ test("interrupted syncing sale is recovered as retryable", async () => {
   assert.equal(recovered, 1);
   assert.equal(store.sales.get("req-1").status, "failed_retryable");
   assert.match(store.sales.get("req-1").lastError, /request_id/i);
+});
+
+test("scoped queue never sends or recovers another user's pending sales", async () => {
+  const foreign = {
+    ...sale("req-foreign", "2026-09-01T09:59:00.000Z", "syncing"),
+    businessId: "business-2",
+    userId: "user-2"
+  };
+  const own = sale("req-own", "2026-09-01T10:00:00.000Z");
+  const store = new MemoryStore([foreign, own]);
+  const scoped = createScopedOfflineQueueStore(store, {
+    businessId: "business-1",
+    branchId: "branch-1",
+    userId: "user-1"
+  });
+  const sent = [];
+
+  const summary = await syncOfflineQueue(scoped, {
+    async send(item) {
+      sent.push(item.requestId);
+      return { ok: true };
+    }
+  });
+
+  assert.deepEqual(sent, ["req-own"]);
+  assert.equal(summary.recovered, 0);
+  assert.equal(store.sales.get("req-own").status, "synced");
+  assert.equal(store.sales.get("req-foreign").status, "syncing");
 });
