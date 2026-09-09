@@ -5,7 +5,10 @@ import {
   buildLegacyOfflineTicket,
   createLegacyOfflineSale,
   isLegacyOfflineNetworkError,
+  legacyOfflineSalesPreBranchStorageKey,
+  legacyOfflineSalesStorageKey,
   parseLegacyOfflineQueue,
+  partitionLegacyOfflineSalesByScope,
   summarizeLegacyOfflineQueue,
   validateLegacyOfflinePayments
 } from "../../dist-ts/offline/legacy-fallback.js";
@@ -38,6 +41,26 @@ test("legacy queue summary separates pending and review sales", () => {
     revision: 1,
     queue: [pending, review]
   });
+});
+
+test("legacy offline storage is branch-scoped and migration partitions without data loss", () => {
+  const scope = { userId: "user-1", businessId: "business-1", branchId: "branch-1" };
+  const own = createLegacyOfflineSale(baseInput);
+  const otherBranch = createLegacyOfflineSale({ ...baseInput, requestId: "request-2", branchId: "branch-2" });
+  const otherUser = createLegacyOfflineSale({ ...baseInput, requestId: "request-3", userId: "user-2" });
+
+  assert.equal(
+    legacyOfflineSalesStorageKey(scope),
+    "vendify_offline_sales_v2311:user-1:business-1:branch-1"
+  );
+  assert.equal(
+    legacyOfflineSalesPreBranchStorageKey(scope),
+    "vendify_offline_sales_v2311:user-1:business-1"
+  );
+  assert.deepEqual(
+    partitionLegacyOfflineSalesByScope([own, otherBranch, otherUser], scope),
+    { scoped: [own], remaining: [otherBranch, otherUser] }
+  );
 });
 
 test("legacy offline payment validation preserves supported methods", () => {
