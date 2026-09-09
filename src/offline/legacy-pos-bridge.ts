@@ -1,7 +1,9 @@
 import type { LegacyPosPaymentInput, LegacyPosSaleItemInput } from "./legacy-adapter.js";
 import { offlineSaleToLegacyTicketShape } from "./legacy-adapter.js";
+import type { OfflineSale } from "../types/offline.js";
 import type { SupabaseRpcClientLike } from "./supabase-transport.js";
 import type { OfflineSyncSummary } from "./sync-engine.js";
+import type { OfflineQueueScope } from "./sync-engine.js";
 import {
   VENDIFY_PRODUCTION_SUPABASE_REF,
   resolveOfflineSyncSafety
@@ -56,6 +58,7 @@ declare global {
     sincronizarVentasOfflineIndexedDbV2312?: (
       options?: LegacySyncOptions
     ) => Promise<OfflineSyncSummary>;
+    listarVentasOfflineIndexedDbV2312?: () => Promise<readonly OfflineSale[]>;
   }
 }
 
@@ -83,6 +86,22 @@ function currentSyncSafety() {
     supabaseClient.supabaseUrl ?? fallbackProductionUrl,
     window.location.search
   );
+}
+
+function currentOfflineScope(): OfflineQueueScope {
+  const context = window.appContext;
+  return {
+    businessId: requiredScopeId(context?.business?.id, "el negocio"),
+    branchId: requiredScopeId(context?.branch?.id, "la sucursal"),
+    userId: requiredScopeId(sesionActual?.user?.id, "el usuario")
+  };
+}
+
+async function listarVentasOfflineIndexedDbV2312() {
+  const runtime = window.VendifyOfflineV2312;
+  if (!runtime?.enabled) return [];
+  await runtime.ready;
+  return runtime.listSales(currentOfflineScope());
 }
 
 async function registrarVentaOfflineIndexedDbV2312(
@@ -168,8 +187,16 @@ async function runIndexedDbSync(
 
   if (syncInFlight) return syncInFlight;
 
+  let scope: OfflineQueueScope;
+  try {
+    scope = currentOfflineScope();
+  } catch (error) {
+    console.warn("[Vendify v2.31.2] offline sync blocked without an active scope", error);
+    return EMPTY_SYNC_SUMMARY;
+  }
+
   const run = runtime
-    .syncNow(supabaseClient, {
+    .syncNow(supabaseClient, scope, {
       includeReview: options.incluirRevision === true,
       recoverInterrupted: true,
       limit: 50
@@ -213,6 +240,7 @@ async function runIndexedDbSync(
 
 window.registrarVentaOfflineIndexedDbV2312 = registrarVentaOfflineIndexedDbV2312;
 window.sincronizarVentasOfflineIndexedDbV2312 = runIndexedDbSync;
+window.listarVentasOfflineIndexedDbV2312 = listarVentasOfflineIndexedDbV2312;
 
 function scheduleSync(showSummary: boolean): void {
   if (!runtimeEnabled() || !navigator.onLine) return;
