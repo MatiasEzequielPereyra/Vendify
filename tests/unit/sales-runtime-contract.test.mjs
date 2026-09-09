@@ -29,6 +29,13 @@ const accessReassertionMigration = fs.readFileSync(
   path.resolve(currentDirectory, "../../supabase/migrations/20260908_009_sales_rpc_access_reassertion.sql"),
   "utf8"
 );
+const v2InternalMigration = fs.readFileSync(
+  path.resolve(
+    currentDirectory,
+    "../../supabase/migrations/20260909_012_sales_v2_internal_only.sql"
+  ),
+  "utf8"
+);
 
 test("sales runtime contract validates the exact v4 RPC signature", () => {
   assert.match(
@@ -88,4 +95,11 @@ test("only v4 remains callable by API roles after access reassertion", () => {
   assert.match(accessReassertionMigration, /has_function_privilege\('anon', v_v3, 'execute'\)/);
   assert.match(accessReassertionMigration, /has_function_privilege\('service_role', v_v3, 'execute'\)/);
   assert.match(accessReassertionMigration, /v3 y v4 no tienen el mismo owner/);
+});
+
+test("obsolete v2 checkout is not callable by API clients", () => {
+  assert.match(v2InternalMigration, /registrar_venta_v2\(jsonb,text,uuid,uuid\)/);
+  assert.match(v2InternalMigration, /from public, anon, authenticated/i);
+  assert.match(v2InternalMigration, /registrar_venta_v2 sigue expuesta a clientes/i);
+  assert.match(v2InternalMigration, /authenticated perdió acceso a registrar_venta_v4/i);
 });
