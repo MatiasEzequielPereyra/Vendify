@@ -74,7 +74,6 @@ declare
     'recibir_compra_v1',
     'registrar_error_cliente_v1',
     'registrar_movimiento_caja_v1',
-    'registrar_venta_v2',
     'registrar_venta_v4',
     'transferir_stock_v2'
   ];
