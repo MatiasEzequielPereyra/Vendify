@@ -46,8 +46,9 @@ test("sales concurrency harness sends reversed carts to v4 with separate users a
   const config = loadSalesConcurrencyConfig(validEnv);
   const calls = [];
   const saleResults = new Map();
+  const stockByProduct = new Map([["product-a", 10], ["product-b", 10]]);
   const fetchImpl = async (url, request) => {
-    const body = JSON.parse(request.body);
+    const body = request.body ? JSON.parse(request.body) : undefined;
     calls.push({ url, request, body });
     if (url.includes("/auth/v1/token")) {
       return response({ access_token: body.email === validEnv.VENDIFY_TEST_SALES_USER_A_EMAIL ? "token-a" : "token-b" });
@@ -55,9 +56,16 @@ test("sales concurrency harness sends reversed carts to v4 with separate users a
     if (url.endsWith("/obtener_contexto_app")) {
       return response({ business: { id: "business-1" }, branch: { id: "branch-1" } });
     }
+    if (url.includes("/producto_stock_sucursal?")) {
+      const productId = new URL(url).searchParams.get("producto_id")?.replace("eq.", "");
+      return response([{ producto_id: productId, stock: stockByProduct.get(productId) }]);
+    }
     if (url.endsWith("/registrar_venta_v4")) {
       if (!saleResults.has(body.p_request_id)) {
         saleResults.set(body.p_request_id, { venta: { id: crypto.randomUUID() } });
+        for (const item of body.p_items) {
+          stockByProduct.set(item.producto_id, stockByProduct.get(item.producto_id) - item.cantidad);
+        }
       }
       return response(saleResults.get(body.p_request_id));
     }
@@ -75,6 +83,8 @@ test("sales concurrency harness sends reversed carts to v4 with separate users a
   assert.notEqual(sales[0].body.p_request_id, sales[1].body.p_request_id);
   assert.equal(sales[2].body.p_request_id, sales[0].body.p_request_id);
   assert.deepEqual(sales.slice(0, 2).map((call) => call.body.p_caja_id), ["cash-a", "cash-b"]);
+  assert.deepEqual([...stockByProduct.entries()], [["product-a", 8], ["product-b", 8]]);
+  assert.equal(calls.filter((call) => call.url.includes("/producto_stock_sucursal?")).length, 4);
 });
 
 test("sales concurrency client includes an authenticated bearer token", async () => {
