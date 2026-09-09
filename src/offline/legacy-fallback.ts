@@ -43,6 +43,12 @@ export interface LegacyOfflineQueueSummary {
   readonly queue: readonly LegacyOfflineSale[];
 }
 
+export interface LegacyOfflineScope {
+  readonly userId: string | null;
+  readonly businessId: string | null;
+  readonly branchId: string | null;
+}
+
 export interface CreateLegacyOfflineSaleInput {
   readonly requestId: string;
   readonly userId: string | null;
@@ -64,6 +70,47 @@ export function parseLegacyOfflineQueue(raw: string | null): LegacyOfflineSale[]
   } catch {
     return [];
   }
+}
+
+export function legacyOfflineSalesStorageKey(scope: LegacyOfflineScope): string {
+  return [
+    "vendify_offline_sales_v2311",
+    scope.userId ?? "anon",
+    scope.businessId ?? "none",
+    scope.branchId ?? "none"
+  ].join(":");
+}
+
+export function legacyOfflineSalesPreBranchStorageKey(scope: LegacyOfflineScope): string {
+  return [
+    "vendify_offline_sales_v2311",
+    scope.userId ?? "anon",
+    scope.businessId ?? "none"
+  ].join(":");
+}
+
+export function partitionLegacyOfflineSalesByScope(
+  queue: readonly LegacyOfflineSale[],
+  scope: LegacyOfflineScope
+): { readonly scoped: LegacyOfflineSale[]; readonly remaining: LegacyOfflineSale[] } {
+  if (!scope.userId || !scope.businessId || !scope.branchId) {
+    return { scoped: [], remaining: [...queue] };
+  }
+
+  const scoped: LegacyOfflineSale[] = [];
+  const remaining: LegacyOfflineSale[] = [];
+  for (const sale of queue) {
+    if (
+      sale.user_id === scope.userId &&
+      sale.negocio_id === scope.businessId &&
+      sale.sucursal_id === scope.branchId
+    ) {
+      scoped.push(sale);
+    } else {
+      remaining.push(sale);
+    }
+  }
+  return { scoped, remaining };
 }
 
 export function summarizeLegacyOfflineQueue(
