@@ -10,11 +10,18 @@ export interface OfflineTransitionOptions {
 
 export interface OfflineQueueStore {
   listSales(): Promise<readonly OfflineSale[]>;
+  getSale(requestId: RequestId): Promise<OfflineSale | null>;
   transitionSale(
     requestId: RequestId,
     nextStatus: OfflineSale["status"],
     options?: OfflineTransitionOptions
   ): Promise<OfflineSale>;
+}
+
+export interface OfflineQueueScope {
+  readonly businessId: string;
+  readonly branchId: string;
+  readonly userId: string;
 }
 
 export type OfflineTransportResult =
@@ -38,6 +45,34 @@ export interface OfflineSyncOptions {
   readonly includeReview?: boolean;
   readonly limit?: number;
   readonly recoverInterrupted?: boolean;
+}
+
+function saleMatchesScope(sale: OfflineSale, scope: OfflineQueueScope): boolean {
+  return sale.businessId === scope.businessId
+    && sale.branchId === scope.branchId
+    && sale.userId === scope.userId;
+}
+
+export function createScopedOfflineQueueStore(
+  store: OfflineQueueStore,
+  scope: OfflineQueueScope
+): OfflineQueueStore {
+  return {
+    async listSales() {
+      return (await store.listSales()).filter((sale) => saleMatchesScope(sale, scope));
+    },
+    async getSale(requestId) {
+      const sale = await store.getSale(requestId);
+      return sale !== null && saleMatchesScope(sale, scope) ? sale : null;
+    },
+    async transitionSale(requestId, nextStatus, options) {
+      const sale = await store.getSale(requestId);
+      if (sale === null || !saleMatchesScope(sale, scope)) {
+        throw new Error(`Offline sale is outside the active scope: ${requestId}`);
+      }
+      return store.transitionSale(requestId, nextStatus, options);
+    }
+  };
 }
 
 function compareSalesFifo(a: OfflineSale, b: OfflineSale): number {
