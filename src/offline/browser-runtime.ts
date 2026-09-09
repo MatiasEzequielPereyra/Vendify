@@ -13,6 +13,8 @@ import {
 import { createRegistrarVentaV4Transport, type SupabaseRpcClientLike } from "./supabase-transport.js";
 import {
   OfflineQueueSynchronizer,
+  createScopedOfflineQueueStore,
+  type OfflineQueueScope,
   type OfflineSyncOptions,
   type OfflineSyncSummary
 } from "./sync-engine.js";
@@ -40,12 +42,13 @@ export interface VendifyOfflineRuntimePublic {
   readonly mode: "legacy" | "v2312";
   readonly enabled: boolean;
   readonly ready: Promise<void>;
-  diagnostics(): Promise<OfflineRuntimeDiagnostics>;
-  listSales(): Promise<readonly OfflineSale[]>;
+  diagnostics(scope: OfflineQueueScope): Promise<OfflineRuntimeDiagnostics>;
+  listSales(scope: OfflineQueueScope): Promise<readonly OfflineSale[]>;
   captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<void>;
   enqueueLegacySale(input: LegacyPosOfflineSaleInput): Promise<OfflineSale>;
   syncNow(
     client: SupabaseRpcClientLike,
+    scope: OfflineQueueScope,
     options?: OfflineSyncOptions
   ): Promise<OfflineSyncSummary>;
   enableForThisBrowser(): void;
@@ -67,6 +70,7 @@ let db: VendifyOfflineDb | null = null;
 let initializationError: string | null = null;
 let synchronizer: OfflineQueueSynchronizer | null = null;
 let synchronizerClient: SupabaseRpcClientLike | null = null;
+let synchronizerScopeKey: string | null = null;
 
 const ready = (async (): Promise<void> => {
   if (mode !== "v2312") return;
@@ -99,12 +103,16 @@ function emptyStatusCounts(): Record<OfflineSaleStatus, number> {
   };
 }
 
-async function diagnostics(): Promise<OfflineRuntimeDiagnostics> {
+function scopeKey(scope: OfflineQueueScope): string {
+  return `${scope.businessId}:${scope.branchId}:${scope.userId}`;
+}
+
+async function diagnostics(scope: OfflineQueueScope): Promise<OfflineRuntimeDiagnostics> {
   await ready;
   const sales = emptyStatusCounts();
 
   if (db) {
-    const storedSales = await db.listSales();
+    const storedSales = await createScopedOfflineQueueStore(db, scope).listSales();
     for (const sale of storedSales) sales[sale.status] += 1;
   }
 
@@ -118,9 +126,9 @@ async function diagnostics(): Promise<OfflineRuntimeDiagnostics> {
   };
 }
 
-async function listSales(): Promise<readonly OfflineSale[]> {
+async function listSales(scope: OfflineQueueScope): Promise<readonly OfflineSale[]> {
   await ready;
-  return requireDb().listSales();
+  return createScopedOfflineQueueStore(requireDb(), scope).listSales();
 }
 
 async function captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<void> {
@@ -155,15 +163,22 @@ async function enqueueLegacySale(input: LegacyPosOfflineSaleInput): Promise<Offl
 
 async function syncNow(
   client: SupabaseRpcClientLike,
+  scope: OfflineQueueScope,
   options: OfflineSyncOptions = {}
 ): Promise<OfflineSyncSummary> {
   await ready;
   const activeDb = requireDb();
+  const nextScopeKey = scopeKey(scope);
 
-  if (synchronizer === null || synchronizerClient !== client) {
+  if (
+    synchronizer === null
+    || synchronizerClient !== client
+    || synchronizerScopeKey !== nextScopeKey
+  ) {
     synchronizerClient = client;
+    synchronizerScopeKey = nextScopeKey;
     synchronizer = new OfflineQueueSynchronizer(
-      activeDb,
+      createScopedOfflineQueueStore(activeDb, scope),
       createRegistrarVentaV4Transport(client)
     );
   }
