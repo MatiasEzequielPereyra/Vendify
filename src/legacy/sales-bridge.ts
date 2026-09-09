@@ -17,7 +17,6 @@ import {
   configureDiscountPin,
   getDiscountPinState,
   listSales,
-  registerLegacySale,
   registerSale,
   returnSaleItems,
   voidSale
@@ -36,7 +35,6 @@ export interface VendifySalesV232Api {
   readonly paymentsText: typeof salePaymentsText;
   readonly ticketNumber: typeof ticketNumber;
   readonly dateRange: typeof salesDateRange;
-  readonly registerLegacySale: typeof registerLegacySale;
   readonly registerSale: typeof registerSale;
   readonly authorizeDiscount: typeof authorizeDiscount;
   readonly getDiscountPinState: typeof getDiscountPinState;
@@ -63,7 +61,6 @@ window.VendifySalesV232 = Object.freeze({
   paymentsText: salePaymentsText,
   ticketNumber,
   dateRange: salesDateRange,
-  registerLegacySale,
   registerSale,
   authorizeDiscount,
   getDiscountPinState,
