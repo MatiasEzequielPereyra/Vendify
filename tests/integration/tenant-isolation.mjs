@@ -195,6 +195,13 @@ async function expectCrossTenantEmpty(client, token, table, column, id, label) {
   assert.deepEqual(rows, [], `${label}: RLS expuso una fila del otro tenant`);
 }
 
+async function expectAnonymousDeniedOrEmpty(client, table, column, id, label) {
+  const result = await client.select(null, table, column, id);
+  if (result.ok) {
+    assert.deepEqual(result.data, [], `${label}: anon recibió datos`);
+  }
+}
+
 export async function runTenantIsolation(config, fetchImpl = globalThis.fetch, log = console.log) {
   const client = createTenantTestClient(config, fetchImpl);
   const [tokenA, tokenB] = await Promise.all([
@@ -277,9 +284,21 @@ export async function runTenantIsolation(config, fetchImpl = globalThis.fetch, l
     await client.rpc(null, "obtener_contexto_app"),
     "Un usuario anónimo no obtiene contexto"
   );
-  const anonymousBusinessRead = await client.select(null, "negocios", "id", a.businessId);
-  if (anonymousBusinessRead.ok) {
-    assert.deepEqual(anonymousBusinessRead.data, [], "Anon no debe leer negocios");
+  for (const [table, column, identityField] of [
+    ["negocios", "id", "businessId"],
+    ["negocio_miembros", "id", "membershipId"],
+    ["sucursales", "id", "branchId"],
+    ["productos", "negocio_id", "businessId"],
+    ["ventas", "negocio_id", "businessId"],
+    ["producto_stock_sucursal", "sucursal_id", "branchId"]
+  ]) {
+    await expectAnonymousDeniedOrEmpty(
+      client,
+      table,
+      column,
+      a[identityField],
+      `Anon no lee ${table}`
+    );
   }
 
   log("PASS: tenant A/B isolation verified through real Auth, grants and RLS");
