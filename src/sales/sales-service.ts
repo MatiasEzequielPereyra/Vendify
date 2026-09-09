@@ -50,26 +50,6 @@ function fail(error: SalesErrorLike | null, fallback: string): void {
   if (error) throw new Error(error.message ?? fallback);
 }
 
-export async function registerLegacySale(
-  client: SalesRpcClientPort,
-  items: readonly SaleItemInput[],
-  paymentMethod: string | null,
-  branchId: string,
-  cashRegisterId: string
-): Promise<SalesRecord> {
-  const { data, error } = await client.rpc("registrar_venta_v2", {
-    p_items: items.map((item) => ({
-      producto_id: item.id ?? item.producto_id,
-      cantidad: item.cantidad
-    })),
-    p_medio_pago: paymentMethod,
-    p_sucursal_id: branchId,
-    p_caja_id: cashRegisterId
-  });
-  fail(error, "No se pudo registrar la venta");
-  return record(data);
-}
-
 export async function registerSale(
   client: SalesRpcClientPort,
   input: RegisterSaleInput
