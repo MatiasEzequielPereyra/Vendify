@@ -49,7 +49,10 @@ function requestId(label) {
   return `qa-sales-${label}-${crypto.randomUUID()}`;
 }
 
-export function loadSalesConcurrencyConfig(env = process.env) {
+export function loadSalesConcurrencyConfig(
+  env = process.env,
+  requiredConfirmation = "RUN_SALES_CONCURRENCY"
+) {
   const missing = REQUIRED_ENV.filter((name) => !String(env[name] ?? "").trim());
   if (missing.length) throw new Error(`Faltan variables de staging: ${missing.join(", ")}`);
 
@@ -60,8 +63,8 @@ export function loadSalesConcurrencyConfig(env = process.env) {
   if (baseUrl.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(baseUrl.hostname)) {
     throw new Error("Supabase staging debe usar HTTPS o una URL local");
   }
-  if (required(env, "VENDIFY_TEST_CONFIRM_STAGING_SALES") !== "RUN_SALES_CONCURRENCY") {
-    throw new Error("Confirmá la escritura en staging con VENDIFY_TEST_CONFIRM_STAGING_SALES=RUN_SALES_CONCURRENCY");
+  if (required(env, "VENDIFY_TEST_CONFIRM_STAGING_SALES") !== requiredConfirmation) {
+    throw new Error(`Confirmá la escritura en staging con VENDIFY_TEST_CONFIRM_STAGING_SALES=${requiredConfirmation}`);
   }
 
   const userA = {
