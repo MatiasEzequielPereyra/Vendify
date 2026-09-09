@@ -1,8 +1,8 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 68,
+  "rpcCount": 67,
   "definitionsFound": 53,
-  "missingCount": 15,
+  "missingCount": 14,
   "missing": [
     "actualizar_rol_miembro_v2",
     "actualizar_sucursal_v1",
@@ -17,8 +17,7 @@
     "listar_equipo_v3",
     "listar_sucursales_admin_v1",
     "obtener_negocio_admin_actual",
-    "obtener_perfil_empleado_actual",
-    "registrar_venta_v4"
+    "obtener_perfil_empleado_actual"
   ],
   "rows": [
     {
@@ -144,7 +143,8 @@
       "rpc": "dashboard_propietario_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql",
+        "supabase/migrations/20260907_003_dashboard_historical_margin.sql"
       ]
     },
     {
@@ -447,7 +447,8 @@
       "rpc": "registrar_error_cliente_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831_002_v231_commercial_foundation.sql",
+        "supabase/migrations/20260907_001_error_log_hardening.sql"
       ]
     },
     {
@@ -458,17 +459,12 @@
       ]
     },
     {
-      "rpc": "registrar_venta_v2",
+      "rpc": "registrar_venta_v4",
       "sourceFound": true,
       "files": [
-        "supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql",
-        "supabase/legacy/modules/011_caja_profesional.sql"
+        "supabase/migrations/20260907_007_sales_stock_lock_order.sql",
+        "supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql"
       ]
-    },
-    {
-      "rpc": "registrar_venta_v4",
-      "sourceFound": false,
-      "files": []
     },
     {
       "rpc": "transferir_stock_v2",
