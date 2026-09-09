@@ -1,7 +1,7 @@
 {
   "generatedFrom": "app.js + src/**/*.ts",
   "baselineVersion": "2.31.1",
-  "rpcCount": 68,
+  "rpcCount": 67,
   "critical": [
     "ajustar_stock_inventario_v2",
     "aplicar_conteo_fisico_v2",
@@ -79,7 +79,6 @@
     "recibir_compra_v1",
     "registrar_error_cliente_v1",
     "registrar_movimiento_caja_v1",
-    "registrar_venta_v2",
     "registrar_venta_v4",
     "transferir_stock_v2"
   ]
