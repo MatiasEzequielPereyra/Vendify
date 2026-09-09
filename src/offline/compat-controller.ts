@@ -3,15 +3,18 @@ import {
   buildLegacyOfflineTicket,
   createLegacyOfflineSale,
   isLegacyOfflineNetworkError,
+  legacyOfflineSalesPreBranchStorageKey,
+  legacyOfflineSalesStorageKey,
   parseLegacyOfflineQueue,
+  partitionLegacyOfflineSalesByScope,
   summarizeLegacyOfflineQueue,
   validateLegacyOfflinePayments,
   type LegacyOfflineSale,
+  type LegacyOfflineScope,
   type LegacyOfflineTotals
 } from "./legacy-fallback.js";
 import type { OfflineSyncSummary } from "./sync-engine.js";
 
-const OFFLINE_SALES_PREFIX = "vendify_offline_sales_v2311";
 const CASH_PROOF_PREFIX = "vendify_cash_proof_v2311";
 const MAX_OFFLINE_SALES = 200;
 const CASH_PROOF_MAX_MS = 18 * 60 * 60 * 1000;
@@ -147,8 +150,20 @@ export function createOfflineCompatController(
   let setupComplete = false;
 
   function salesKey(): string {
+    return legacyOfflineSalesStorageKey(currentLegacyScope());
+  }
+
+  function preBranchSalesKey(): string {
+    return legacyOfflineSalesPreBranchStorageKey(currentLegacyScope());
+  }
+
+  function currentLegacyScope(): LegacyOfflineScope {
     const context = dependencies.getContext();
-    return `${OFFLINE_SALES_PREFIX}:${context.userId ?? "anon"}:${context.businessId ?? "none"}`;
+    return {
+      userId: context.userId,
+      businessId: context.businessId,
+      branchId: context.branchId
+    };
   }
 
   function cashProofKey(): string {
@@ -164,7 +179,24 @@ export function createOfflineCompatController(
 
   function readLegacySales(): LegacyOfflineSale[] {
     try {
-      return parseLegacyOfflineQueue(dependencies.storage.getItem(salesKey()));
+      const scopedRaw = dependencies.storage.getItem(salesKey());
+      if (scopedRaw !== null) return parseLegacyOfflineQueue(scopedRaw);
+
+      const previousKey = preBranchSalesKey();
+      const previousQueue = parseLegacyOfflineQueue(dependencies.storage.getItem(previousKey));
+      const { scoped, remaining } = partitionLegacyOfflineSalesByScope(
+        previousQueue,
+        currentLegacyScope()
+      );
+      if (scoped.length === 0) return [];
+
+      dependencies.storage.setItem(salesKey(), JSON.stringify(scoped));
+      if (remaining.length === 0) {
+        dependencies.storage.removeItem(previousKey);
+      } else {
+        dependencies.storage.setItem(previousKey, JSON.stringify(remaining));
+      }
+      return scoped;
     } catch {
       return [];
     }
