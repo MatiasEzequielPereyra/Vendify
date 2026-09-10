@@ -11,6 +11,7 @@ import { escapeHtml, queryAll, queryOne } from "../core/dom.js";
 import { formatArs, productDisplayName } from "../core/format.js";
 import { showToast } from "../core/toast.js";
 import { loadTheme, toggleTheme } from "../core/theme.js";
+import { dismissConfirmation, showConfirmation } from "../core/confirm.js";
 
 export interface VendifyCoreV232Api {
   readonly queryOne: typeof queryOne;
@@ -21,6 +22,8 @@ export interface VendifyCoreV232Api {
   readonly showToast: typeof showToast;
   readonly loadTheme: typeof loadTheme;
   readonly toggleTheme: typeof toggleTheme;
+  readonly showConfirmation: typeof showConfirmation;
+  readonly dismissConfirmation: typeof dismissConfirmation;
 }
 
 declare global {
@@ -37,5 +40,7 @@ window.VendifyCoreV232 = Object.freeze({
   productDisplayName,
   showToast,
   loadTheme,
-  toggleTheme
+  toggleTheme,
+  showConfirmation,
+  dismissConfirmation
 });
