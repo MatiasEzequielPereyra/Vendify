@@ -4391,9 +4391,7 @@ async function cambiarSucursalDesdeSelectorV226(e) {
 }
 
 async function listarSucursalesAdminV226() {
-  const { data, error } = await supabaseClient.rpc("listar_sucursales_admin_v1");
-  if (error) throw new Error(error.message);
-  return data || [];
+  return window.VendifyBranchesV232.listAdmin(supabaseClient);
 }
 
 async function renderSucursalesConfigV226() {
@@ -4563,30 +4561,25 @@ async function guardarSucursalV226(e) {
   btn.disabled = true;
   btn.textContent = "Guardando...";
 
-  let response;
+  const input = {
+    name: $("#sucursal-nombre-v226").value.trim(),
+    address: $("#sucursal-direccion-v226").value.trim() || null,
+    phone: $("#sucursal-telefono-v226").value.trim() || null,
+    active: $("#sucursal-activa-v226").checked,
+  };
 
-  if (id) {
-    response = await supabaseClient.rpc("actualizar_sucursal_v1", {
-      p_sucursal_id: id,
-      p_nombre: $("#sucursal-nombre-v226").value.trim(),
-      p_direccion: $("#sucursal-direccion-v226").value.trim() || null,
-      p_telefono: $("#sucursal-telefono-v226").value.trim() || null,
-      p_activa: $("#sucursal-activa-v226").checked,
-    });
-  } else {
-    response = await supabaseClient.rpc("crear_sucursal_v1", {
-      p_nombre: $("#sucursal-nombre-v226").value.trim(),
-      p_direccion: $("#sucursal-direccion-v226").value.trim() || null,
-      p_telefono: $("#sucursal-telefono-v226").value.trim() || null,
-    });
-  }
-
-  btn.disabled = false;
-  btn.textContent = "Guardar";
-
-  if (response.error) {
-    errorEl.textContent = response.error.message;
+  try {
+    if (id) {
+      await window.VendifyBranchesV232.update(supabaseClient, id, input);
+    } else {
+      await window.VendifyBranchesV232.create(supabaseClient, input);
+    }
+  } catch (error) {
+    errorEl.textContent = error.message;
     return;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Guardar";
   }
 
   cerrarModalSucursalV226();
