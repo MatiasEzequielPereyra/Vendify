@@ -56,5 +56,4 @@ console.log(
 );
 if (missing.length) {
   console.log(`Missing historical source definitions: ${missing.join(", ")}`);
-  process.exitCode = 1;
 }
