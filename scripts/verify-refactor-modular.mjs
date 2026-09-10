@@ -46,7 +46,7 @@ try {
 }
 pass("generated compatibility app parses without redeclarations");
 
-for (const marker of ["VendifyCoreV232", "formatArs", "productDisplayName", "escapeHtml", "queryOne", "queryAll"]) {
+for (const marker of ["VendifyCoreV232", "formatArs", "productDisplayName", "escapeHtml", "queryOne", "queryAll", "showToast"]) {
   if (!coreSource.includes(marker)) fail(`core bundle missing ${marker}`);
 }
 pass("core bundle exposes extracted helpers");
@@ -55,7 +55,8 @@ for (const marker of [
   "const $ = (sel) => window.VendifyCoreV232.queryOne(sel);",
   "const $$ = (sel) => window.VendifyCoreV232.queryAll(sel);",
   "window.VendifyCoreV232.formatArs(valor)",
-  "window.VendifyCoreV232.escapeHtml(texto)"
+  "window.VendifyCoreV232.escapeHtml(texto)",
+  "window.VendifyCoreV232.showToast(mensaje, tipo)"
 ]) {
   if (!appSource.includes(marker)) fail(`compatibility app missing modular delegation ${marker}`);
 }
@@ -65,7 +66,8 @@ for (const obsoleteCoreImplementation of [
   "const $ = (sel) => document.querySelector(sel);",
   "const $$ = (sel) => document.querySelectorAll(sel);",
   'style: "currency", currency: "ARS"',
-  'const div = document.createElement("div");'
+  'const div = document.createElement("div");',
+  'const container = $("#toast-container");'
 ]) {
   if (sourceApp.includes(obsoleteCoreImplementation)) {
     fail(`root app.js still contains migrated Core implementation ${obsoleteCoreImplementation}`);
