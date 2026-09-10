@@ -1098,15 +1098,7 @@ function escapeHtml(texto) {
 }
 
 function mostrarToast(mensaje, tipo = "success") {
-  const container = $("#toast-container");
-  const toast = document.createElement("div");
-  toast.className = `toast ${tipo}`;
-  toast.textContent = mensaje;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add("leaving");
-    setTimeout(() => toast.remove(), 250);
-  }, 2600);
+  window.VendifyCoreV232.showToast(mensaje, tipo);
 }
 
 async function leerArchivoImagen(file) {
