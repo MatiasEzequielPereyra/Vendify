@@ -33,6 +33,49 @@ export interface CatalogImportItem {
   readonly categoria: string;
 }
 
+export interface BulkCatalogImportItem extends CatalogImportItem {
+  readonly codigo_barras: string;
+  readonly precio_compra: number;
+  readonly precio_venta: number;
+  readonly stock: number;
+}
+
+export function parseCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let value = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index] ?? "";
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') {
+        value += '"';
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+    } else if (character === "," && !quoted) {
+      cells.push(value.trim());
+      value = "";
+    } else {
+      value += character;
+    }
+  }
+
+  cells.push(value.trim());
+  return cells;
+}
+
+export function normalizeCsvHeader(value: unknown): string {
+  const text = typeof value === "string" || typeof value === "number" ? String(value) : "";
+  return text
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_");
+}
+
 function record(value: unknown): ProductRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? value as ProductRecord
@@ -200,6 +243,20 @@ export async function importCatalog(
       presentacion: item.presentacion,
       categoria: item.categoria
     }))
+  });
+  fail(error, "No se pudo importar el catálogo");
+  return requireOk(data, "No se pudo importar el catálogo");
+}
+
+
+export async function importBulkCatalog(
+  client: ProductsRpcClientPort,
+  branchId: string,
+  items: readonly BulkCatalogImportItem[]
+): Promise<ProductRecord> {
+  const { data, error } = await client.rpc("importar_productos_masivo_v1", {
+    p_sucursal_id: branchId,
+    p_items: items.map((item) => ({ ...item }))
   });
   fail(error, "No se pudo importar el catálogo");
   return requireOk(data, "No se pudo importar el catálogo");
