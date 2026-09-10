@@ -31,7 +31,8 @@ const removedLegacySymbols = [
   "cerrarTransferenciaV226",
   "cargarProductosTransferV226",
   "actualizarDisponibleTransferV226",
-  "transferirStockV226"
+  "transferirStockV226",
+  "cerrarConfirm"
 ];
 
 for (const symbol of removedLegacySymbols) {
@@ -46,6 +47,10 @@ for (const symbol of removedLegacySymbols) {
 
 if (/\bMAX_IMG_SIZE\b/.test(app)) {
   throw new Error("Unused legacy image compression constant was restored: MAX_IMG_SIZE");
+}
+
+if (/\bconfirmCallback\b/.test(app)) {
+  throw new Error("Obsolete confirmation callback state was restored");
 }
 
 console.log(`PASS: ${removedLegacySymbols.length} unreferenced legacy functions remain removed`);
