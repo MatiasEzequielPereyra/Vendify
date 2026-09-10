@@ -1328,10 +1328,6 @@ function confirmar(
   });
 }
 
-function cerrarConfirm() {
-  window.VendifyCoreV232.dismissConfirmation();
-}
-
 // =====================
 // Categorías delegadas a TypeScript
 // =====================
@@ -4032,7 +4028,7 @@ function inicializarEventos() {
   });
 
   $("#modal-confirm .modal-backdrop").addEventListener("click", () => {
-    cerrarConfirm();
+    window.VendifyCoreV232.dismissConfirmation();
   });
 
   $("#btn-cerrar-stock").addEventListener("click", cerrarModalStock);
