@@ -28,3 +28,8 @@ production RPCs that predate the incremental repository history. Run a
 diagnostic only when its corresponding audit phase requests it; do not treat
 its result as a migration.
 
+## `sources/`
+
+Recovered deployed definitions needed for contract auditability but not safe to add
+to the migration chain. They are source references only: do not execute this
+directory as migrations.
