@@ -3056,39 +3056,11 @@ async function descargarBackupOperativoV231() {
 // Importación CSV
 // ---------------------
 function parseCSVLineV231(line) {
-  const cells = [];
-  let value = "";
-  let quoted = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-
-    if (ch === '"') {
-      if (quoted && line[i + 1] === '"') {
-        value += '"';
-        i++;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (ch === "," && !quoted) {
-      cells.push(value.trim());
-      value = "";
-    } else {
-      value += ch;
-    }
-  }
-
-  cells.push(value.trim());
-  return cells;
+  return window.VendifyProductsV232.parseCsvLine(line);
 }
 
 function normalizarHeaderCSVV231(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "_");
+  return window.VendifyProductsV232.normalizeCsvHeader(value);
 }
 
 function descargarPlantillaCSVV231() {
@@ -3227,21 +3199,11 @@ async function importarCSVV231(file) {
   }
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "importar_productos_masivo_v1",
-      {
-        p_sucursal_id: appContext.branch.id,
-        p_items: items,
-      }
+    const data = await window.VendifyProductsV232.importBulkCatalog(
+      supabaseClient,
+      appContext.branch.id,
+      items
     );
-
-    if (error || data?.ok === false) {
-      throw new Error(
-        error?.message ||
-          data?.message ||
-          "No se pudo importar"
-      );
-    }
 
     await cargarCategorias();
     await cargarProductos();
