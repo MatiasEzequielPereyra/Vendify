@@ -9,3 +9,38 @@ test("RPC source recovery diagnostic is read-only and includes every missing con
 });
 
 
+const recoveredSourcePath = new URL(
+  "../../supabase/sources/recovered_rpc_definitions_20260910.sql",
+  import.meta.url
+);
+const coveragePath = new URL("../../contracts/rpc-source-coverage.json", import.meta.url);
+const recoveredRpcNames = [
+  "actualizar_rol_miembro_v2",
+  "actualizar_sucursal_v1",
+  "autorizar_descuento_v1",
+  "cambiar_estado_caja_v1",
+  "cambiar_estado_miembro_v3",
+  "configurar_pin_descuento_v1",
+  "crear_caja_v1",
+  "crear_sucursal_v1",
+  "diagnostico_integridad_v1",
+  "estado_pin_descuento_v1",
+  "listar_equipo_v3",
+  "listar_sucursales_admin_v1",
+  "obtener_negocio_admin_actual",
+  "obtener_perfil_empleado_actual"
+];
+
+test("recovered RPC definitions close the source coverage gap without entering migrations", async () => {
+  const [source, coverage] = await Promise.all([
+    readFile(recoveredSourcePath, "utf8"),
+    readFile(coveragePath, "utf8").then(JSON.parse)
+  ]);
+  assert.match(source, /Source reference only: do not include this file in the migration execution chain/i);
+  assert.equal(coverage.missingCount, 0);
+  for (const rpc of recoveredRpcNames) {
+    assert.match(source, new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${rpc}\\b`, "i"));
+    const row = coverage.rows.find((entry) => entry.rpc === rpc);
+    assert.deepEqual(row?.files, ["supabase/sources/recovered_rpc_definitions_20260910.sql"]);
+  }
+});
