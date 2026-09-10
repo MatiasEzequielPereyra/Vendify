@@ -1,9 +1,24 @@
 {
   "baselineVersion": "2.31.1",
   "rpcCount": 67,
-  "definitionsFound": 67,
-  "missingCount": 0,
-  "missing": [],
+  "definitionsFound": 53,
+  "missingCount": 14,
+  "missing": [
+    "actualizar_rol_miembro_v2",
+    "actualizar_sucursal_v1",
+    "autorizar_descuento_v1",
+    "cambiar_estado_caja_v1",
+    "cambiar_estado_miembro_v3",
+    "configurar_pin_descuento_v1",
+    "crear_caja_v1",
+    "crear_sucursal_v1",
+    "diagnostico_integridad_v1",
+    "estado_pin_descuento_v1",
+    "listar_equipo_v3",
+    "listar_sucursales_admin_v1",
+    "obtener_negocio_admin_actual",
+    "obtener_perfil_empleado_actual"
+  ],
   "rows": [
     {
       "rpc": "abrir_caja_v1",
@@ -28,17 +43,13 @@
     },
     {
       "rpc": "actualizar_rol_miembro_v2",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "actualizar_sucursal_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "ajustar_stock_inicial_rapido_v2",
@@ -85,24 +96,18 @@
     },
     {
       "rpc": "autorizar_descuento_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "cambiar_estado_caja_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "cambiar_estado_miembro_v3",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "cerrar_caja_v1",
@@ -114,10 +119,8 @@
     },
     {
       "rpc": "configurar_pin_descuento_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "confirmar_stock_por_scanner_v2",
@@ -128,17 +131,13 @@
     },
     {
       "rpc": "crear_caja_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "crear_sucursal_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "dashboard_propietario_v1",
@@ -157,10 +156,8 @@
     },
     {
       "rpc": "diagnostico_integridad_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "eliminar_categoria_segura_v1",
@@ -199,10 +196,8 @@
     },
     {
       "rpc": "estado_pin_descuento_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "exportar_respaldo_operativo_v1",
@@ -293,10 +288,8 @@
     },
     {
       "rpc": "listar_equipo_v3",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "listar_errores_plataforma_v1",
@@ -357,10 +350,8 @@
     },
     {
       "rpc": "listar_sucursales_admin_v1",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "listar_sucursales_app",
@@ -408,17 +399,13 @@
     },
     {
       "rpc": "obtener_negocio_admin_actual",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "obtener_perfil_empleado_actual",
-      "sourceFound": true,
-      "files": [
-        "supabase/sources/recovered_rpc_definitions_20260910.sql"
-      ]
+      "sourceFound": false,
+      "files": []
     },
     {
       "rpc": "obtener_permisos_personalizados_v1",
