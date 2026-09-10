@@ -5,6 +5,7 @@ import {
 } from "../products/product-model.js";
 import { createProductsController } from "../products/products-controller.js";
 import { createScannerController } from "../products/scanner-controller.js";
+import { normalizeCsvHeader, parseCsvLine } from "../products/products-service.js";
 import {
   adjustInitialStock,
   confirmScannedStock,
@@ -12,6 +13,7 @@ import {
   deleteCategory,
   deleteProduct,
   importCatalog,
+  importBulkCatalog,
   initializeCategories,
   listCategories,
   listProducts,
@@ -38,6 +40,9 @@ export interface VendifyProductsV232Api {
   readonly listSmartStock: typeof listSmartStock;
   readonly confirmScannedStock: typeof confirmScannedStock;
   readonly importCatalog: typeof importCatalog;
+  readonly importBulkCatalog: typeof importBulkCatalog;
+  readonly parseCsvLine: typeof parseCsvLine;
+  readonly normalizeCsvHeader: typeof normalizeCsvHeader;
 }
 
 declare global {
@@ -63,5 +68,8 @@ window.VendifyProductsV232 = Object.freeze({
   adjustInitialStock,
   listSmartStock,
   confirmScannedStock,
-  importCatalog
+  importCatalog,
+  importBulkCatalog,
+  parseCsvLine,
+  normalizeCsvHeader
 });
