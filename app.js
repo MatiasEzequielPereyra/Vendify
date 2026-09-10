@@ -2671,9 +2671,7 @@ async function registrarErrorClienteV231(
     return;
   }
 
-  const cleanMessage = String(mensaje || "Error")
-    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
-    .slice(0, 1000);
+  const cleanMessage = window.VendifyObservabilityV232.sanitizeClientErrorMessage(mensaje);
 
   const key = `${tipo}:${cleanMessage.slice(0, 140)}`;
   const last = errorLogThrottleV231.get(key) || 0;
@@ -2682,17 +2680,17 @@ async function registrarErrorClienteV231(
   errorLogThrottleV231.set(key, Date.now());
 
   try {
-    await supabaseClient.rpc("registrar_error_cliente_v1", {
-      p_tipo: String(tipo || "client").slice(0, 50),
-      p_mensaje: cleanMessage,
-      p_version: VENDIFY_VERSION_V231,
-      p_contexto: {
+    await window.VendifyObservabilityV232.logClientError(supabaseClient, {
+      type: tipo,
+      message: cleanMessage,
+      version: VENDIFY_VERSION_V231,
+      context: {
         path: location.pathname,
         role: appContext.membership?.role || null,
         branch_id: appContext.branch?.id || null,
         online: navigator.onLine,
         ...contexto,
-      },
+      }
     });
   } catch {}
 }
