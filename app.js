@@ -2856,13 +2856,8 @@ async function refrescarOnboardingComercialV231() {
   if (!esOwnerV231() || !navigator.onLine) return;
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "estado_onboarding_comercial_v1"
-    );
-
-    if (!error) {
-      renderOnboardingComercialV231(data || {});
-    }
+    const data = await window.VendifyCommercialV232.getOnboarding(supabaseClient);
+    renderOnboardingComercialV231(data);
   } catch {}
 }
 
@@ -2877,11 +2872,7 @@ async function cargarPlanV231() {
   const usage = $("#config-plan-usage-v231");
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "obtener_plan_actual_v1"
-    );
-
-    if (error) throw error;
+    const data = await window.VendifyCommercialV232.getPlan(supabaseClient);
 
     if (name) {
       name.textContent = data?.nombre || "Plan";
@@ -2930,11 +2921,7 @@ async function cargarConfigOperativaV231() {
   if (!navigator.onLine || !esSupervisorV231()) return;
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "obtener_config_operativa_v1"
-    );
-
-    if (error) throw error;
+    const data = await window.VendifyCommercialV232.getOperationalConfig(supabaseClient);
 
     commercialConfigV231 = {
       ...commercialConfigV231,
@@ -2991,35 +2978,14 @@ async function guardarConfigOperativaV231(event) {
   }
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "guardar_config_operativa_v1",
-      {
-        p_stock_cobertura_alerta: Number(
-          $("#config-stock-days-v231").value || 3
-        ),
-        p_ajuste_grande_unidades: Number(
-          $("#config-adjust-threshold-v231").value || 10
-        ),
-        p_diferencia_caja_alerta: Number(
-          $("#config-cash-diff-v231").value || 0
-        ),
-        p_resumen_diario:
-          $("#config-daily-summary-v231").checked,
-        p_auto_imprimir_ticket:
-          $("#config-auto-print-v231").checked,
-        p_ancho_ticket_mm: Number(
-          $("#config-ticket-width-v231").value || 80
-        ),
-      }
-    );
-
-    if (error || data?.ok === false) {
-      throw new Error(
-        error?.message ||
-          data?.message ||
-          "No se pudo guardar"
-      );
-    }
+    await window.VendifyCommercialV232.saveOperationalConfig(supabaseClient, {
+      stockCoverageAlert: Number($("#config-stock-days-v231").value || 3),
+      largeAdjustmentUnits: Number($("#config-adjust-threshold-v231").value || 10),
+      cashDifferenceAlert: Number($("#config-cash-diff-v231").value || 0),
+      dailySummary: $("#config-daily-summary-v231").checked,
+      autoPrintTicket: $("#config-auto-print-v231").checked,
+      ticketWidthMm: Number($("#config-ticket-width-v231").value || 80),
+    });
 
     await cargarConfigOperativaV231();
     await dashboardControllerV232.loadAlertBadge();
@@ -3056,11 +3022,7 @@ async function descargarBackupOperativoV231() {
   if (btn) btn.disabled = true;
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "exportar_respaldo_operativo_v1"
-    );
-
-    if (error) throw error;
+    const data = await window.VendifyCommercialV232.exportBackup(supabaseClient);
 
     const date = new Date().toISOString().slice(0, 10);
     const business = String(
