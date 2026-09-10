@@ -4061,7 +4061,6 @@ function inicializarEventos() {
       else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
       else if (!$("#modal-confirm").classList.contains("hidden")) {
         cerrarConfirm();
-        if (confirmCallback) confirmCallback(false);
       } else if (!$("#modal-stock").classList.contains("hidden")) cerrarModalStock();
       return;
     }
