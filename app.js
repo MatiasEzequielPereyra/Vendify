@@ -109,7 +109,6 @@ let cropLastX = 0;
 let cropLastY = 0;
 let stockAjusteId = null;
 let stockAjusteValor = 0;
-let confirmCallback = null;
 
 // Compatibility aliases while the remaining legacy runtime is compacted.
 // The implementation now lives in src/core and is loaded before app.js.
@@ -1322,55 +1321,15 @@ function confirmar(
     danger = null,
   } = {}
 ) {
-  return new Promise((resolve) => {
-    const destructive =
-      typeof danger === "boolean"
-        ? danger
-        : /eliminar|borrar|anular|desactivar|cerrar sesión|salir de vendify/i.test(
-            `${titulo} ${mensaje}`
-          );
-
-    const okButton = $("#btn-confirm-ok");
-    const cancelButton = $("#btn-confirm-cancel");
-
-    $("#confirm-titulo").textContent = titulo;
-    $("#confirm-mensaje").textContent = mensaje;
-
-    if (okButton) {
-      okButton.textContent =
-        okText || (destructive ? "Confirmar" : "Aceptar");
-      okButton.className = `btn ${destructive ? "btn-danger" : "btn-primary"}`;
-    }
-
-    if (cancelButton) cancelButton.textContent = cancelText;
-
-    $("#modal-confirm").classList.remove("hidden");
-    confirmCallback = resolve;
-
-    if (okButton) {
-      okButton.onclick = () => {
-        cerrarConfirm();
-        resolve(true);
-      };
-    }
-
-    if (cancelButton) {
-      cancelButton.onclick = () => {
-        cerrarConfirm();
-        resolve(false);
-      };
-    }
-
-    $("#btn-cerrar-confirm").onclick = () => {
-      cerrarConfirm();
-      resolve(false);
-    };
+  return window.VendifyCoreV232.showConfirmation(titulo, mensaje, {
+    okText,
+    cancelText,
+    danger,
   });
 }
 
 function cerrarConfirm() {
-  $("#modal-confirm").classList.add("hidden");
-  confirmCallback = null;
+  window.VendifyCoreV232.dismissConfirmation();
 }
 
 // =====================
@@ -4074,7 +4033,6 @@ function inicializarEventos() {
 
   $("#modal-confirm .modal-backdrop").addEventListener("click", () => {
     cerrarConfirm();
-    if (confirmCallback) confirmCallback(false);
   });
 
   $("#btn-cerrar-stock").addEventListener("click", cerrarModalStock);
