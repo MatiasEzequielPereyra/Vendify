@@ -1071,17 +1071,11 @@ async function cargarCategorias() {
 // Tema (se mantiene local: es solo una preferencia visual del dispositivo)
 // =====================
 function cargarTema() {
-  const tema = localStorage.getItem(THEME_KEY) || "dark";
-  document.documentElement.setAttribute("data-theme", tema === "light" ? "light" : "");
-  $("#theme-icon").textContent = tema === "light" ? "🌙" : "☀️";
+  window.VendifyCoreV232.loadTheme(THEME_KEY);
 }
 
 function toggleTema() {
-  const actual = document.documentElement.getAttribute("data-theme");
-  const nuevo = actual === "light" ? "dark" : "light";
-  document.documentElement.setAttribute("data-theme", nuevo === "light" ? "light" : "");
-  localStorage.setItem(THEME_KEY, nuevo);
-  $("#theme-icon").textContent = nuevo === "light" ? "🌙" : "☀️";
+  const nuevo = window.VendifyCoreV232.toggleTheme(THEME_KEY);
   mostrarToast(nuevo === "light" ? "Tema claro activado" : "Tema oscuro activado", "info");
 }
 
