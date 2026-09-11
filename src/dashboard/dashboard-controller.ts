@@ -21,7 +21,6 @@ export interface DashboardControllerDependencies {
   readonly icon: (name: string) => string;
   readonly showToast: (message: string, type: "error" | "info" | "success") => void;
   readonly reportError: (type: string, message: string) => void | Promise<void>;
-  readonly navigateTo: (target: "sales" | "inventory" | "cash" | "purchases") => void;
 }
 
 export interface DashboardLoadOptions {
@@ -111,7 +110,7 @@ export function createDashboardController(
         const date = new Date(`${textValue(row.fecha)}T12:00:00`);
         const label = date.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
         return `
-          <button type="button" class="dashboard-bar-column-v231 dashboard-actionable-v231" data-dashboard-target="sales" title="Ver ventas de ${label} · ${formatArs(total)}">
+          <div class="dashboard-bar-column-v231" title="${label} · ${formatArs(total)}">
             <div class="dashboard-bar-value-v231">
               ${total > 0 ? formatCompactNumber(total) : ""}
             </div>
@@ -119,7 +118,7 @@ export function createDashboardController(
               <div class="dashboard-bar-v231" style="height:${String(height)}%"></div>
             </div>
             <small>${label}</small>
-          </button>`;
+          </div>`;
       })
       .join("");
   }
@@ -160,14 +159,14 @@ export function createDashboardController(
       queryOne("#dashboard-top-products-v231"),
       data.top_productos,
       (row, index) => `
-          <button type="button" class="dashboard-list-row-v231 dashboard-actionable-v231" data-dashboard-target="inventory">
+        <div class="dashboard-list-row-v231">
           <span class="dashboard-rank-v231">${String(index + 1)}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
             <small>${String(numberValue(row.unidades))} unidades</small>
           </div>
           <strong>${formatArs(numberValue(row.total))}</strong>
-          </button>`,
+        </div>`,
       "Todavía no hay productos vendidos en este período."
     );
 
@@ -197,7 +196,7 @@ export function createDashboardController(
       queryOne("#dashboard-restock-v231"),
       data.reposicion,
       (row) => `
-          <button type="button" class="dashboard-list-row-v231 dashboard-actionable-v231" data-dashboard-target="inventory">
+        <div class="dashboard-list-row-v231">
           <span class="dashboard-list-icon-v231 warning">${dependencies.icon("inventory")}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
@@ -207,7 +206,7 @@ export function createDashboardController(
             </small>
           </div>
           <strong>+${String(numberValue(row.reposicion_sugerida))}</strong>
-          </button>`,
+        </div>`,
       "No hay reposiciones urgentes sugeridas."
     );
 
@@ -217,7 +216,7 @@ export function createDashboardController(
       (row) => {
         const severity = textValue(row.severity, "info");
         return `
-          <button type="button" class="dashboard-alert-row-v231 ${escapeHtml(severity)} dashboard-actionable-v231" data-dashboard-target="inventory">
+          <div class="dashboard-alert-row-v231 ${escapeHtml(severity)}">
             <span class="dashboard-list-icon-v231">
               ${dependencies.icon(severity === "critical" ? "alert" : "bell")}
             </span>
@@ -226,7 +225,7 @@ export function createDashboardController(
               <small>${escapeHtml(textValue(row.detail))}</small>
             </div>
             <strong>${String(numberValue(row.count))}</strong>
-          </button>`;
+          </div>`;
       },
       "Sin alertas operativas activas."
     );
@@ -235,7 +234,7 @@ export function createDashboardController(
       queryOne("#dashboard-activity-v231"),
       data.actividad,
       (row) => `
-          <div class="dashboard-list-row-v231">
+        <div class="dashboard-list-row-v231">
           <span class="dashboard-list-icon-v231">${dependencies.icon(textValue(row.icon, "history"))}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.title, "Actividad"))}</strong>
@@ -376,18 +375,6 @@ export function createDashboardController(
 
     queryOne("#btn-refresh-dashboard-v231")?.addEventListener("click", () => void load());
     queryOne("#btn-copy-summary-v231")?.addEventListener("click", () => void copySummary());
-    queryOne("#modal-dashboard-v231")?.addEventListener("click", (event) => {
-      const trigger = event.target instanceof Element
-        ? event.target.closest<HTMLElement>("[data-dashboard-target]")
-        : null;
-      if (trigger) {
-        const target = trigger.getAttribute("data-dashboard-target");
-        if (target === "sales" || target === "inventory" || target === "cash" || target === "purchases") {
-          close();
-          dependencies.navigateTo(target);
-        }
-      }
-    });
   }
 
   return Object.freeze({ setup, open, close, load, loadAlertBadge });
