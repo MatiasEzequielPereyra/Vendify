@@ -3245,8 +3245,7 @@ async function verificarPlatformAdminV231() {
   if (!btn || !navigator.onLine) return;
 
   try {
-    const { data, error } =
-      await supabaseClient.rpc("es_admin_plataforma_v1");
+    const data = await window.VendifyPlatformV232.isAdmin(supabaseClient);
 
     btn.classList.toggle(
       "hidden",
@@ -3263,23 +3262,8 @@ async function abrirPlatformAdminV231() {
   );
 
   try {
-    const [overview, businesses, errorsResult] = await Promise.all([
-      supabaseClient.rpc("platform_overview_v1"),
-      supabaseClient.rpc(
-        "listar_negocios_plataforma_v1",
-        { p_limit: 50 }
-      ),
-      supabaseClient.rpc(
-        "listar_errores_plataforma_v1",
-        { p_limit: 30 }
-      ),
-    ]);
-
-    if (overview.error) throw overview.error;
-    if (businesses.error) throw businesses.error;
-    if (errorsResult.error) throw errorsResult.error;
-
-    const data = overview.data || {};
+    const { overview: data, businesses, errors: errorsResult } =
+      await window.VendifyPlatformV232.loadBackoffice(supabaseClient);
 
     $("#platform-businesses-v231").textContent =
       Number(data.negocios || 0);
@@ -3295,7 +3279,7 @@ async function abrirPlatformAdminV231() {
 
     window.VendifyDashboardV232.renderDashboardRows(
       $("#platform-business-list-v231"),
-      businesses.data || [],
+      businesses,
       (row) => `
         <div class="platform-business-row-v231" data-platform-business="${row.id}">
           <span class="dashboard-list-icon-v231">
@@ -3344,7 +3328,7 @@ async function abrirPlatformAdminV231() {
 
     window.VendifyDashboardV232.renderDashboardRows(
       $("#platform-error-list-v231"),
-      errorsResult.data || [],
+      errorsResult,
       (row) => `
         <div class="platform-error-row-v231">
           <span class="dashboard-list-icon-v231 ${row.tipo === "window_error" ? "warning" : ""}">
@@ -3385,22 +3369,9 @@ async function guardarPlanPlataformaV231(button) {
   button.textContent = "Guardando...";
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "actualizar_plan_negocio_plataforma_v1",
-      {
-        p_negocio_id: negocioId,
-        p_plan_codigo: plan,
-        p_estado: estado,
-      }
+    await window.VendifyPlatformV232.updatePlan(
+      supabaseClient, negocioId, plan, estado
     );
-
-    if (error || data?.ok === false) {
-      throw new Error(
-        error?.message ||
-        data?.message ||
-        "No se pudo actualizar el plan"
-      );
-    }
 
     mostrarToast("Plan actualizado", "success");
     await abrirPlatformAdminV231();
