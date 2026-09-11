@@ -145,13 +145,27 @@ export async function listSales(
   from: Date | null,
   to: Date | null
 ): Promise<SalesRecord[]> {
-  let query = client.from("ventas")
-    .select("*, venta_items(*), venta_pagos(*), venta_devoluciones(*)")
+  const buildQuery = (columns: string): SalesHistoryQueryPort => {
+    let query = client.from("ventas")
+      .select(columns)
     .order("creado", { ascending: false });
-  if (branchId) query = query.eq("sucursal_id", branchId);
-  if (from) query = query.gte("creado", from.toISOString());
-  if (to) query = query.lt("creado", to.toISOString());
-  const { data, error } = await query;
-  fail(error, "No se pudo cargar el historial");
-  return records(data);
+    if (branchId) query = query.eq("sucursal_id", branchId);
+    if (from) query = query.gte("creado", from.toISOString());
+    if (to) query = query.lt("creado", to.toISOString());
+    return query;
+  };
+
+  const detailed = await buildQuery("*, venta_items(*), venta_pagos(*), venta_devoluciones(*)");
+  if (!detailed.error) return records(detailed.data);
+
+  // Algunos proyectos anteriores no publican todas las relaciones de PostgREST.
+  // El historial debe seguir disponible, aunque el detalle de cada ticket se muestre vacío.
+  const relationError = /PGRST20[01]|relationship|embedded resource|could not find/i.test(
+    detailed.error.message ?? ""
+  );
+  if (!relationError) fail(detailed.error, "No se pudo cargar el historial");
+
+  const basic = await buildQuery("*");
+  fail(basic.error, "No se pudo cargar el historial");
+  return records(basic.data);
 }
