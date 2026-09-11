@@ -197,9 +197,6 @@
   border-radius: 13px;
   background: var(--surface);
 }
-.dashboard-actionable-v231 { cursor: pointer; text-align: left; font: inherit; color: inherit; }
-.dashboard-actionable-v231:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 45%, transparent); box-shadow: 0 10px 24px rgba(15,23,42,.12); }
-.dashboard-actionable-v231:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 55%, white); outline-offset: 2px; }
 .dashboard-kpi-v231.primary {
   border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
   background: color-mix(in srgb, var(--primary-soft) 60%, var(--surface));
