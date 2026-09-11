@@ -386,6 +386,7 @@ export function createDashboardController(
           close();
           dependencies.navigateTo(target);
         }
+      }
     });
   }
 
