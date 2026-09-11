@@ -1701,6 +1701,11 @@ function setupOverlayStabilityV23011() {
   const observer = new MutationObserver((mutations) => {
     if (mutations.some((m) => m.type === "attributes")) {
       sincronizarEstadoOverlaysV23011();
+      for (const mutation of mutations) {
+        if (mutation.target instanceof HTMLElement) {
+          restaurarDashboardDesdeDestinoV235(mutation.target);
+        }
+      }
     }
   });
 
@@ -2726,6 +2731,7 @@ const dashboardControllerV232 =
     icon: iconV23011,
     showToast: mostrarToast,
     reportError: registrarErrorClienteV231,
+    openDestination: abrirDestinoDesdeDashboardV235,
   });
 
 // ---------------------
@@ -3690,6 +3696,38 @@ const discountControllerV232 =
     showToast: mostrarToast,
     recalculateTotals: () => posControllerV232.updateTotals(),
   });
+
+let dashboardReturnModalV235 = null;
+
+function abrirDestinoDesdeDashboardV235(target) {
+  const destinations = {
+    sales: { button: "#btn-historial", modal: "modal-historial" },
+    inventory: { button: "#btn-inventario", modal: "modal-inventario" },
+    cash: { button: "#btn-caja-v227", modal: "modal-caja-operativa-v227" },
+    purchases: { button: "#btn-compras", modal: "modal-compras" },
+  };
+  const destination = destinations[target];
+  const trigger = destination ? $(destination.button) : null;
+  if (!destination || !trigger) {
+    mostrarToast("No se pudo abrir la sección solicitada", "error");
+    return;
+  }
+  dashboardReturnModalV235 = destination.modal;
+  dashboardControllerV232.close();
+  trigger.click();
+  setTimeout(() => {
+    if (dashboardReturnModalV235 === destination.modal && !modalVisibleV23011(document.getElementById(destination.modal))) {
+      dashboardReturnModalV235 = null;
+      void dashboardControllerV232.open();
+    }
+  }, 0);
+}
+
+function restaurarDashboardDesdeDestinoV235(modal) {
+  if (!modal || dashboardReturnModalV235 !== modal.id || modalVisibleV23011(modal)) return;
+  dashboardReturnModalV235 = null;
+  void dashboardControllerV232.open();
+}
 
 const salesHistoryControllerV232 =
   window.VendifySalesV232.createHistoryController({
