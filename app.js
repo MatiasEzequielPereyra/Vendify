@@ -130,9 +130,10 @@ window.appContext = {
 };
 
 async function cargarContextoApp() {
-  const { data, error } = await supabaseClient.rpc("obtener_contexto_app");
-
-  if (error) {
+  let data;
+  try {
+    data = await window.VendifyContextV232.getApp(supabaseClient);
+  } catch (error) {
     console.error("[V2] Error cargando contexto:", error);
 
     if (!navigator.onLine) {
@@ -170,27 +171,25 @@ async function cargarContextoApp() {
   // Permisos personalizados del miembro prevalecen sobre los defaults
   // históricos por rol.
   try {
-    const { data: customPermissions, error: customPermissionsError } =
-      await supabaseClient.rpc("obtener_permisos_personalizados_v1");
+    const customPermissions =
+      await window.VendifyContextV232.getPermissions(supabaseClient);
 
-    if (!customPermissionsError && customPermissions) {
+    if (customPermissions && Object.keys(customPermissions).length) {
       appContext.permissions = {
         ...appContext.permissions,
         ...customPermissions,
       };
-    } else if (customPermissionsError) {
-      console.warn("[Vendify permisos] overrides no disponibles:", customPermissionsError);
     }
   } catch (permissionError) {
     console.warn("[Vendify permisos] fallback a permisos por rol:", permissionError);
   }
 
   // Si es un usuario interno, recuperamos nombre y username reales.
-  const { data: employeeProfile, error: employeeProfileError } =
-    await supabaseClient.rpc("obtener_perfil_empleado_actual");
-
-  if (!employeeProfileError && employeeProfile) {
-    appContext.employee = employeeProfile;
+  try {
+    const employeeProfile = await window.VendifyContextV232.getEmployee(supabaseClient);
+    if (Object.keys(employeeProfile).length) appContext.employee = employeeProfile;
+  } catch (employeeProfileError) {
+    console.warn("[Vendify empleados] perfil no disponible:", employeeProfileError);
   }
 
   actualizarContextoUI();
@@ -395,17 +394,11 @@ function aplicarPermisosV2() {
 }
 
 async function listarSucursalesV2() {
-  const { data, error } = await supabaseClient.rpc("listar_sucursales_app");
-  if (error) throw new Error(error.message);
-  return data || [];
+  return window.VendifyContextV232.listBranches(supabaseClient);
 }
 
 async function cambiarSucursalV2(sucursalId, { recargar = true } = {}) {
-  const { data, error } = await supabaseClient.rpc("obtener_contexto_sucursal", {
-    p_sucursal_id: sucursalId,
-  });
-
-  if (error) throw new Error(error.message);
+  const data = await window.VendifyContextV232.getBranch(supabaseClient, sucursalId);
 
   appContext.branch = data.branch;
   appContext.cashRegister = data.cashRegister;
@@ -1832,12 +1825,8 @@ async function ejecutarDiagnosticoV23011() {
   }
 
   try {
-    const { data, error } = await supabaseClient.rpc(
-      "diagnostico_integridad_v1"
-    );
-
-    if (error) throw error;
-    renderDiagnosticoV23011(data || {});
+    const data = await window.VendifyContextV232.runDiagnostic(supabaseClient);
+    renderDiagnosticoV23011(data);
   } catch (error) {
     $("#diagnostic-summary-v23011").className =
       "diagnostic-summary-v23011 critical";
@@ -3953,7 +3942,7 @@ function inicializarEventos() {
       else if (!$("#modal-reset-empleado").classList.contains("hidden")) teamControllerV232.closePasswordReset();
       else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
       else if (!$("#modal-confirm").classList.contains("hidden")) {
-        cerrarConfirm();
+        window.VendifyCoreV232.dismissConfirmation();
       } else if (!$("#modal-stock").classList.contains("hidden")) cerrarModalStock();
       return;
     }
