@@ -17,7 +17,7 @@ const modules = [
   "styles/09-stability-forms.css",
   "styles/10-commercial-offline.css"
 ];
-const validatedMonolithSha256 = "b7556eaa88d0c9be098a1961fd2cf2899580297433deaf14021c5423f65a53c3";
+const validatedMonolithSha256 = "ef6cc9c2e55783d4b8c21b66d368453d5ee83a6b90fff38e5657ea1b0269e794";
 
 function fail(message) {
   throw new Error(`Modular CSS verification failed: ${message}`);
