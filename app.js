@@ -2726,10 +2726,6 @@ const dashboardControllerV232 =
     icon: iconV23011,
     showToast: mostrarToast,
     reportError: registrarErrorClienteV231,
-    navigateTo: (target) => {
-      const buttons = { sales: "#btn-historial", inventory: "#btn-inventario", cash: "#btn-caja-v227", purchases: "#btn-compras" };
-      $(buttons[target])?.click();
-    },
   });
 
 // ---------------------
