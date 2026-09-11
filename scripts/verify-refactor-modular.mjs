@@ -12,13 +12,17 @@ const pass = (message) => console.log(`PASS: ${message}`);
 
 if (!existsSync(resolve(root, "index.html"))) fail("refactor preview is missing index.html");
 
-const files = readdirSync(root);
-const core = files.filter((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const app = files.filter((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
-if (core.length !== 1) fail(`expected one modular core bundle, found ${core.length}`);
-if (app.length !== 1) fail(`expected one refactor app bundle, found ${app.length}`);
-
 const index = readFileSync(resolve(root, "index.html"), "utf8");
+const files = readdirSync(root);
+const sources = [...index.matchAll(/src: "([^"]+\.js)"/g)].map((match) => match[1]);
+const core = sources.filter((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
+const app = sources.filter((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+if (core.length !== 1) fail(`expected one modular core referenced by index, found ${core.length}`);
+if (app.length !== 1) fail(`expected one refactor app referenced by index, found ${app.length}`);
+if (!existsSync(resolve(root, core[0])) || !existsSync(resolve(root, app[0]))) {
+  fail("index references a missing modular bundle");
+}
+
 const coreMarker = `src: "${core[0]}"`;
 const appMarker = `src: "${app[0]}"`;
 const corePosition = index.indexOf(coreMarker);
