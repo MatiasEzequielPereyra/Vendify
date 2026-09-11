@@ -21,7 +21,10 @@ export interface DashboardControllerDependencies {
   readonly icon: (name: string) => string;
   readonly showToast: (message: string, type: "error" | "info" | "success") => void;
   readonly reportError: (type: string, message: string) => void | Promise<void>;
+  readonly openDestination: (target: DashboardDestination) => void;
 }
+
+export type DashboardDestination = "sales" | "inventory" | "cash" | "purchases";
 
 export interface DashboardLoadOptions {
   readonly focusAlerts?: boolean;
@@ -110,7 +113,7 @@ export function createDashboardController(
         const date = new Date(`${textValue(row.fecha)}T12:00:00`);
         const label = date.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
         return `
-          <div class="dashboard-bar-column-v231" title="${label} · ${formatArs(total)}">
+          <div class="dashboard-bar-column-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="sales" title="Ver ventas de ${label} · ${formatArs(total)}">
             <div class="dashboard-bar-value-v231">
               ${total > 0 ? formatCompactNumber(total) : ""}
             </div>
@@ -159,7 +162,7 @@ export function createDashboardController(
       queryOne("#dashboard-top-products-v231"),
       data.top_productos,
       (row, index) => `
-        <div class="dashboard-list-row-v231">
+        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Ver inventario">
           <span class="dashboard-rank-v231">${String(index + 1)}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
@@ -196,7 +199,7 @@ export function createDashboardController(
       queryOne("#dashboard-restock-v231"),
       data.reposicion,
       (row) => `
-        <div class="dashboard-list-row-v231">
+        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Ver inventario">
           <span class="dashboard-list-icon-v231 warning">${dependencies.icon("inventory")}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
@@ -216,7 +219,7 @@ export function createDashboardController(
       (row) => {
         const severity = textValue(row.severity, "info");
         return `
-          <div class="dashboard-alert-row-v231 ${escapeHtml(severity)}">
+          <div class="dashboard-alert-row-v231 ${escapeHtml(severity)} dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Revisar inventario">
             <span class="dashboard-list-icon-v231">
               ${dependencies.icon(severity === "critical" ? "alert" : "bell")}
             </span>
@@ -375,6 +378,26 @@ export function createDashboardController(
 
     queryOne("#btn-refresh-dashboard-v231")?.addEventListener("click", () => void load());
     queryOne("#btn-copy-summary-v231")?.addEventListener("click", () => void copySummary());
+    const dashboardModal = queryOne("#modal-dashboard-v231");
+    const openTarget = (element: Element | null): void => {
+      const target = element?.closest<HTMLElement>("[data-dashboard-target]")?.dataset.dashboardTarget;
+      if (target === "sales" || target === "inventory" || target === "cash" || target === "purchases") {
+        dependencies.openDestination(target);
+      }
+    };
+    dashboardModal?.addEventListener("click", (event) => {
+      openTarget(event.target instanceof Element ? event.target : null);
+    });
+    dashboardModal?.addEventListener("keydown", (event) => {
+      if (!(event instanceof KeyboardEvent)) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const trigger = event.target instanceof Element
+        ? event.target.closest("[data-dashboard-target]")
+        : null;
+      if (!trigger) return;
+      event.preventDefault();
+      openTarget(trigger);
+    });
   }
 
   return Object.freeze({ setup, open, close, load, loadAlertBadge });
