@@ -26,3 +26,4 @@ window.VendifyDashboardV232 = Object.freeze({
   dashboardEmpty,
   renderDashboardRows
 });
+
