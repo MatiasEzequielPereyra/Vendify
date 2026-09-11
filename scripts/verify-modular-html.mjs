@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { normalizeLineEndings } from "./text-normalization.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const targetArg = process.argv[2] ?? ".";
@@ -30,7 +31,7 @@ const index = readFileSync(resolve(target, "index.html"), "utf8");
 const loader = readFileSync(resolve(target, "html-loader.js"), "utf8");
 const serviceWorker = readFileSync(resolve(target, "sw.js"), "utf8");
 const parts = fragments.map((file) => readFileSync(resolve(target, file), "utf8"));
-const markup = parts.join("");
+const markup = normalizeLineEndings(parts.join(""));
 
 if (index.split(/\r?\n/).length > 100 || Buffer.byteLength(index) > 6_000) {
   fail("root index.html grew beyond the compact compatibility shell budget");
