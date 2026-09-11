@@ -263,6 +263,18 @@
   background: var(--primary);
 }
 .dashboard-bar-column-v231 small { align-self: center; color: var(--text-muted); font-size: 7px; }
+.dashboard-action-v235 {
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+}
+.dashboard-action-v235:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .11);
+}
+.dashboard-action-v235:hover .dashboard-bar-v231 { background: color-mix(in srgb, var(--primary) 82%, white); }
+.dashboard-action-v235:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .dashboard-action-v235 { transition: none; } }
 
 .dashboard-list-v231 {
   display: flex;
