@@ -1,0 +1,3 @@
+import assert from "node:assert/strict"; import test from "node:test";
+import { getAppContext, getBranchContext, listAppBranches, runIntegrityDiagnostic } from "../../dist-ts/context/context-service.js";
+test("context service preserves app, branch and diagnostic contracts", async () => { const calls=[]; const client={rpc:async(name,args)=>{calls.push({name,args});return {data:name==="listar_sucursales_app"?[{id:"s"}]:{id:"x"},error:null};}}; assert.equal((await getAppContext(client)).id,"x"); assert.equal((await listAppBranches(client))[0].id,"s"); await getBranchContext(client,"s"); await runIntegrityDiagnostic(client); assert.deepEqual(calls.map(x=>x.name),["obtener_contexto_app","listar_sucursales_app","obtener_contexto_sucursal","diagnostico_integridad_v1"]); });
