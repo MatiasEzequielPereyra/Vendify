@@ -4,6 +4,7 @@ import {
   authorizeDiscount,
   configureDiscountPin,
   getDiscountPinState,
+  listSales,
   registerSale,
   returnSaleItems,
   voidSale
@@ -16,6 +17,30 @@ function makeClient(responses) {
     async rpc(name, args) {
       calls.push({ name, args });
       return responses[name] ?? { data: null, error: null };
+    }
+  };
+}
+
+function makeHistoryClient(responses) {
+  const selected = [];
+  return {
+    selected,
+    from() {
+      let query;
+      query = {
+        select(columns) {
+          selected.push(columns);
+          return query;
+        },
+        order() { return query; },
+        eq() { return query; },
+        gte() { return query; },
+        lt() { return query; },
+        then(resolve, reject) {
+          return Promise.resolve(responses.shift()).then(resolve, reject);
+        }
+      };
+      return query;
     }
   };
 }
@@ -95,4 +120,14 @@ test("sales services keep backend business messages", async () => {
     cashRegisterId: "cash-1",
     requestId: "request-1"
   }), /Stock insuficiente/);
+});
+
+test("history keeps tickets available when a legacy relationship is not exposed", async () => {
+  const client = makeHistoryClient([
+    { data: null, error: { message: "PGRST200: Could not find a relationship" } },
+    { data: [{ id: "sale-1", total: 100 }], error: null }
+  ]);
+  const sales = await listSales(client, "branch-1", null, null);
+  assert.deepEqual(sales, [{ id: "sale-1", total: 100 }]);
+  assert.deepEqual(client.selected, ["*, venta_items(*), venta_pagos(*), venta_devoluciones(*)", "*"]);
 });
