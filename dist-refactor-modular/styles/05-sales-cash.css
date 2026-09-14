@@ -1,0 +1,863 @@
+/* ============================================================
+   Vendify v2.28 — Ventas profesionales
+   ============================================================ */
+
+.sale-tools-v228 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sale-discount-v228,
+.sale-note-v228,
+.sale-payment-card-v228 {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.sale-field-title-v228 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sale-field-title-v228 span,
+.sale-note-v228 label,
+.sale-payment-head-v228 strong {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sale-field-title-v228 small,
+.sale-payment-head-v228 small {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.sale-discount-row-v228 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px;
+  gap: 7px;
+}
+
+.sale-discount-row-v228 input,
+.sale-note-v228 input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+}
+
+.sale-note-v228 label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.sale-payment-card-v228 {
+  margin-top: 8px;
+}
+
+.sale-payment-head-v228 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sale-payment-head-v228 > div:first-child {
+  display: flex;
+  flex-direction: column;
+}
+
+.sale-payment-mode-v228 {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.sale-payment-mode-v228 button {
+  min-width: 52px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sale-payment-mode-v228 button.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.mixed-payment-rows-v228 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mixed-pay-row-v228 {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) 105px auto 30px;
+  gap: 6px;
+  align-items: center;
+}
+
+.mixed-pay-amount-wrap-v228 {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.mixed-pay-amount-wrap-v228 span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.mixed-pay-amount-wrap-v228 input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+}
+
+.mixed-pay-rest-v228 {
+  white-space: nowrap;
+}
+
+.mixed-payment-footer-v228 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+}
+
+#mixed-payment-remaining-v228 {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+#mixed-payment-remaining-v228.ok {
+  color: #22c55e;
+}
+
+#mixed-payment-remaining-v228.error {
+  color: var(--danger);
+}
+
+.sale-totals-v228 {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.sale-totals-v228 > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.sale-totals-v228 span {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sale-totals-v228 strong {
+  font-size: 11px;
+}
+
+.sale-grand-total-v228 {
+  padding-top: 7px !important;
+  margin-top: 3px;
+  border-top: 1px dashed var(--border);
+}
+
+.sale-grand-total-v228 span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.sale-grand-total-v228 strong {
+  font-size: 20px;
+  color: var(--primary);
+}
+
+/* Historial profesional */
+.ticket-card-v228 summary {
+  grid-template-columns: minmax(115px, 1fr) auto auto auto !important;
+}
+
+.sale-status-v228 {
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 750;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sale-status-v228.completada {
+  background: rgba(34,197,94,.1);
+  color: #22c55e;
+}
+
+.sale-status-v228.parcialmente_devuelta {
+  background: rgba(245,158,11,.12);
+  color: #f59e0b;
+}
+
+.sale-status-v228.devuelta,
+.sale-status-v228.anulada {
+  background: rgba(239,68,68,.1);
+  color: var(--danger);
+}
+
+.ticket-card-v228.anulada {
+  opacity: .72;
+}
+
+.ticket-detail-v228 {
+  padding-top: 8px;
+}
+
+.ticket-returned-v228 {
+  color: var(--danger);
+  font-size: 9px;
+}
+
+.ticket-finance-v228 {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--border);
+}
+
+.ticket-finance-v228 > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 10px;
+}
+
+.ticket-finance-v228 .refund {
+  color: var(--danger);
+}
+
+.ticket-finance-v228 .net {
+  margin-top: 3px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.ticket-payment-note-v228,
+.ticket-observation-v228 {
+  margin: 7px 0 0;
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.ticket-payment-note-v228.refund {
+  color: var(--danger);
+}
+
+.ticket-actions-row-v228 {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+/* Ticket */
+.ticket-modal-v228 {
+  width: min(430px, 94vw) !important;
+  max-width: 430px !important;
+  max-height: 92dvh !important;
+  overflow: hidden !important;
+}
+
+.ticket-preview-v228 {
+  overflow-y: auto;
+  max-height: 67dvh;
+  padding: 16px 22px;
+  background: #fff;
+  color: #111;
+}
+
+.receipt-v228 {
+  max-width: 320px;
+  margin: 0 auto;
+  font-size: 11px;
+}
+
+.receipt-head-v228 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.receipt-brand-v228 {
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.receipt-head-v228 span,
+.receipt-meta-v228,
+.receipt-footer-v228 small {
+  color: #666;
+  font-size: 9px;
+}
+
+.receipt-meta-v228 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 7px 0;
+  border-top: 1px dashed #aaa;
+  border-bottom: 1px dashed #aaa;
+}
+
+.receipt-status-v228 {
+  padding: 4px;
+  margin-bottom: 7px;
+  border: 1px solid #222;
+  text-align: center;
+  font-weight: 700;
+}
+
+.receipt-item-v228 {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.receipt-item-v228 > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-item-v228 strong {
+  font-size: 10px;
+}
+
+.receipt-item-v228 small {
+  color: #666;
+  font-size: 9px;
+}
+
+.receipt-totals-v228,
+.receipt-payment-v228,
+.receipt-note-v228 {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed #aaa;
+}
+
+.receipt-line-v228 {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.receipt-line-v228.total {
+  margin-top: 3px;
+  padding-top: 5px;
+  font-size: 14px;
+}
+
+.receipt-line-v228.refund {
+  color: #b91c1c;
+}
+
+.receipt-note-v228 p {
+  margin: 3px 0 0;
+}
+
+.receipt-footer-v228 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 11px;
+  padding-top: 8px;
+  border-top: 1px dashed #aaa;
+  text-align: center;
+}
+
+.ticket-actions-v228 {
+  padding: 10px 14px !important;
+  border-top: 1px solid var(--border);
+}
+
+/* Return */
+.return-modal-v228 {
+  width: min(650px, 94vw) !important;
+  max-width: 650px !important;
+  max-height: 92dvh !important;
+  overflow: hidden !important;
+}
+
+#form-return-v228 {
+  max-height: 75dvh;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.return-warning-v228 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 11px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(239,68,68,.3);
+  border-radius: 9px;
+  background: rgba(239,68,68,.06);
+}
+
+.return-warning-v228 strong {
+  color: var(--danger);
+  font-size: 11px;
+}
+
+.return-warning-v228 span {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.return-section-title-v228 {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 7px;
+}
+
+.return-section-title-v228 strong {
+  font-size: 12px;
+}
+
+.return-section-title-v228 span {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.return-items-v228 {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.return-item-v228 {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 80px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+
+.return-item-v228.disabled {
+  opacity: .55;
+}
+
+.return-item-copy-v228 {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.return-item-copy-v228 strong {
+  font-size: 11px;
+}
+
+.return-item-copy-v228 small {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.return-item-qty-v228 {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.return-form-grid-v228 {
+  display: grid;
+  grid-template-columns: 170px minmax(0,1fr);
+  gap: 9px;
+}
+
+.return-total-v228 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 5px;
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: var(--primary-soft);
+}
+
+.return-total-v228 span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.return-total-v228 strong {
+  font-size: 16px;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .sale-discount-row-v228 {
+    grid-template-columns: minmax(0, 1fr) 90px;
+  }
+
+  .sale-payment-head-v228 {
+    align-items: flex-start;
+  }
+
+  .mixed-pay-row-v228 {
+    grid-template-columns: minmax(0,1fr) 90px 30px;
+  }
+
+  .mixed-pay-rest-v228 {
+    grid-column: 1 / 3;
+    width: 100%;
+  }
+
+  .mixed-pay-remove-v228 {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .ticket-card-v228 summary {
+    grid-template-columns: minmax(100px,1fr) auto auto !important;
+  }
+
+  .ticket-card-v228 summary .ticket-medio {
+    display: none;
+  }
+
+  .return-form-grid-v228 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .return-modal-v228 {
+    width: 96vw !important;
+  }
+}
+
+
+/* ============================================================
+   Vendify — Mobile UX stabilization
+   ============================================================ */
+
+/* Keep header popovers outside wrapped header flow */
+.header,
+.header-actions,
+.user-menu-wrap {
+  overflow: visible !important;
+}
+
+.user-menu {
+  z-index: 12050 !important;
+}
+
+/* Scanner touch targets */
+#btn-scan-producto,
+#btn-scan-venta {
+  position: relative !important;
+  z-index: 30 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scanner feedback */
+.scanner-video-wrap-v29 {
+  isolation: isolate;
+}
+
+.scanner-video-wrap-v29::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  z-index: 3;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,.38);
+  border-radius: 13px;
+  box-shadow:
+    inset 18px 0 0 -17px rgba(255,255,255,.95),
+    inset -18px 0 0 -17px rgba(255,255,255,.95),
+    inset 0 18px 0 -17px rgba(255,255,255,.95),
+    inset 0 -18px 0 -17px rgba(255,255,255,.95);
+}
+
+.scanner-line-v29 {
+  left: 14% !important;
+  right: 14% !important;
+  top: 20%;
+  z-index: 4;
+  height: 3px !important;
+  opacity: .28;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239,68,68,.9) 12%,
+    #fff 50%,
+    rgba(239,68,68,.9) 88%,
+    transparent
+  ) !important;
+  box-shadow:
+    0 0 7px rgba(239,68,68,.95),
+    0 0 20px rgba(239,68,68,.45) !important;
+}
+
+.scanner-video-wrap-v29.is-scanning .scanner-line-v29 {
+  opacity: 1;
+  animation: vendifyScannerSweep 1.7s ease-in-out infinite alternate;
+}
+
+.scanner-video-wrap-v29.is-scanning::after {
+  content: "Buscando código…";
+  position: absolute;
+  left: 50%;
+  bottom: 7%;
+  transform: translateX(-50%);
+  z-index: 4;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(5,7,10,.68);
+  color: rgba(255,255,255,.92);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: vendifyScannerPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes vendifyScannerSweep {
+  0% {
+    top: 18%;
+    filter: brightness(.9);
+  }
+  100% {
+    top: 80%;
+    filter: brightness(1.35);
+  }
+}
+
+@keyframes vendifyScannerPulse {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanner-video-wrap-v29.is-scanning .scanner-line-v29,
+  .scanner-video-wrap-v29.is-scanning::after {
+    animation: none !important;
+  }
+
+  .scanner-video-wrap-v29.is-scanning .scanner-line-v29 {
+    top: 50%;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Header has many operational controls; prioritize touch usability. */
+  .header {
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    position: relative;
+    width: 100%;
+    gap: 7px !important;
+    overflow: visible !important;
+  }
+
+  .contexto-negocio {
+    display: none !important;
+  }
+
+  /* Sucursal and Caja look like icon buttons on mobile, but the native
+     select covers the complete control so the whole icon is tappable. */
+  .branch-switcher-v226,
+  .cash-switcher-v227 {
+    position: relative !important;
+    overflow: visible !important;
+    flex: 0 0 44px !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    padding: 6px !important;
+    justify-content: center !important;
+    touch-action: manipulation;
+  }
+
+  .branch-switcher-icon-v226,
+  .cash-switcher-icon-v227 {
+    width: 32px !important;
+    height: 32px !important;
+    pointer-events: none;
+  }
+
+  .branch-switcher-copy-v226,
+  .cash-switcher-copy-v227 {
+    position: absolute !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    z-index: 8 !important;
+  }
+
+  .branch-switcher-copy-v226 small,
+  .cash-switcher-copy-v227 small {
+    display: none !important;
+  }
+
+  #branch-selector-v226,
+  #cash-selector-v227 {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 9 !important;
+    -webkit-appearance: menulist-button;
+    appearance: auto;
+  }
+
+  /* Configuration tabs must remain tappable over scrollable content. */
+  .config-tabs-v224 {
+    position: relative;
+    z-index: 12;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .config-tab-v224 {
+    position: relative;
+    z-index: 13;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+  }
+
+  /* User menu is positioned by JS using viewport coordinates. */
+  .user-menu {
+    z-index: 12050 !important;
+    max-height: min(420px, calc(100dvh - 20px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .user-menu-trigger,
+  .user-menu-item {
+    touch-action: manipulation;
+  }
+
+  /* Scanner buttons remain above sticky/scroll regions. */
+  .venta-search-v29 {
+    z-index: 25 !important;
+    isolation: isolate;
+  }
+
+  #btn-scan-venta {
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+
+  #btn-scan-producto {
+    min-height: 48px !important;
+  }
+
+  .barcode-actions-v225 {
+    position: relative;
+    z-index: 20;
+  }
+
+  /* Scanner itself fills mobile safely and remains above POS. */
+  #modal-scanner-v29 {
+    z-index: 12000 !important;
+  }
+
+  #modal-scanner-v29 .modal-scanner-v29 {
+    position: relative;
+    z-index: 12001;
+  }
+
+  .scanner-video-wrap-v29 {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 430px) {
+  .header-actions {
+    gap: 6px !important;
+  }
+
+  .branch-switcher-v226,
+  .cash-switcher-v227,
+  .user-menu-trigger,
+  .header-action,
+  .header-primary,
+  .cash-status-btn-v227 {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+  }
+
+  #btn-scan-venta {
+    width: 50px !important;
+    min-width: 50px !important;
+    padding: 0 !important;
+  }
+
+  #btn-scan-venta span:last-child {
+    display: none !important;
+  }
+}
+
+
