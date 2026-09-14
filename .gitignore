@@ -5,6 +5,7 @@ node_modules/
 dist/
 dist-ts/
 dist-staging-v2312/
+dist-refactor-modular/
 dist-vite/
 .vendify-build/
 coverage/
