@@ -10,6 +10,7 @@ import {
 } from "./inventory-service.js";
 
 type InventoryTab = "resumen" | "movimientos" | "ajuste" | "conteo" | "transferencias";
+export type InventoryAttentionFilter = "low" | "out" | null;
 type FormField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 interface BranchContext {
@@ -37,12 +38,14 @@ export interface InventoryControllerDependencies {
   readonly emitStockChange: (reason: string) => void;
   readonly reloadProducts: () => Promise<void>;
   readonly renderProducts: () => void;
+  readonly onClose?: () => void;
 }
 
 export interface InventoryController {
   readonly setup: () => void;
   readonly refreshOpenView: (reloadProducts?: boolean) => Promise<void>;
   readonly openAdjustmentFromProduct: (productId: string, delta?: number | null) => Promise<void>;
+  readonly openFiltered: (filter: InventoryAttentionFilter) => Promise<void>;
 }
 
 function field(selector: string): FormField | null {
@@ -118,6 +121,7 @@ export function createInventoryController(
   let countInProgress = false;
   let transferInProgress = false;
   let setupComplete = false;
+  let attentionFilter: InventoryAttentionFilter = null;
 
   function applyPermissions(): void {
     const supervisor = dependencies.isSupervisor();
@@ -260,6 +264,11 @@ export function createInventoryController(
       .filter(({ product, info }) =>
         dependencies.isOutOfStock(product) || dependencies.isLowStock(product) || info?.estado === "proximo"
       )
+      .filter(({ product }) => attentionFilter === "out"
+        ? dependencies.isOutOfStock(product)
+        : attentionFilter === "low"
+          ? dependencies.isLowStock(product) && !dependencies.isOutOfStock(product)
+          : true)
       .sort((a, b) => {
         if (dependencies.isOutOfStock(a.product) !== dependencies.isOutOfStock(b.product)) {
           return dependencies.isOutOfStock(a.product) ? -1 : 1;
@@ -652,6 +661,19 @@ export function createInventoryController(
 
   function close(): void {
     queryOne("#modal-inventario")?.classList.add("hidden");
+    attentionFilter = null;
+    dependencies.onClose?.();
+  }
+
+  async function openFiltered(filter: InventoryAttentionFilter): Promise<void> {
+    attentionFilter = filter;
+    await open("resumen");
+    if (filter) {
+      setText(
+        "#inventory-summary-title",
+        filter === "out" ? "Inventario · Productos sin stock" : "Inventario · Stock bajo"
+      );
+    }
   }
 
   async function openAdjustmentFromProduct(
@@ -696,5 +718,5 @@ export function createInventoryController(
     queryOne("#inventory-transfer-product")?.addEventListener("change", updateTransferAvailable);
   }
 
-  return Object.freeze({ setup, refreshOpenView, openAdjustmentFromProduct });
+  return Object.freeze({ setup, refreshOpenView, openAdjustmentFromProduct, openFiltered });
 }

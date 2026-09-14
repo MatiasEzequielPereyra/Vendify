@@ -79,6 +79,7 @@ export interface ProductsControllerDependencies {
   readonly restoreSaleBehindProduct: (focus?: boolean) => void;
   readonly shouldReturnCreatedProductToSale: () => boolean;
   readonly clearPendingScannerProduct: () => void;
+  readonly onEditorClose?: () => void;
 }
 
 export interface ProductsController {
@@ -528,6 +529,7 @@ export function createProductsController(
     dependencies.setCurrentPhoto(null);
     dependencies.restoreSaleBehindProduct(!preserveScannerFlow);
     if (!preserveScannerFlow) dependencies.clearPendingScannerProduct();
+    if (!preserveScannerFlow) dependencies.onEditorClose?.();
   }
 
   async function submitProduct(event: Event): Promise<void> {

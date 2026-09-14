@@ -11,6 +11,7 @@ import {
   renderDashboardRows,
   type DashboardRow
 } from "./dashboard-ui.js";
+import type { DashboardDestination } from "./dashboard-navigation.js";
 
 export interface DashboardControllerDependencies {
   readonly client: DashboardRpcClientPort;
@@ -21,10 +22,8 @@ export interface DashboardControllerDependencies {
   readonly icon: (name: string) => string;
   readonly showToast: (message: string, type: "error" | "info" | "success") => void;
   readonly reportError: (type: string, message: string) => void | Promise<void>;
-  readonly openDestination: (target: DashboardDestination) => void;
+  readonly openDestination: (target: DashboardDestination) => void | Promise<void>;
 }
-
-export type DashboardDestination = "sales" | "inventory" | "cash" | "purchases";
 
 export interface DashboardLoadOptions {
   readonly focusAlerts?: boolean;
@@ -113,7 +112,7 @@ export function createDashboardController(
         const date = new Date(`${textValue(row.fecha)}T12:00:00`);
         const label = date.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
         return `
-          <div class="dashboard-bar-column-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="sales" title="Ver ventas de ${label} · ${formatArs(total)}">
+          <div class="dashboard-bar-column-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-kind="sales" aria-label="Ver tickets del ${label}, ${formatArs(total)}" title="Ver tickets del ${label} · ${formatArs(total)}">
             <div class="dashboard-bar-value-v231">
               ${total > 0 ? formatCompactNumber(total) : ""}
             </div>
@@ -162,7 +161,7 @@ export function createDashboardController(
       queryOne("#dashboard-top-products-v231"),
       data.top_productos,
       (row, index) => `
-        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Ver inventario">
+        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-kind="product" data-product-id="${escapeHtml(textValue(row.producto_id))}" aria-label="Abrir ${escapeHtml(textValue(row.nombre, "Producto"))}" title="Abrir producto">
           <span class="dashboard-rank-v231">${String(index + 1)}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
@@ -199,7 +198,7 @@ export function createDashboardController(
       queryOne("#dashboard-restock-v231"),
       data.reposicion,
       (row) => `
-        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Ver inventario">
+        <div class="dashboard-list-row-v231 dashboard-action-v235" role="button" tabindex="0" data-dashboard-kind="restock" data-product-id="${escapeHtml(textValue(row.producto_id))}" aria-label="Reponer ${escapeHtml(textValue(row.nombre, "Producto"))}" title="Gestionar reposición">
           <span class="dashboard-list-icon-v231 warning">${dependencies.icon("inventory")}</span>
           <div class="dashboard-list-copy-v231">
             <strong>${escapeHtml(textValue(row.nombre, "Producto"))}</strong>
@@ -218,8 +217,10 @@ export function createDashboardController(
       alerts,
       (row) => {
         const severity = textValue(row.severity, "info");
+        const code = textValue(row.code);
+        const action = code === "stock_zero" ? "out" : code === "stock_low" ? "low" : "";
         return `
-          <div class="dashboard-alert-row-v231 ${escapeHtml(severity)} dashboard-action-v235" role="button" tabindex="0" data-dashboard-target="inventory" title="Revisar inventario">
+          <div class="dashboard-alert-row-v231 ${escapeHtml(severity)}${action ? " dashboard-action-v235" : ""}"${action ? ` role="button" tabindex="0" data-dashboard-kind="inventory" data-inventory-filter="${action}" aria-label="Revisar ${escapeHtml(textValue(row.title, "alerta"))}" title="Revisar inventario"` : ""}>
             <span class="dashboard-list-icon-v231">
               ${dependencies.icon(severity === "critical" ? "alert" : "bell")}
             </span>
@@ -378,11 +379,35 @@ export function createDashboardController(
 
     queryOne("#btn-refresh-dashboard-v231")?.addEventListener("click", () => void load());
     queryOne("#btn-copy-summary-v231")?.addEventListener("click", () => void copySummary());
+    const actions: readonly [string, DashboardDestination][] = [
+      ["#dash-sales-v231", { kind: "sales" }],
+      ["#dash-tickets-v231", { kind: "sales" }],
+      ["#dash-refunds-v231", { kind: "sales" }],
+      ["#dash-alerts-v231", { kind: "inventory", filter: null }],
+      ["#dash-open-cash-v231", { kind: "cash" }]
+    ];
+    for (const [selector, destination] of actions) {
+      const trigger = queryOne(selector)?.closest<HTMLElement>(".dashboard-kpi-v231");
+      if (!trigger) continue;
+      trigger.classList.add("dashboard-action-v235");
+      trigger.tabIndex = 0;
+      trigger.setAttribute("role", "button");
+      trigger.dataset.dashboardKind = destination.kind;
+      if (destination.kind === "inventory" && destination.filter) {
+        trigger.dataset.inventoryFilter = destination.filter;
+      }
+    }
     const dashboardModal = queryOne("#modal-dashboard-v231");
     const openTarget = (element: Element | null): void => {
-      const target = element?.closest<HTMLElement>("[data-dashboard-target]")?.dataset.dashboardTarget;
-      if (target === "sales" || target === "inventory" || target === "cash" || target === "purchases") {
-        dependencies.openDestination(target);
+      const trigger = element?.closest<HTMLElement>("[data-dashboard-kind]");
+      const kind = trigger?.dataset.dashboardKind;
+      const productId = trigger?.dataset.productId?.trim() ?? "";
+      if (kind === "sales" || kind === "cash") void dependencies.openDestination({ kind });
+      else if (kind === "inventory") {
+        const filter = trigger?.dataset.inventoryFilter;
+        void dependencies.openDestination({ kind, filter: filter === "low" || filter === "out" ? filter : null });
+      } else if ((kind === "restock" || kind === "product") && productId) {
+        void dependencies.openDestination({ kind, productId });
       }
     };
     dashboardModal?.addEventListener("click", (event) => {
@@ -392,7 +417,7 @@ export function createDashboardController(
       if (!(event instanceof KeyboardEvent)) return;
       if (event.key !== "Enter" && event.key !== " ") return;
       const trigger = event.target instanceof Element
-        ? event.target.closest("[data-dashboard-target]")
+        ? event.target.closest("[data-dashboard-kind]")
         : null;
       if (!trigger) return;
       event.preventDefault();

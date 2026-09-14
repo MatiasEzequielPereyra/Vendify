@@ -38,6 +38,7 @@ export interface SalesHistoryControllerDependencies {
   readonly reloadProducts: () => Promise<void>;
   readonly renderProducts: () => void;
   readonly reloadCash: () => Promise<void>;
+  readonly onClose?: () => void;
 }
 
 export interface SalesHistoryController {
@@ -290,8 +291,10 @@ export function createSalesHistoryController(
       sales = await listSales(dependencies.client, dependencies.getContext().branchId, range.desde, range.hasta);
     } catch (error) {
       console.error("[Ventas] historial:", error);
-      container.innerHTML = "";
-      dependencies.showToast("No se pudo cargar el historial", "error");
+      const message = errorMessage(error, "No se pudo cargar el historial");
+      container.innerHTML = `<div class="empty-state" style="padding:2rem 1rem"><h3>No se pudo cargar el historial</h3><p>${escapeHtml(message)}</p><button type="button" class="btn btn-secondary" data-history-retry>Reintentar</button></div>`;
+      summary.innerHTML = "";
+      dependencies.showToast(message, "error");
       return;
     }
     if (!sales.length) {
@@ -349,6 +352,7 @@ export function createSalesHistoryController(
 
   function close(): void {
     queryOne("#modal-historial")?.classList.add("hidden");
+    dependencies.onClose?.();
   }
 
   function setup(): void {
@@ -364,6 +368,12 @@ export function createSalesHistoryController(
     queryOne("#btn-print-ticket-v228")?.addEventListener("click", printTicket);
     queryOne("#historial-lista")?.addEventListener("click", (event) => {
       const target = event.target;
+      const retry = target instanceof Element ? target.closest("[data-history-retry]") : null;
+      if (retry) {
+        event.preventDefault();
+        void render();
+        return;
+      }
       const button = target instanceof Element ? target.closest("[data-sale-action-v228]") : null;
       if (!(button instanceof HTMLElement)) return;
       event.preventDefault();

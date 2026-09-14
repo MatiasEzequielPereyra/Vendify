@@ -20,6 +20,7 @@ for (const marker of [
   "loadDashboard",
   "loadOperationalAlerts",
   "createDashboardController",
+  "createDashboardNavigationCoordinator",
   "dashboardEmpty",
   "renderDashboardRows",
   "dashboard_propietario_v1",
@@ -35,7 +36,8 @@ for (const marker of [
   "window.VendifyDashboardV232.dashboardEmpty(",
   "window.VendifyDashboardV232.renderDashboardRows(",
   "dashboardControllerV232.loadAlertBadge()",
-  "dashboardControllerV232.setup()"
+  "dashboardControllerV232.setup()",
+  "window.VendifyDashboardV232.createNavigationCoordinator("
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Dashboard delegation: ${marker}`);
@@ -57,7 +59,9 @@ for (const obsoleteMarker of [
   "function copiarResumenDiarioV231",
   "function dashboardEmptyV231",
   "function renderDashboardRowsV231",
-  "function cargarBadgeAlertasV231"
+  "function cargarBadgeAlertasV231",
+  "let dashboardReturnModalV235",
+  "restaurarDashboardDesdeDestinoV235"
 ]) {
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
     throw new Error(`Legacy app still contains migrated Dashboard data access: ${obsoleteMarker}`);

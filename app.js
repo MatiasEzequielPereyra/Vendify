@@ -1032,6 +1032,7 @@ const productsControllerV232 =
     clearPendingScannerProduct: () => {
       scannerControllerV232?.clearPendingProduct();
     },
+    onEditorClose: () => dashboardNavigationV236.complete("product"),
   });
 
 scannerControllerV232 =
@@ -1701,11 +1702,6 @@ function setupOverlayStabilityV23011() {
   const observer = new MutationObserver((mutations) => {
     if (mutations.some((m) => m.type === "attributes")) {
       sincronizarEstadoOverlaysV23011();
-      for (const mutation of mutations) {
-        if (mutation.target instanceof HTMLElement) {
-          restaurarDashboardDesdeDestinoV235(mutation.target);
-        }
-      }
     }
   });
 
@@ -3637,6 +3633,10 @@ const inventoryControllerV232 =
     emitStockChange: emitirCambioStockRealtime,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
+    onClose: () => {
+      dashboardNavigationV236.complete("inventory");
+      dashboardNavigationV236.complete("restock");
+    },
   });
 
 const branchTransferControllerV232 =
@@ -3697,36 +3697,61 @@ const discountControllerV232 =
     recalculateTotals: () => posControllerV232.updateTotals(),
   });
 
-let dashboardReturnModalV235 = null;
+const dashboardNavigationV236 =
+  window.VendifyDashboardV232.createNavigationCoordinator(
+    () => dashboardControllerV232.open()
+  );
 
-function abrirDestinoDesdeDashboardV235(target) {
-  const destinations = {
-    sales: { button: "#btn-historial", modal: "modal-historial" },
-    inventory: { button: "#btn-inventario", modal: "modal-inventario" },
-    cash: { button: "#btn-caja-v227", modal: "modal-caja-operativa-v227" },
-    purchases: { button: "#btn-compras", modal: "modal-compras" },
-  };
-  const destination = destinations[target];
-  const trigger = destination ? $(destination.button) : null;
-  if (!destination || !trigger) {
-    mostrarToast("No se pudo abrir la sección solicitada", "error");
+async function abrirDestinoDesdeDashboardV235(destination) {
+  if (destination.kind === "sales") {
+    dashboardNavigationV236.begin(destination);
+    dashboardControllerV232.close();
+    await salesHistoryControllerV232.open();
     return;
   }
-  dashboardReturnModalV235 = destination.modal;
-  dashboardControllerV232.close();
-  trigger.click();
-  setTimeout(() => {
-    if (dashboardReturnModalV235 === destination.modal && !modalVisibleV23011(document.getElementById(destination.modal))) {
-      dashboardReturnModalV235 = null;
-      void dashboardControllerV232.open();
+  if (destination.kind === "inventory") {
+    const canManageInventory = ["owner", "admin", "manager"].includes(
+      appContext.membership?.role
+    ) || tienePermisoV2("adjustStock");
+    if (!canManageInventory) {
+      mostrarToast("Tu rol no permite administrar inventario", "error");
+      return;
     }
-  }, 0);
-}
-
-function restaurarDashboardDesdeDestinoV235(modal) {
-  if (!modal || dashboardReturnModalV235 !== modal.id || modalVisibleV23011(modal)) return;
-  dashboardReturnModalV235 = null;
-  void dashboardControllerV232.open();
+    dashboardNavigationV236.begin(destination);
+    dashboardControllerV232.close();
+    await inventoryControllerV232.openFiltered(destination.filter);
+    return;
+  }
+  const product = productos.find((item) => item.id === destination.productId);
+  if (!product) {
+    mostrarToast("El producto ya no está disponible. Actualizamos el Dashboard.", "info");
+    await dashboardControllerV232.load();
+    return;
+  }
+  if (destination.kind === "restock") {
+    if (!exigirPermisoV2("adjustStock", "No tenés permiso para ajustar stock")) return;
+    dashboardNavigationV236.begin(destination);
+    dashboardControllerV232.close();
+    await inventoryControllerV232.openAdjustmentFromProduct(destination.productId);
+    return;
+  }
+  if (destination.kind === "product") {
+    if (!exigirPermisoV2("manageProducts", "No tenés permiso para modificar productos")) return;
+    dashboardNavigationV236.begin(destination);
+    dashboardControllerV232.close();
+    productsControllerV232.openEditor(product);
+    return;
+  }
+  if (destination.kind === "cash" && appContext.cashRegister?.id) {
+    dashboardNavigationV236.begin(destination);
+    dashboardControllerV232.close();
+    try {
+      await cashControllerV232.openPanel();
+    } catch (error) {
+      dashboardNavigationV236.complete("cash");
+      mostrarToast(error?.message || "No se pudo abrir la caja", "error");
+    }
+  }
 }
 
 const salesHistoryControllerV232 =
@@ -3750,6 +3775,7 @@ const salesHistoryControllerV232 =
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
     reloadCash: cargarEstadoCajaV227,
+    onClose: () => dashboardNavigationV236.complete("sales"),
   });
 
 const posControllerV232 =
@@ -4173,6 +4199,7 @@ const cashControllerV232 = window.VendifyCashV232.createController({
   restoreOfflineState: () => restaurarPruebaCajaOfflineV2311?.() === true,
   persistOfflineState: () => guardarPruebaCajaOfflineV2311?.(),
   isOnline: () => navigator.onLine,
+  onPanelClose: () => dashboardNavigationV236.complete("cash"),
 });
 
 const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({

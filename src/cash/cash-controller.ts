@@ -37,6 +37,7 @@ export interface CashControllerDependencies {
   readonly restoreOfflineState: () => boolean;
   readonly persistOfflineState: () => void;
   readonly isOnline: () => boolean;
+  readonly onPanelClose?: () => void;
 }
 
 export interface CashController {
@@ -559,6 +560,7 @@ export function createCashController(dependencies: CashControllerDependencies): 
 
   function closePanel(): void {
     queryOne("#modal-caja-operativa-v227")?.classList.add("hidden");
+    dependencies.onPanelClose?.();
   }
 
   function setup(): void {
