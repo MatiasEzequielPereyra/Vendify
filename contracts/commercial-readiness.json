@@ -34,7 +34,7 @@
     { "id": "offline-durable-core", "status": "pass_automated", "blocksPilot": true, "evidence": ["src/offline/indexeddb-store.ts", "src/offline/sync-engine.ts", "src/offline/pending-sales-ui.ts"] },
     { "id": "service-worker-atomic-shell", "status": "pass_automated", "blocksPilot": true, "evidence": ["sw.js", "tests/unit/service-worker-contract.test.mjs"] },
     { "id": "two-register-realtime-stock", "status": "pass_manual", "blocksPilot": true, "observedAt": "2026-09-15", "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md"] },
-    { "id": "database-clean-bootstrap", "status": "blocked", "blocksPilot": true, "reason": "The versioned migration chain starts with a preflight that requires the pre-v2.31 schema; no reviewed executable baseline manifest exists.", "evidence": ["supabase/README.md", "supabase/migrations/20260831_000_preflight_v231.sql"] },
+    { "id": "database-clean-bootstrap", "status": "blocked", "blocksPilot": true, "reason": "Six authoritative core table definitions are absent; the versioned migration chain requires the pre-v2.31 schema.", "evidence": ["contracts/database-baseline.json", "supabase/README.md", "supabase/migrations/20260831_000_preflight_v231.sql"] },
     { "id": "tenant-isolation-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/tenant-isolation.mjs"] },
     { "id": "sales-atomicity-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/sales-atomicity.mjs"] },
     { "id": "sales-concurrency-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/sales-concurrency.mjs"] },

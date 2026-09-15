@@ -44,6 +44,7 @@ if (contract.migrationChain?.baselineRequired && !contract.migrationChain?.basel
 const packageJson = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"));
 if (packageJson.scripts?.["qa:commercial"] !== "node scripts/verify-commercial-readiness.mjs") fail("package.json does not expose qa:commercial");
 if (!packageJson.scripts?.ci?.includes("npm run qa:commercial")) fail("commercial readiness verification is not part of CI");
+if (!packageJson.scripts?.ci?.includes("npm run qa:database-baseline")) fail("database baseline verification is not part of CI");
 
 const matrix = readFileSync(resolve(root, "docs/audit/MATRIZ-QA-v2.31.1.md"), "utf8");
 for (const marker of ["PENDIENTE LIVE", "Condiciones del gate de piloto", "dos cajas distintas del mismo negocio", "baseline SQL ejecutable"]) {

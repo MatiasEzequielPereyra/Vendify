@@ -4,6 +4,8 @@
 
 Only reviewed migration/preflight/verify files intended for the current repository history belong here.
 
+The current chain is incremental and requires the pre-v2.31 schema. Its recovery status is tracked in `contracts/database-baseline.json`. Do not apply this directory to an empty database until that contract reaches `ready_for_disposable_test` and the resulting baseline passes a disposable Supabase rebuild.
+
 ## `legacy/`
 
 Historical SQL preserved only for:

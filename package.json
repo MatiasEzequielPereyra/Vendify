@@ -31,12 +31,13 @@
     "qa:legacy-dead-code": "node scripts/verify-legacy-dead-code.mjs",
     "qa:rpc-source": "node scripts/rpc-source-coverage.mjs",
     "qa:commercial": "node scripts/verify-commercial-readiness.mjs",
+    "qa:database-baseline": "node scripts/verify-database-baseline.mjs",
     "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run qa:legacy-dead-code && npm run typecheck && npm test",
     "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312 && node scripts/verify-modular-css.mjs dist-staging-v2312 && node scripts/verify-modular-html.mjs dist-staging-v2312",
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && node scripts/verify-modular-html.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular"
+    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && node scripts/verify-modular-html.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

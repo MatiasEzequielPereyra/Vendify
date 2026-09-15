@@ -18,6 +18,7 @@ La fuente de verdad de estados es [`MATRIZ-QA-v2.31.1.md`](./MATRIZ-QA-v2.31.1.m
 - [x] incluir el gate comercial en CI;
 - [x] registrar evidencia manual sin confundirla con concurrencia automatizada;
 - [ ] construir y revisar la baseline SQL previa a v2.31;
+- [x] inventariar las 16 relaciones requeridas y las 6 definiciones autoritativas faltantes;
 - [ ] generar un informe de ejecución por release con resultados live.
 
 ## 3. Staging limpio

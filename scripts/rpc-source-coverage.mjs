@@ -26,14 +26,14 @@ for (const file of sqlFiles) {
   for (const match of sql.matchAll(regex)) {
     const name = match[1];
     if (!definitions.has(name)) definitions.set(name, []);
-    definitions.get(name).push(relative(root, file));
+    definitions.get(name).push(relative(root, file).replaceAll("\\", "/"));
   }
 }
 
 const rows = contract.rpcs.map((rpc) => ({
   rpc,
   sourceFound: definitions.has(rpc),
-  files: definitions.get(rpc) ?? []
+  files: (definitions.get(rpc) ?? []).sort()
 }));
 const missing = rows.filter((row) => !row.sourceFound).map((row) => row.rpc);
 
