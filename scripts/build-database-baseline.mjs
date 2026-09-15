@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 const assemblyPath = resolve(root, "supabase/baseline/assembly.json");
 const outputPath = resolve(root, "supabase/baseline/vendify_pre_v231_baseline.sql");
+const localMigrationPath = resolve(root, "supabase/migrations/20260830_000_pre_v231_baseline.local.sql");
 const assembly = JSON.parse(readFileSync(assemblyPath, "utf8"));
 
 if (!Array.isArray(assembly.steps) || assembly.steps.length === 0) {
@@ -52,5 +53,9 @@ if (process.argv.includes("--check")) {
   console.log(`PASS: generated database baseline matches ${assembly.steps.length} ordered sources with ${transactionBegins} balanced transactions`);
 } else {
   writeFileSync(outputPath, generated, "utf8");
+  if (process.argv.includes("--local-migration")) {
+    writeFileSync(localMigrationPath, generated, "utf8");
+    console.log("Local disposable migration generated before the v2.31 chain.");
+  }
   console.log(`Vendify database baseline generated from ${assembly.steps.length} ordered sources.`);
 }

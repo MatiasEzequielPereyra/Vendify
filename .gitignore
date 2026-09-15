@@ -34,3 +34,4 @@ qa-output/
 playwright-report/
 test-results/
 supabase/baseline/vendify_pre_v231_baseline.sql
+supabase/migrations/20260830_000_pre_v231_baseline.local.sql

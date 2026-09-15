@@ -63,6 +63,8 @@ test("baseline package generator is deterministic and restricted to disposable p
   assert.match(generator, /Unbalanced baseline transactions/);
   assert.match(generator, /Destructive DROP TABLE\/SCHEMA is forbidden/);
   assert.match(generator, /service_role\|SUPABASE_SERVICE/);
+  assert.match(generator, /20260830_000_pre_v231_baseline\.local\.sql/);
+  assert.match(generator, /process\.argv\.includes\("--local-migration"\)/);
 });
 
 test("post-bootstrap validation is read-only and checks structural dependencies", () => {

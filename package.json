@@ -33,6 +33,7 @@
     "qa:commercial": "node scripts/verify-commercial-readiness.mjs",
     "qa:database-baseline": "node scripts/build-database-baseline.mjs && node scripts/verify-database-baseline.mjs && node scripts/build-database-baseline.mjs --check",
     "build:database-baseline": "node scripts/build-database-baseline.mjs",
+    "prepare:database-local": "node scripts/build-database-baseline.mjs --local-migration",
     "verify:database-baseline": "node scripts/build-database-baseline.mjs --check",
     "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run qa:legacy-dead-code && npm run typecheck && npm test",
     "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312 && node scripts/verify-modular-css.mjs dist-staging-v2312 && node scripts/verify-modular-html.mjs dist-staging-v2312",
