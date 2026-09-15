@@ -15,6 +15,10 @@ const capturePath = manifest.captureEvidence ? resolve(root, manifest.captureEvi
 const capture = capturePath && existsSync(capturePath)
   ? JSON.parse(readFileSync(capturePath, "utf8"))
   : null;
+const dependencyCapturePath = manifest.dependencyCaptureEvidence ? resolve(root, manifest.dependencyCaptureEvidence) : null;
+const dependencyCapture = dependencyCapturePath && existsSync(dependencyCapturePath)
+  ? JSON.parse(readFileSync(dependencyCapturePath, "utf8"))
+  : null;
 const capturedRelations = new Map((capture?.relations ?? []).map((relation) => [relation.name, relation]));
 for (const relation of manifest.requiredRelations ?? []) {
   if (!relation.name || names.has(relation.name)) fail(`invalid or duplicate relation: ${relation.name ?? "missing"}`);
@@ -42,6 +46,19 @@ if (manifest.executableBaseline && manifest.status !== "ready_for_disposable_tes
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
 if (!manifest.dependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.dependencyCaptureDiagnostic))) fail("baseline dependency capture diagnostic is missing");
+if (!manifest.transitiveDependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.transitiveDependencyCaptureDiagnostic))) fail("baseline transitive dependency diagnostic is missing");
+if (!dependencyCapture) fail("baseline trigger-function evidence is missing");
+else {
+  if (dependencyCapture.capture_version !== 1) fail("unsupported trigger-function capture version");
+  const capturedFunctions = new Set((dependencyCapture.functions ?? []).map((fn) => `${fn.schema}.${fn.name}(${fn.identity_arguments})`));
+  for (const expected of [
+    "public.crear_stock_sucursales_producto_v1()",
+    "public.stock_sucursal_recalcular_total_trigger_v1()",
+    "public.validar_autorizacion_descuento_venta_v1()"
+  ]) {
+    if (!capturedFunctions.has(expected)) fail(`trigger-function evidence is missing ${expected}`);
+  }
+}
 if (!Array.isArray(manifest.missingExecutableDependencies)) fail("baseline executable dependency inventory is missing");
 if (!capture) fail("baseline capture evidence is missing");
 else {
@@ -55,6 +72,6 @@ else {
 if (process.exitCode) process.exit(process.exitCode);
 pass(`${names.size} pre-v2.31 relations inventoried; ${declaredMissing.length} authoritative definitions missing`);
 for (const name of declaredMissing) console.log(`MISSING: public.${name}`);
-if (!manifest.executableBaseline) console.log(`PENDING: dependency-ordered executable baseline assembly; ${manifest.missingExecutableDependencies.length} trigger functions require authoritative capture`);
+if (!manifest.executableBaseline) console.log(`PENDING: dependency-ordered executable baseline assembly; ${manifest.missingExecutableDependencies.length} executable dependencies require authoritative capture`);
 for (const dependency of manifest.missingExecutableDependencies) console.log(`MISSING DEPENDENCY: ${dependency}`);
 pass("database baseline gap is explicit and safe recovery rules are present");

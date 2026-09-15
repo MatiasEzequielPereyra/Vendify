@@ -26,10 +26,10 @@
   "captureDiagnostic": "supabase/diagnostics/pre_v231_baseline_capture.sql",
   "captureEvidence": "contracts/captures/pre-v231-core-schema-20260915.json",
   "dependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_trigger_function_capture.sql",
+  "dependencyCaptureEvidence": "contracts/captures/pre-v231-trigger-functions-20260915.json",
+  "transitiveDependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_stock_helper_capture.sql",
   "missingExecutableDependencies": [
-    "public.crear_stock_sucursales_producto_v1()",
-    "public.stock_sucursal_recalcular_total_trigger_v1()",
-    "public.validar_autorizacion_descuento_venta_v1()"
+    "public.recalcular_stock_total_producto_v1()"
   ],
   "executableBaseline": null,
   "forbiddenShortcuts": [

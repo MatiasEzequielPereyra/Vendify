@@ -1,0 +1,49 @@
+{
+  "schema": "public",
+  "source": "core_relation_triggers",
+  "functions": [
+    {
+      "name": "cerrar_stock_inicial_por_movimiento_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.cerrar_stock_inicial_por_movimiento_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n    if new.tipo <> 'stock_inicial' then\r\n        update public.producto_stock_sucursal ps\r\n           set stock_inicial_cerrado = true,\r\n               stock_inicial_cerrado_en = coalesce(ps.stock_inicial_cerrado_en, now())\r\n         where ps.negocio_id = new.negocio_id\r\n           and ps.sucursal_id = new.sucursal_id\r\n           and ps.producto_id = new.producto_id\r\n           and ps.stock_inicial_cerrado = false;\r\n    end if;\r\n\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "cerrar_stock_inicial_por_venta_item_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.cerrar_stock_inicial_por_venta_item_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_sucursal_id uuid;\r\n    v_negocio_id uuid;\r\nbegin\r\n    select v.sucursal_id, v.negocio_id\r\n      into v_sucursal_id, v_negocio_id\r\n      from public.ventas v\r\n     where v.id = new.venta_id;\r\n\r\n    if v_sucursal_id is not null then\r\n        update public.producto_stock_sucursal ps\r\n           set stock_inicial_cerrado = true,\r\n               stock_inicial_cerrado_en = coalesce(ps.stock_inicial_cerrado_en, now())\r\n         where ps.negocio_id = v_negocio_id\r\n           and ps.sucursal_id = v_sucursal_id\r\n           and ps.producto_id = new.producto_id\r\n           and ps.stock_inicial_cerrado = false;\r\n    end if;\r\n\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "completar_negocio_id",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.completar_negocio_id()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n    if new.negocio_id is null then\r\n        new.negocio_id := public.negocio_actual_id();\r\n    end if;\r\n\r\n    if not public.es_miembro_negocio(new.negocio_id) then\r\n        raise exception 'No autorizado para este negocio';\r\n    end if;\r\n\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "crear_stock_sucursales_producto_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.crear_stock_sucursales_producto_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_principal_id uuid;\r\nbegin\r\n    select s.id\r\n      into v_principal_id\r\n      from public.sucursales s\r\n     where s.negocio_id = new.negocio_id\r\n       and s.activa = true\r\n     order by\r\n       case when lower(s.nombre) = 'principal' then 0 else 1 end,\r\n       s.creado\r\n     limit 1;\r\n\r\n    insert into public.producto_stock_sucursal(\r\n        negocio_id,\r\n        sucursal_id,\r\n        producto_id,\r\n        stock,\r\n        stock_minimo\r\n    )\r\n    select\r\n        new.negocio_id,\r\n        s.id,\r\n        new.id,\r\n        case\r\n          when s.id = v_principal_id then greatest(coalesce(new.stock,0),0)\r\n          else 0\r\n        end,\r\n        greatest(coalesce(new.stock_minimo,5),0)\r\n    from public.sucursales s\r\n    where s.negocio_id = new.negocio_id\r\n    on conflict (sucursal_id, producto_id) do nothing;\r\n\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "stock_sucursal_recalcular_total_trigger_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.stock_sucursal_recalcular_total_trigger_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n    perform public.recalcular_stock_total_producto_v1(\r\n        coalesce(new.producto_id, old.producto_id)\r\n    );\r\n    return coalesce(new, old);\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "validar_autorizacion_descuento_venta_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.validar_autorizacion_descuento_venta_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_auth public.descuento_autorizaciones;\r\nbegin\r\n    if coalesce(new.descuento_total,0) <= 0 then\r\n        new.descuento_autorizado_por := null;\r\n        new.descuento_autorizacion_id := null;\r\n        return new;\r\n    end if;\r\n\r\n    select da.*\r\n      into v_auth\r\n      from public.descuento_autorizaciones da\r\n     where da.negocio_id = new.negocio_id\r\n       and da.sucursal_id = new.sucursal_id\r\n       and da.solicitante_user_id = auth.uid()\r\n       and da.usado_en is null\r\n       and da.expira_en > now()\r\n       and da.descuento_tipo = new.descuento_tipo\r\n       and abs(da.descuento_valor - coalesce(new.descuento_valor,0)) <= 0.001\r\n       and abs(da.subtotal - coalesce(new.subtotal,0)) <= 0.01\r\n     order by da.creado desc\r\n     limit 1\r\n     for update skip locked;\r\n\r\n    if v_auth.id is null then\r\n        raise exception\r\n            'El descuento requiere un PIN válido de Propietario o Administrador';\r\n    end if;\r\n\r\n    update public.descuento_autorizaciones\r\n       set usado_en = now(),\r\n           venta_id = new.id\r\n     where id = v_auth.id;\r\n\r\n    new.descuento_autorizado_por := v_auth.autorizador_user_id;\r\n    new.descuento_autorizacion_id := v_auth.id;\r\n\r\n    insert into public.audit_log(\r\n        negocio_id,user_id,accion,entidad,entidad_id,detalle\r\n    )\r\n    values(\r\n        new.negocio_id,\r\n        auth.uid(),\r\n        'descuento_aplicado',\r\n        'ventas',\r\n        new.id,\r\n        jsonb_build_object(\r\n            'autorizador_user_id',v_auth.autorizador_user_id,\r\n            'autorizacion_id',v_auth.id,\r\n            'subtotal',new.subtotal,\r\n            'descuento_tipo',new.descuento_tipo,\r\n            'descuento_valor',new.descuento_valor,\r\n            'descuento_total',new.descuento_total\r\n        )\r\n    );\r\n\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    },
+    {
+      "name": "vendify_limite_productos_trigger_v1",
+      "schema": "public",
+      "definition": "CREATE OR REPLACE FUNCTION public.vendify_limite_productos_trigger_v1()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\nbegin\r\n    perform public.validar_limite_plan_v1(\r\n        new.negocio_id,'productos',1\r\n    );\r\n    return new;\r\nend;\r\n$function$\n",
+      "identity_arguments": ""
+    }
+  ],
+  "capture_version": 1
+}
