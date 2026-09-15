@@ -41,6 +41,8 @@ if (declaredMissing.length === 0 && !manifest.executableBaseline && manifest.sta
 if (manifest.executableBaseline && manifest.status !== "ready_for_disposable_test") fail("an executable baseline must advance to disposable testing");
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
+if (!manifest.dependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.dependencyCaptureDiagnostic))) fail("baseline dependency capture diagnostic is missing");
+if (!Array.isArray(manifest.missingExecutableDependencies)) fail("baseline executable dependency inventory is missing");
 if (!capture) fail("baseline capture evidence is missing");
 else {
   if (capture.capture_version !== 1) fail("unsupported baseline capture version");
@@ -53,5 +55,6 @@ else {
 if (process.exitCode) process.exit(process.exitCode);
 pass(`${names.size} pre-v2.31 relations inventoried; ${declaredMissing.length} authoritative definitions missing`);
 for (const name of declaredMissing) console.log(`MISSING: public.${name}`);
-if (!manifest.executableBaseline) console.log("PENDING: dependency-ordered executable baseline assembly");
+if (!manifest.executableBaseline) console.log(`PENDING: dependency-ordered executable baseline assembly; ${manifest.missingExecutableDependencies.length} trigger functions require authoritative capture`);
+for (const dependency of manifest.missingExecutableDependencies) console.log(`MISSING DEPENDENCY: ${dependency}`);
 pass("database baseline gap is explicit and safe recovery rules are present");

@@ -5,6 +5,7 @@ import test from "node:test";
 
 const root = resolve(import.meta.dirname, "../..");
 const sql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_baseline_capture.sql"), "utf8");
+const functionSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_trigger_function_capture.sql"), "utf8");
 
 test("pre-v2.31 baseline capture is read-only and covers every missing relation", () => {
   const statements = sql.replace(/^\s*--.*$/gm, "");
@@ -12,6 +13,14 @@ test("pre-v2.31 baseline capture is read-only and covers every missing relation"
   for (const relation of ["categorias", "productos", "producto_stock_sucursal", "movimientos", "ventas", "venta_items"]) {
     assert.match(sql, new RegExp(`'${relation}'`));
   }
+});
+
+test("trigger-function capture is read-only and exports exact definitions", () => {
+  const statements = functionSql.replace(/^\s*--.*$/gm, "");
+  assert.match(functionSql, /pg_catalog\.pg_get_functiondef\(p\.oid\)/i);
+  assert.match(functionSql, /not t\.tgisinternal/i);
+  assert.match(functionSql, /vendify_pre_v231_trigger_function_capture/i);
+  assert.doesNotMatch(statements, /^\s*(?:insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/im);
 });
 
 test("baseline capture includes security and structural metadata", () => {

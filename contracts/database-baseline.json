@@ -25,6 +25,12 @@
   "allowedRecoveryMethod": "Obtain a schema-only dump from an authorized non-production clone or production schema export, review it, remove ownership/data/secrets, and validate it in a disposable Supabase project.",
   "captureDiagnostic": "supabase/diagnostics/pre_v231_baseline_capture.sql",
   "captureEvidence": "contracts/captures/pre-v231-core-schema-20260915.json",
+  "dependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_trigger_function_capture.sql",
+  "missingExecutableDependencies": [
+    "public.crear_stock_sucursales_producto_v1()",
+    "public.stock_sucursal_recalcular_total_trigger_v1()",
+    "public.validar_autorizacion_descuento_venta_v1()"
+  ],
   "executableBaseline": null,
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",
