@@ -19,6 +19,10 @@ const dependencyCapturePath = manifest.dependencyCaptureEvidence ? resolve(root,
 const dependencyCapture = dependencyCapturePath && existsSync(dependencyCapturePath)
   ? JSON.parse(readFileSync(dependencyCapturePath, "utf8"))
   : null;
+const transitiveCapturePath = manifest.transitiveDependencyCaptureEvidence ? resolve(root, manifest.transitiveDependencyCaptureEvidence) : null;
+const transitiveCapture = transitiveCapturePath && existsSync(transitiveCapturePath)
+  ? JSON.parse(readFileSync(transitiveCapturePath, "utf8"))
+  : null;
 const capturedRelations = new Map((capture?.relations ?? []).map((relation) => [relation.name, relation]));
 for (const relation of manifest.requiredRelations ?? []) {
   if (!relation.name || names.has(relation.name)) fail(`invalid or duplicate relation: ${relation.name ?? "missing"}`);
@@ -47,6 +51,17 @@ if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcut
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
 if (!manifest.dependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.dependencyCaptureDiagnostic))) fail("baseline dependency capture diagnostic is missing");
 if (!manifest.transitiveDependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.transitiveDependencyCaptureDiagnostic))) fail("baseline transitive dependency diagnostic is missing");
+if (!transitiveCapture) fail("baseline transitive dependency evidence is missing");
+else {
+  if (transitiveCapture.capture_version !== 1) fail("unsupported transitive dependency capture version");
+  if ((transitiveCapture.missing_functions ?? []).length !== 0) fail("transitive dependency capture still reports missing functions");
+  const stockHelper = (transitiveCapture.functions ?? []).find((fn) => fn.identity === "public.recalcular_stock_total_producto_v1(uuid)");
+  if (!stockHelper?.definition) fail("transitive dependency evidence is missing the stock-total helper definition");
+  else {
+    if (!/security definer/i.test(stockHelper.definition) || !/set search_path to 'public'/i.test(stockHelper.definition)) fail("captured stock-total helper lacks its security contract");
+    if (!/sum\(ps\.stock\)/i.test(stockHelper.definition) || !/where ps\.producto_id = p_producto_id/i.test(stockHelper.definition)) fail("captured stock-total helper lacks its aggregate invariant");
+  }
+}
 if (!dependencyCapture) fail("baseline trigger-function evidence is missing");
 else {
   if (dependencyCapture.capture_version !== 1) fail("unsupported trigger-function capture version");

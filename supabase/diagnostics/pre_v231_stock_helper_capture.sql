@@ -3,7 +3,7 @@
 -- Run in an authorized Supabase SQL editor and export the single JSON result.
 
 with requested_functions(identity) as (
-    values ('public.recalcular_stock_total_producto_v1()'::text)
+    values ('public.recalcular_stock_total_producto_v1(uuid)'::text)
 ),
 resolved_functions as (
     select

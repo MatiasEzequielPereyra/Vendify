@@ -7,6 +7,7 @@ const root = resolve(import.meta.dirname, "../..");
 const sql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_baseline_capture.sql"), "utf8");
 const functionSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_trigger_function_capture.sql"), "utf8");
 const stockHelperSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_stock_helper_capture.sql"), "utf8");
+const stockHelperCapture = JSON.parse(readFileSync(resolve(root, "contracts/captures/pre-v231-stock-helper-20260915.json"), "utf8"));
 
 test("pre-v2.31 baseline capture is read-only and covers every missing relation", () => {
   const statements = sql.replace(/^\s*--.*$/gm, "");
@@ -26,10 +27,20 @@ test("trigger-function capture is read-only and exports exact definitions", () =
 
 test("stock helper capture is read-only and reports missing dependencies", () => {
   const statements = stockHelperSql.replace(/^\s*--.*$/gm, "");
-  assert.match(stockHelperSql, /recalcular_stock_total_producto_v1\(\)/i);
+  assert.match(stockHelperSql, /recalcular_stock_total_producto_v1\(uuid\)/i);
   assert.match(stockHelperSql, /pg_catalog\.pg_get_functiondef\(oid\)/i);
   assert.match(stockHelperSql, /missing_functions/i);
   assert.doesNotMatch(statements, /^\s*(?:insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/im);
+});
+
+test("captured stock helper preserves the aggregate and security contract", () => {
+  assert.deepEqual(stockHelperCapture.missing_functions, []);
+  const helper = stockHelperCapture.functions.find((fn) => fn.identity === "public.recalcular_stock_total_producto_v1(uuid)");
+  assert.ok(helper);
+  assert.match(helper.definition, /security definer/i);
+  assert.match(helper.definition, /set search_path to 'public'/i);
+  assert.match(helper.definition, /sum\(ps\.stock\)/i);
+  assert.match(helper.definition, /where ps\.producto_id = p_producto_id/i);
 });
 
 test("baseline capture includes security and structural metadata", () => {

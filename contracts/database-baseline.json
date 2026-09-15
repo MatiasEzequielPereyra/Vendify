@@ -28,9 +28,8 @@
   "dependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_trigger_function_capture.sql",
   "dependencyCaptureEvidence": "contracts/captures/pre-v231-trigger-functions-20260915.json",
   "transitiveDependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_stock_helper_capture.sql",
-  "missingExecutableDependencies": [
-    "public.recalcular_stock_total_producto_v1()"
-  ],
+  "transitiveDependencyCaptureEvidence": "contracts/captures/pre-v231-stock-helper-20260915.json",
+  "missingExecutableDependencies": [],
   "executableBaseline": null,
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",

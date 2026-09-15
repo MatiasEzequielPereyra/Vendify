@@ -1,0 +1,12 @@
+{
+  "schema": "public",
+  "source": "captured_trigger_function_dependencies",
+  "functions": [
+    {
+      "identity": "public.recalcular_stock_total_producto_v1(uuid)",
+      "definition": "CREATE OR REPLACE FUNCTION public.recalcular_stock_total_producto_v1(p_producto_id uuid)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\r\ndeclare\r\n    v_total integer;\r\nbegin\r\n    select coalesce(sum(ps.stock),0)::integer\r\n      into v_total\r\n      from public.producto_stock_sucursal ps\r\n     where ps.producto_id = p_producto_id;\r\n\r\n    update public.productos\r\n       set stock = greatest(v_total,0),\r\n           actualizado = now()\r\n     where id = p_producto_id;\r\nend;\r\n$function$\n"
+    }
+  ],
+  "capture_version": 1,
+  "missing_functions": []
+}
