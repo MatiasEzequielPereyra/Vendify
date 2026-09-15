@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-09-15",
+  "branch": "refactor/modular-runtime",
+  "migrationChain": {
+    "kind": "incremental",
+    "baselineRequired": true,
+    "baselineManifest": null,
+    "files": [
+      "supabase/migrations/20260831_000_preflight_v231.sql",
+      "supabase/migrations/20260831_001_permisos_stock_empleados.sql",
+      "supabase/migrations/20260831_002_v231_commercial_foundation.sql",
+      "supabase/migrations/20260831_003_verify_v231.sql",
+      "supabase/migrations/20260904_001_tenant_plan_limit_hardening.sql",
+      "supabase/migrations/20260907_001_error_log_hardening.sql",
+      "supabase/migrations/20260907_002_product_barcode_uniqueness.sql",
+      "supabase/migrations/20260907_003_dashboard_historical_margin.sql",
+      "supabase/migrations/20260907_004_sales_runtime_contract.sql",
+      "supabase/migrations/20260907_005_sales_rpc_execute_hardening.sql",
+      "supabase/migrations/20260907_006_sales_v3_internal_only.sql",
+      "supabase/migrations/20260907_007_sales_stock_lock_order.sql",
+      "supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql",
+      "supabase/migrations/20260908_009_sales_rpc_access_reassertion.sql",
+      "supabase/migrations/20260908_010_security_definer_api_grants.sql",
+      "supabase/migrations/20260909_011_critical_table_grants_hardening.sql",
+      "supabase/migrations/20260909_012_sales_v2_internal_only.sql",
+      "supabase/migrations/20260911_013_role_guard_execute_grant.sql"
+    ]
+  },
+  "gates": [
+    { "id": "automated-ci", "status": "pass_automated", "blocksPilot": true, "evidence": ["package.json", ".github/workflows/ci.yml"] },
+    { "id": "release-package", "status": "pass_automated", "blocksPilot": true, "evidence": ["scripts/build-release.mjs", "scripts/verify-release.mjs"] },
+    { "id": "rpc-contract-and-security", "status": "pass_automated", "blocksPilot": true, "evidence": ["contracts/rpc-contract.json", "contracts/rpc-source-coverage.json", "scripts/check-rpc-contract.mjs"] },
+    { "id": "offline-durable-core", "status": "pass_automated", "blocksPilot": true, "evidence": ["src/offline/indexeddb-store.ts", "src/offline/sync-engine.ts", "src/offline/pending-sales-ui.ts"] },
+    { "id": "service-worker-atomic-shell", "status": "pass_automated", "blocksPilot": true, "evidence": ["sw.js", "tests/unit/service-worker-contract.test.mjs"] },
+    { "id": "two-register-realtime-stock", "status": "pass_manual", "blocksPilot": true, "observedAt": "2026-09-15", "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md"] },
+    { "id": "database-clean-bootstrap", "status": "blocked", "blocksPilot": true, "reason": "The versioned migration chain starts with a preflight that requires the pre-v2.31 schema; no reviewed executable baseline manifest exists.", "evidence": ["supabase/README.md", "supabase/migrations/20260831_000_preflight_v231.sql"] },
+    { "id": "tenant-isolation-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/tenant-isolation.mjs"] },
+    { "id": "sales-atomicity-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/sales-atomicity.mjs"] },
+    { "id": "sales-concurrency-live", "status": "pending_live", "blocksPilot": true, "evidence": ["tests/integration/sales-concurrency.mjs"] },
+    { "id": "offline-signed-lease", "status": "pending_implementation", "blocksPilot": true, "evidence": ["src/offline/compat-controller.ts"] },
+    { "id": "pwa-device-matrix", "status": "pending_manual", "blocksPilot": true, "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md"] },
+    { "id": "self-hosted-critical-runtime", "status": "pending_implementation", "blocksPilot": false, "evidence": ["index.html", "sw.js"] },
+    { "id": "backup-restore-at-scale", "status": "pending_implementation", "blocksPilot": true, "evidence": ["src/commercial/commercial-service.ts"] }
+  ]
+}

@@ -11,12 +11,14 @@ La fuente de verdad de estados es [`MATRIZ-QA-v2.31.1.md`](./MATRIZ-QA-v2.31.1.m
 - registrar el gate objetivo del piloto;
 - no atribuir `PASS live` a verificaciones estáticas.
 
-## 2. Gate técnico automatizado — SIGUIENTE
+## 2. Gate técnico automatizado — EN CURSO
 
-- convertir los requisitos vigentes en verificadores mantenibles;
-- revisar el contrato de migraciones completo y su orden;
-- asegurar que CI bloquee artefactos o contratos incompletos;
-- preparar un informe de ejecución reproducible.
+- [x] convertir los requisitos vigentes en un contrato verificable;
+- [x] inventariar el orden exacto de migraciones revisadas;
+- [x] incluir el gate comercial en CI;
+- [x] registrar evidencia manual sin confundirla con concurrencia automatizada;
+- [ ] construir y revisar la baseline SQL previa a v2.31;
+- [ ] generar un informe de ejecución por release con resultados live.
 
 ## 3. Staging limpio
 

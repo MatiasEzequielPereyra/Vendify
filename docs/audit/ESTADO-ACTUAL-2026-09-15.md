@@ -34,19 +34,25 @@ Este documento reconcilia la auditoría histórica de v2.31.1 con el repositorio
 
 Los harness de tenant, atomicidad y concurrencia están versionados, pero el entorno local conserva placeholders para el endpoint y la clave de staging y no tiene configuradas las variables de ventas concurrentes. Falta ejecutar las pruebas contra un staging descartable con dos tenants y sesiones independientes.
 
-### 2. Autorización offline
+La prueba manual de dos cajas distintas dentro del mismo negocio ya confirmó que Realtime actualiza el stock después de la primera venta y bloquea la venta posterior del producto agotado. Aún falta el harness de carrera simultánea para demostrar el lock transaccional del backend.
+
+### 2. Baseline de base de datos incompleta
+
+Las migraciones versionadas comienzan con un preflight que exige tablas y funciones pre-v2.31. Las definiciones recuperadas de `supabase/sources` sirven para auditoría, pero están explícitamente excluidas de ejecución. Antes de reconstruir staging desde cero se necesita una baseline SQL revisada, ordenada y verificable.
+
+### 3. Autorización offline
 
 La cola local valida contexto, payload, stock e idempotencia, pero todavía no usa un lease criptográficamente firmado y emitido por backend. Un dispositivo bajo control hostil puede fabricar autorización local; el backend la rechazará al sincronizar después de que el comercio pudo entregar mercadería.
 
-### 3. Primera carga dependiente de CDN
+### 4. Primera carga dependiente de CDN
 
 Supabase JS `2.116.0` y ZXing `0.2.1` están fijados y precacheados, pero aún se obtienen desde jsDelivr. Una primera instalación depende del tercero.
 
-### 4. Backup y escala
+### 5. Backup y escala
 
 El respaldo operativo agrega el negocio en un único `jsonb`. Falta exportación asíncrona/paginada, almacenamiento privado, checksum y una restauración ensayada. También faltan pruebas de 5.000 productos, 50.000 ventas y 250.000 items.
 
-### 5. Deuda de interfaz
+### 6. Deuda de interfaz
 
 La modularización redujo el tamaño de los entrypoints, pero permanecen 1.318 usos de `!important` y 98 referencias a `.innerHTML` entre legacy y módulos. No prueban un defecto por sí mismas; aumentan el costo de regresión visual y la superficie a auditar.
 
@@ -63,4 +69,4 @@ La ejecución completa de este relevamiento pasó `npm.cmd run ci` con 200 tests
 
 ## Próxima acción
 
-Implementar el punto 2 de `PLAN-ESTABILIZACION.md`: reforzar el gate técnico automatizado y producir un paquete reproducible de evidencia. Luego se configura staging para convertir los estados `PENDIENTE LIVE` en resultados observados.
+Completar el punto 2 de `PLAN-ESTABILIZACION.md` construyendo la baseline SQL previa a v2.31 y el informe de resultados live. El contrato automatizado ya impide ocultar esa dependencia.

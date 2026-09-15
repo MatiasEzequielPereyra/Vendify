@@ -38,6 +38,7 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [ ] PENDIENTE LIVE — deployment limpio en staging.
 - [ ] PENDIENTE LIVE — ensayo de rollback completo.
 - [ ] PENDIENTE LIVE — migraciones contra una copia representativa de producción.
+- [ ] BLOQUEADO — falta una baseline SQL ejecutable y revisada; la cadena actual es incremental y su primer preflight requiere el esquema pre-v2.31.
 
 ## Ventas y caja
 
@@ -48,6 +49,7 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [ ] PENDIENTE LIVE — venta simple y pagos mixtos.
 - [ ] PENDIENTE LIVE — doble tap, timeout posterior al commit y reintento.
 - [ ] PENDIENTE LIVE — dos cajeros compitiendo por la última unidad.
+- [x] PASS manual — dos cajas distintas del mismo negocio vendieron el mismo catálogo; Realtime actualizó el stock inmediatamente y la segunda caja no pudo vender stock ya agotado (2026-09-15).
 - [ ] PENDIENTE LIVE — apertura doble, cierre concurrente y diferencia exacta.
 - [ ] PENDIENTE MANUAL — ticket e impresión en hardware objetivo.
 
