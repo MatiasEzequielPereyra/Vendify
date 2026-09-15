@@ -1,0 +1,1862 @@
+{
+  "schema": "public",
+  "relations": [
+    {
+      "name": "categorias",
+      "grants": [
+        {
+          "grantee": "anon",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "anon",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "anon",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "creado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 4,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 5,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "categorias_negocio_idx",
+          "definition": "CREATE INDEX categorias_negocio_idx ON public.categorias USING btree (negocio_id)"
+        },
+        {
+          "name": "categorias_negocio_nombre_uidx",
+          "definition": "CREATE UNIQUE INDEX categorias_negocio_nombre_uidx ON public.categorias USING btree (negocio_id, lower(nombre)) WHERE (negocio_id IS NOT NULL)"
+        },
+        {
+          "name": "categorias_pkey",
+          "definition": "CREATE UNIQUE INDEX categorias_pkey ON public.categorias USING btree (id)"
+        },
+        {
+          "name": "categorias_user_id_nombre_key",
+          "definition": "CREATE UNIQUE INDEX categorias_user_id_nombre_key ON public.categorias USING btree (user_id, nombre)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_categorias_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "((negocio_id IS NOT NULL) AND es_miembro_negocio(negocio_id))",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "categorias_completar_negocio",
+          "definition": "CREATE TRIGGER categorias_completar_negocio BEFORE INSERT OR UPDATE OF negocio_id ON categorias FOR EACH ROW EXECUTE FUNCTION completar_negocio_id()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "categorias_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "categorias_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "categorias_user_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "categorias_user_id_nombre_key",
+          "type": "u",
+          "definition": "UNIQUE (user_id, nombre)"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "movimientos",
+      "grants": [
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "producto_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "producto_nombre",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "tipo",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "delta",
+          "type": "integer",
+          "comment": null,
+          "default": null,
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock_resultante",
+          "type": "integer",
+          "comment": null,
+          "default": null,
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "creado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 8,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 9,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "sucursal_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 10,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "motivo",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 11,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "detalle",
+          "type": "jsonb",
+          "comment": null,
+          "default": "'{}'::jsonb",
+          "ordinal": 12,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "movimientos_alertas_v231_idx",
+          "definition": "CREATE INDEX movimientos_alertas_v231_idx ON public.movimientos USING btree (negocio_id, sucursal_id, creado DESC)"
+        },
+        {
+          "name": "movimientos_inventario_producto_idx",
+          "definition": "CREATE INDEX movimientos_inventario_producto_idx ON public.movimientos USING btree (producto_id, creado DESC)"
+        },
+        {
+          "name": "movimientos_inventario_sucursal_fecha_idx",
+          "definition": "CREATE INDEX movimientos_inventario_sucursal_fecha_idx ON public.movimientos USING btree (sucursal_id, creado DESC)"
+        },
+        {
+          "name": "movimientos_negocio_idx",
+          "definition": "CREATE INDEX movimientos_negocio_idx ON public.movimientos USING btree (negocio_id)"
+        },
+        {
+          "name": "movimientos_pkey",
+          "definition": "CREATE UNIQUE INDEX movimientos_pkey ON public.movimientos USING btree (id)"
+        },
+        {
+          "name": "movimientos_producto_id_idx",
+          "definition": "CREATE INDEX movimientos_producto_id_idx ON public.movimientos USING btree (producto_id)"
+        },
+        {
+          "name": "movimientos_sucursal_idx",
+          "definition": "CREATE INDEX movimientos_sucursal_idx ON public.movimientos USING btree (sucursal_id)"
+        },
+        {
+          "name": "movimientos_user_id_idx",
+          "definition": "CREATE INDEX movimientos_user_id_idx ON public.movimientos USING btree (user_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_movimientos_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "tiene_rol_negocio(negocio_id, ARRAY['owner'::text, 'admin'::text, 'manager'::text])",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "movimientos_completar_negocio",
+          "definition": "CREATE TRIGGER movimientos_completar_negocio BEFORE INSERT OR UPDATE OF negocio_id ON movimientos FOR EACH ROW EXECUTE FUNCTION completar_negocio_id()"
+        },
+        {
+          "name": "trg_cerrar_stock_inicial_por_movimiento",
+          "definition": "CREATE TRIGGER trg_cerrar_stock_inicial_por_movimiento AFTER INSERT ON movimientos FOR EACH ROW EXECUTE FUNCTION cerrar_stock_inicial_por_movimiento_v1()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "movimientos_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "movimientos_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "movimientos_producto_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "movimientos_sucursal_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "movimientos_tipo_check",
+          "type": "c",
+          "definition": "CHECK (tipo = ANY (ARRAY['ajuste'::text, 'compra'::text, 'devolucion'::text, 'ingreso'::text, 'inventario'::text, 'perdida'::text, 'rotura'::text, 'stock_inicial'::text, 'transferencia_entrada'::text, 'transferencia_salida'::text, 'vencimiento'::text, 'venta'::text]))"
+        },
+        {
+          "name": "movimientos_user_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "producto_stock_sucursal",
+      "grants": [
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "sucursal_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "producto_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock",
+          "type": "integer",
+          "comment": null,
+          "default": "0",
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock_minimo",
+          "type": "integer",
+          "comment": null,
+          "default": "5",
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "creado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "actualizado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 8,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock_inicial_cerrado",
+          "type": "boolean",
+          "comment": null,
+          "default": "false",
+          "ordinal": 9,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock_inicial_cerrado_en",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": null,
+          "ordinal": 10,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "producto_stock_dashboard_v231_idx",
+          "definition": "CREATE INDEX producto_stock_dashboard_v231_idx ON public.producto_stock_sucursal USING btree (negocio_id, sucursal_id, stock)"
+        },
+        {
+          "name": "producto_stock_sucursal_negocio_idx",
+          "definition": "CREATE INDEX producto_stock_sucursal_negocio_idx ON public.producto_stock_sucursal USING btree (negocio_id)"
+        },
+        {
+          "name": "producto_stock_sucursal_pkey",
+          "definition": "CREATE UNIQUE INDEX producto_stock_sucursal_pkey ON public.producto_stock_sucursal USING btree (id)"
+        },
+        {
+          "name": "producto_stock_sucursal_producto_idx",
+          "definition": "CREATE INDEX producto_stock_sucursal_producto_idx ON public.producto_stock_sucursal USING btree (producto_id)"
+        },
+        {
+          "name": "producto_stock_sucursal_sucursal_id_producto_id_key",
+          "definition": "CREATE UNIQUE INDEX producto_stock_sucursal_sucursal_id_producto_id_key ON public.producto_stock_sucursal USING btree (sucursal_id, producto_id)"
+        },
+        {
+          "name": "producto_stock_sucursal_sucursal_idx",
+          "definition": "CREATE INDEX producto_stock_sucursal_sucursal_idx ON public.producto_stock_sucursal USING btree (sucursal_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_stock_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "es_miembro_negocio(negocio_id)",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "stock_sucursal_recalcular_total_v1",
+          "definition": "CREATE TRIGGER stock_sucursal_recalcular_total_v1 AFTER INSERT OR DELETE OR UPDATE OF stock ON producto_stock_sucursal FOR EACH ROW EXECUTE FUNCTION stock_sucursal_recalcular_total_trigger_v1()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "producto_stock_sucursal_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "producto_stock_sucursal_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "producto_stock_sucursal_producto_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "producto_stock_sucursal_stock_check",
+          "type": "c",
+          "definition": "CHECK (stock >= 0)"
+        },
+        {
+          "name": "producto_stock_sucursal_stock_minimo_check",
+          "type": "c",
+          "definition": "CHECK (stock_minimo >= 0)"
+        },
+        {
+          "name": "producto_stock_sucursal_sucursal_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "producto_stock_sucursal_sucursal_id_producto_id_key",
+          "type": "u",
+          "definition": "UNIQUE (sucursal_id, producto_id)"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "productos",
+      "grants": [
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "nombre",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "categoria",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "precio_compra",
+          "type": "numeric",
+          "comment": null,
+          "default": "0",
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "precio_venta",
+          "type": "numeric",
+          "comment": null,
+          "default": "0",
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock",
+          "type": "integer",
+          "comment": null,
+          "default": "0",
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "stock_minimo",
+          "type": "integer",
+          "comment": null,
+          "default": "5",
+          "ordinal": 8,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "foto",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 9,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "creado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 10,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "actualizado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 11,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 12,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "marca",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 13,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "presentacion",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 14,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "codigo_barras",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 15,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "productos_codigo_barras_idx",
+          "definition": "CREATE INDEX productos_codigo_barras_idx ON public.productos USING btree (codigo_barras) WHERE (codigo_barras IS NOT NULL)"
+        },
+        {
+          "name": "productos_codigo_barras_negocio_unique",
+          "definition": "CREATE UNIQUE INDEX productos_codigo_barras_negocio_unique ON public.productos USING btree (negocio_id, codigo_barras) WHERE ((codigo_barras IS NOT NULL) AND (codigo_barras <> ''::text))"
+        },
+        {
+          "name": "productos_negocio_codigo_barras_unico_idx",
+          "definition": "CREATE UNIQUE INDEX productos_negocio_codigo_barras_unico_idx ON public.productos USING btree (negocio_id, btrim(codigo_barras)) WHERE (NULLIF(btrim(codigo_barras), ''::text) IS NOT NULL)"
+        },
+        {
+          "name": "productos_negocio_idx",
+          "definition": "CREATE INDEX productos_negocio_idx ON public.productos USING btree (negocio_id)"
+        },
+        {
+          "name": "productos_pkey",
+          "definition": "CREATE UNIQUE INDEX productos_pkey ON public.productos USING btree (id)"
+        },
+        {
+          "name": "productos_user_id_idx",
+          "definition": "CREATE INDEX productos_user_id_idx ON public.productos USING btree (user_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_productos_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "tiene_rol_negocio(negocio_id, ARRAY['owner'::text, 'admin'::text, 'manager'::text])",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "productos_completar_negocio",
+          "definition": "CREATE TRIGGER productos_completar_negocio BEFORE INSERT OR UPDATE OF negocio_id ON productos FOR EACH ROW EXECUTE FUNCTION completar_negocio_id()"
+        },
+        {
+          "name": "productos_crear_stock_sucursales_v1",
+          "definition": "CREATE TRIGGER productos_crear_stock_sucursales_v1 AFTER INSERT ON productos FOR EACH ROW EXECUTE FUNCTION crear_stock_sucursales_producto_v1()"
+        },
+        {
+          "name": "vendify_limite_productos",
+          "definition": "CREATE TRIGGER vendify_limite_productos BEFORE INSERT ON productos FOR EACH ROW EXECUTE FUNCTION vendify_limite_productos_trigger_v1()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "productos_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "productos_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "productos_precio_compra_no_negativo",
+          "type": "c",
+          "definition": "CHECK (precio_compra >= 0::numeric)"
+        },
+        {
+          "name": "productos_precio_venta_no_negativo",
+          "type": "c",
+          "definition": "CHECK (precio_venta >= 0::numeric)"
+        },
+        {
+          "name": "productos_stock_no_negativo",
+          "type": "c",
+          "definition": "CHECK (stock >= 0)"
+        },
+        {
+          "name": "productos_user_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "venta_items",
+      "grants": [
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "venta_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "producto_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "producto_nombre",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "cantidad",
+          "type": "integer",
+          "comment": null,
+          "default": null,
+          "ordinal": 6,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "precio_unitario",
+          "type": "numeric",
+          "comment": null,
+          "default": null,
+          "ordinal": 7,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "subtotal",
+          "type": "numeric",
+          "comment": null,
+          "default": null,
+          "ordinal": 8,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 9,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "costo_unitario",
+          "type": "numeric",
+          "comment": null,
+          "default": "0",
+          "ordinal": 10,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "ganancia",
+          "type": "numeric",
+          "comment": null,
+          "default": "((precio_unitario - costo_unitario) * (cantidad)::numeric)",
+          "ordinal": 11,
+          "identity": "",
+          "not_null": false,
+          "generated": "s"
+        },
+        {
+          "name": "precio_neto_unitario",
+          "type": "numeric(14,4)",
+          "comment": null,
+          "default": null,
+          "ordinal": 12,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "cantidad_devuelta",
+          "type": "integer",
+          "comment": null,
+          "default": "0",
+          "ordinal": 13,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "venta_items_negocio_idx",
+          "definition": "CREATE INDEX venta_items_negocio_idx ON public.venta_items USING btree (negocio_id)"
+        },
+        {
+          "name": "venta_items_pkey",
+          "definition": "CREATE UNIQUE INDEX venta_items_pkey ON public.venta_items USING btree (id)"
+        },
+        {
+          "name": "venta_items_venta_id_idx",
+          "definition": "CREATE INDEX venta_items_venta_id_idx ON public.venta_items USING btree (venta_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_venta_items_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "tiene_rol_negocio(negocio_id, ARRAY['owner'::text, 'admin'::text, 'manager'::text])",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "trg_cerrar_stock_inicial_por_venta_item",
+          "definition": "CREATE TRIGGER trg_cerrar_stock_inicial_por_venta_item AFTER INSERT ON venta_items FOR EACH ROW EXECUTE FUNCTION cerrar_stock_inicial_por_venta_item_v1()"
+        },
+        {
+          "name": "venta_items_completar_negocio",
+          "definition": "CREATE TRIGGER venta_items_completar_negocio BEFORE INSERT OR UPDATE OF negocio_id ON venta_items FOR EACH ROW EXECUTE FUNCTION completar_negocio_id()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "venta_items_cantidad_devuelta_check_v228",
+          "type": "c",
+          "definition": "CHECK (cantidad_devuelta >= 0 AND cantidad_devuelta <= cantidad)"
+        },
+        {
+          "name": "venta_items_cantidad_positiva",
+          "type": "c",
+          "definition": "CHECK (cantidad > 0)"
+        },
+        {
+          "name": "venta_items_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "venta_items_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "venta_items_producto_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "venta_items_user_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "venta_items_venta_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (venta_id) REFERENCES ventas(id) ON DELETE CASCADE"
+        }
+      ],
+      "rls_enabled": true
+    },
+    {
+      "name": "ventas",
+      "grants": [
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "authenticated",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "postgres",
+          "grantable": "YES",
+          "privilege": "UPDATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "DELETE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "INSERT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "REFERENCES"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "SELECT"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRIGGER"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "TRUNCATE"
+        },
+        {
+          "grantee": "service_role",
+          "grantable": "NO",
+          "privilege": "UPDATE"
+        }
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "comment": null,
+          "default": "gen_random_uuid()",
+          "ordinal": 1,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 2,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "total",
+          "type": "numeric",
+          "comment": null,
+          "default": "0",
+          "ordinal": 3,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "medio_pago",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 4,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "creado",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": "now()",
+          "ordinal": 5,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "negocio_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 6,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "sucursal_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 7,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "caja_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 8,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "caja_sesion_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 9,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "estado",
+          "type": "text",
+          "comment": null,
+          "default": "'completada'::text",
+          "ordinal": 10,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "subtotal",
+          "type": "numeric(14,2)",
+          "comment": null,
+          "default": "0",
+          "ordinal": 11,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "descuento_tipo",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 12,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "descuento_valor",
+          "type": "numeric(14,2)",
+          "comment": null,
+          "default": "0",
+          "ordinal": 13,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "descuento_total",
+          "type": "numeric(14,2)",
+          "comment": null,
+          "default": "0",
+          "ordinal": 14,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "observacion",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 15,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "total_devuelto",
+          "type": "numeric(14,2)",
+          "comment": null,
+          "default": "0",
+          "ordinal": 16,
+          "identity": "",
+          "not_null": true,
+          "generated": ""
+        },
+        {
+          "name": "anulada_en",
+          "type": "timestamp with time zone",
+          "comment": null,
+          "default": null,
+          "ordinal": 17,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "anulada_por",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 18,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "motivo_anulacion",
+          "type": "text",
+          "comment": null,
+          "default": null,
+          "ordinal": 19,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "descuento_autorizado_por",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 20,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        },
+        {
+          "name": "descuento_autorizacion_id",
+          "type": "uuid",
+          "comment": null,
+          "default": null,
+          "ordinal": 21,
+          "identity": "",
+          "not_null": false,
+          "generated": ""
+        }
+      ],
+      "comment": null,
+      "indexes": [
+        {
+          "name": "ventas_caja_sesion_idx",
+          "definition": "CREATE INDEX ventas_caja_sesion_idx ON public.ventas USING btree (caja_sesion_id)"
+        },
+        {
+          "name": "ventas_creado_idx",
+          "definition": "CREATE INDEX ventas_creado_idx ON public.ventas USING btree (creado)"
+        },
+        {
+          "name": "ventas_dashboard_v231_idx",
+          "definition": "CREATE INDEX ventas_dashboard_v231_idx ON public.ventas USING btree (negocio_id, sucursal_id, creado DESC)"
+        },
+        {
+          "name": "ventas_descuento_autorizado_idx",
+          "definition": "CREATE INDEX ventas_descuento_autorizado_idx ON public.ventas USING btree (descuento_autorizado_por) WHERE (descuento_total > (0)::numeric)"
+        },
+        {
+          "name": "ventas_negocio_creado_idx",
+          "definition": "CREATE INDEX ventas_negocio_creado_idx ON public.ventas USING btree (negocio_id, creado DESC)"
+        },
+        {
+          "name": "ventas_negocio_idx",
+          "definition": "CREATE INDEX ventas_negocio_idx ON public.ventas USING btree (negocio_id)"
+        },
+        {
+          "name": "ventas_pkey",
+          "definition": "CREATE UNIQUE INDEX ventas_pkey ON public.ventas USING btree (id)"
+        },
+        {
+          "name": "ventas_user_id_idx",
+          "definition": "CREATE INDEX ventas_user_id_idx ON public.ventas USING btree (user_id)"
+        }
+      ],
+      "policies": [
+        {
+          "name": "security_ventas_select",
+          "check": null,
+          "roles": [
+            "authenticated"
+          ],
+          "using": "tiene_rol_negocio(negocio_id, ARRAY['owner'::text, 'admin'::text, 'manager'::text])",
+          "command": "SELECT",
+          "permissive": "PERMISSIVE"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "validar_autorizacion_descuento_venta_v1",
+          "definition": "CREATE TRIGGER validar_autorizacion_descuento_venta_v1 BEFORE INSERT ON ventas FOR EACH ROW EXECUTE FUNCTION validar_autorizacion_descuento_venta_v1()"
+        },
+        {
+          "name": "ventas_completar_negocio",
+          "definition": "CREATE TRIGGER ventas_completar_negocio BEFORE INSERT OR UPDATE OF negocio_id ON ventas FOR EACH ROW EXECUTE FUNCTION completar_negocio_id()"
+        }
+      ],
+      "rls_forced": false,
+      "constraints": [
+        {
+          "name": "ventas_anulada_por_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (anulada_por) REFERENCES auth.users(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "ventas_caja_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (caja_id) REFERENCES cajas(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "ventas_caja_sesion_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (caja_sesion_id) REFERENCES cajas_sesiones(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "ventas_descuento_autorizacion_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (descuento_autorizacion_id) REFERENCES descuento_autorizaciones(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "ventas_descuento_autorizado_por_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (descuento_autorizado_por) REFERENCES auth.users(id) ON DELETE SET NULL"
+        },
+        {
+          "name": "ventas_descuento_tipo_check_v228",
+          "type": "c",
+          "definition": "CHECK (descuento_tipo IS NULL OR (descuento_tipo = ANY (ARRAY['porcentaje'::text, 'monto'::text])))"
+        },
+        {
+          "name": "ventas_estado_check_v228",
+          "type": "c",
+          "definition": "CHECK (estado = ANY (ARRAY['completada'::text, 'parcialmente_devuelta'::text, 'devuelta'::text, 'anulada'::text]))"
+        },
+        {
+          "name": "ventas_negocio_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (negocio_id) REFERENCES negocios(id) ON DELETE CASCADE"
+        },
+        {
+          "name": "ventas_pkey",
+          "type": "p",
+          "definition": "PRIMARY KEY (id)"
+        },
+        {
+          "name": "ventas_sucursal_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (sucursal_id) REFERENCES sucursales(id) ON DELETE RESTRICT"
+        },
+        {
+          "name": "ventas_total_no_negativo",
+          "type": "c",
+          "definition": "CHECK (total >= 0::numeric)"
+        },
+        {
+          "name": "ventas_user_id_fkey",
+          "type": "f",
+          "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+        }
+      ],
+      "rls_enabled": true
+    }
+  ],
+  "capture_version": 1,
+  "missing_relations": [],
+  "expected_relations": [
+    "categorias",
+    "movimientos",
+    "producto_stock_sucursal",
+    "productos",
+    "venta_items",
+    "ventas"
+  ]
+}

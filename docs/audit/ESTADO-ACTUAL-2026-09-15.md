@@ -38,7 +38,7 @@ La prueba manual de dos cajas distintas dentro del mismo negocio ya confirmó qu
 
 ### 2. Baseline de base de datos incompleta
 
-Las migraciones versionadas comienzan con un preflight que exige tablas y funciones pre-v2.31. Las definiciones recuperadas de `supabase/sources` sirven para auditoría, pero están explícitamente excluidas de ejecución. Antes de reconstruir staging desde cero se necesita una baseline SQL revisada, ordenada y verificable.
+Las migraciones versionadas comienzan con un preflight que exige tablas y funciones pre-v2.31. Ya se capturaron columnas, constraints, índices, triggers, políticas y grants vigentes de las seis tablas cuya definición no estaba en Git. Antes de reconstruir staging falta ensamblar esas fuentes en una baseline SQL con orden de dependencias y validarla en un proyecto descartable.
 
 ### 3. Autorización offline
 

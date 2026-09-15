@@ -19,6 +19,8 @@ La fuente de verdad de estados es [`MATRIZ-QA-v2.31.1.md`](./MATRIZ-QA-v2.31.1.m
 - [x] registrar evidencia manual sin confundirla con concurrencia automatizada;
 - [ ] construir y revisar la baseline SQL previa a v2.31;
 - [x] inventariar las 16 relaciones requeridas y las 6 definiciones autoritativas faltantes;
+- [x] capturar metadatos autoritativos de las 6 relaciones faltantes;
+- [ ] ensamblar el SQL en orden de dependencias y validarlo en un proyecto descartable;
 - [ ] generar un informe de ejecución por release con resultados live.
 
 ## 3. Staging limpio

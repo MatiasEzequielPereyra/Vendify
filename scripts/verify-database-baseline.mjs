@@ -11,6 +11,11 @@ if (!Array.isArray(manifest.requiredRelations) || manifest.requiredRelations.len
 
 const names = new Set();
 const derivedMissing = [];
+const capturePath = manifest.captureEvidence ? resolve(root, manifest.captureEvidence) : null;
+const capture = capturePath && existsSync(capturePath)
+  ? JSON.parse(readFileSync(capturePath, "utf8"))
+  : null;
+const capturedRelations = new Map((capture?.relations ?? []).map((relation) => [relation.name, relation]));
 for (const relation of manifest.requiredRelations ?? []) {
   if (!relation.name || names.has(relation.name)) fail(`invalid or duplicate relation: ${relation.name ?? "missing"}`);
   names.add(relation.name);
@@ -18,10 +23,13 @@ for (const relation of manifest.requiredRelations ?? []) {
   if (relation.definitionSources?.length === 0) derivedMissing.push(relation.name);
   for (const source of relation.definitionSources ?? []) {
     if (!existsSync(resolve(root, source))) fail(`relation ${relation.name} references missing source: ${source}`);
-    const sql = readFileSync(resolve(root, source), "utf8");
-    const escaped = relation.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (!new RegExp(`create\\s+table(?:\\s+if\\s+not\\s+exists)?\\s+public\\.${escaped}\\b`, "i").test(sql)) {
-      fail(`source does not create public.${relation.name}: ${source}`);
+    if (source.endsWith(".json")) {
+      const captured = capturedRelations.get(relation.name);
+      if (!captured || !Array.isArray(captured.columns) || captured.columns.length === 0) fail(`capture has no structural definition for public.${relation.name}`);
+    } else {
+      const sql = readFileSync(resolve(root, source), "utf8");
+      const escaped = relation.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (!new RegExp(`create\\s+table(?:\\s+if\\s+not\\s+exists)?\\s+public\\.${escaped}\\b`, "i").test(sql)) fail(`source does not create public.${relation.name}: ${source}`);
     }
   }
 }
@@ -29,11 +37,21 @@ for (const relation of manifest.requiredRelations ?? []) {
 const declaredMissing = [...(manifest.missingAuthoritativeDefinitions ?? [])].sort();
 if (JSON.stringify(derivedMissing.sort()) !== JSON.stringify(declaredMissing)) fail("missing baseline definitions are stale");
 if (declaredMissing.length > 0 && manifest.status !== "incomplete") fail("baseline with missing definitions must remain incomplete");
-if (declaredMissing.length === 0 && manifest.status !== "ready_for_disposable_test") fail("complete source inventory must advance to disposable testing");
+if (declaredMissing.length === 0 && !manifest.executableBaseline && manifest.status !== "captured_core_relations") fail("captured source inventory must remain in assembly state");
+if (manifest.executableBaseline && manifest.status !== "ready_for_disposable_test") fail("an executable baseline must advance to disposable testing");
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
+if (!capture) fail("baseline capture evidence is missing");
+else {
+  if (capture.capture_version !== 1) fail("unsupported baseline capture version");
+  if ((capture.missing_relations ?? []).length !== 0) fail("baseline capture reports missing relations");
+  const expected = [...names].filter((name) => capturedRelations.has(name)).sort();
+  const actual = [...capturedRelations.keys()].sort();
+  if (JSON.stringify(expected) !== JSON.stringify(actual)) fail("baseline capture relation inventory is unexpected");
+}
 
 if (process.exitCode) process.exit(process.exitCode);
 pass(`${names.size} pre-v2.31 relations inventoried; ${declaredMissing.length} authoritative definitions missing`);
 for (const name of declaredMissing) console.log(`MISSING: public.${name}`);
+if (!manifest.executableBaseline) console.log("PENDING: dependency-ordered executable baseline assembly");
 pass("database baseline gap is explicit and safe recovery rules are present");
