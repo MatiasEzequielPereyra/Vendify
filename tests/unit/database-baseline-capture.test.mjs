@@ -10,6 +10,7 @@ const stockHelperSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231
 const stockHelperCapture = JSON.parse(readFileSync(resolve(root, "contracts/captures/pre-v231-stock-helper-20260915.json"), "utf8"));
 const coreBaselineSql = readFileSync(resolve(root, "supabase/baseline/000_v1_core.sql"), "utf8");
 const branchStockBaselineSql = readFileSync(resolve(root, "supabase/baseline/010_v226_branch_stock.sql"), "utf8");
+const baselineValidationSql = readFileSync(resolve(root, "supabase/baseline/validate_pre_v231_baseline.sql"), "utf8");
 
 test("pre-v2.31 baseline capture is read-only and covers every missing relation", () => {
   const statements = sql.replace(/^\s*--.*$/gm, "");
@@ -59,6 +60,15 @@ test("baseline package generator is deterministic and restricted to disposable p
   assert.match(generator, /GENERATED FILE\. DO NOT EDIT/);
   assert.match(generator, /empty disposable Supabase project only/i);
   assert.match(generator, /process\.argv\.includes\("--check"\)/);
+});
+
+test("post-bootstrap validation is read-only and checks structural dependencies", () => {
+  const statements = baselineValidationSql.replace(/^\s*--.*$/gm, "");
+  for (const marker of ["missing_relations", "missing_functions", "missing_columns", "missing_triggers"]) {
+    assert.match(baselineValidationSql, new RegExp(marker));
+  }
+  assert.match(baselineValidationSql, /vendify_pre_v231_baseline_validation/);
+  assert.doesNotMatch(statements, /^\s*(?:insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/im);
 });
 
 test("baseline capture includes security and structural metadata", () => {

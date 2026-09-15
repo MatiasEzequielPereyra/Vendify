@@ -32,6 +32,7 @@
   "missingExecutableDependencies": [],
   "assemblyDraft": "supabase/baseline/assembly.json",
   "executableBaseline": "supabase/baseline/vendify_pre_v231_baseline.sql",
+  "validationDiagnostic": "supabase/baseline/validate_pre_v231_baseline.sql",
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",
     "Do not execute supabase/sources as a migration directory.",

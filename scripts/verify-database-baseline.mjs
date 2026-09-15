@@ -48,6 +48,7 @@ if (declaredMissing.length > 0 && manifest.status !== "incomplete") fail("baseli
 if (declaredMissing.length === 0 && !manifest.executableBaseline && manifest.status !== "captured_core_relations") fail("captured source inventory must remain in assembly state");
 if (manifest.executableBaseline && manifest.status !== "ready_for_disposable_test") fail("an executable baseline must advance to disposable testing");
 if (manifest.executableBaseline && !existsSync(resolve(root, manifest.executableBaseline))) fail("executable baseline file is missing");
+if (!manifest.validationDiagnostic || !existsSync(resolve(root, manifest.validationDiagnostic))) fail("baseline validation diagnostic is missing");
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
 if (!manifest.dependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.dependencyCaptureDiagnostic))) fail("baseline dependency capture diagnostic is missing");
@@ -100,6 +101,10 @@ else {
   for (const marker of ["producto_stock_sucursal", "recalcular_stock_total_producto_v1", "stock_sucursal_recalcular_total_trigger_v1", "crear_stock_sucursales_producto_v1"]) {
     if (!branchStockSql.includes(marker)) fail(`branch-stock foundation lacks ${marker}`);
   }
+  const validationSql = readFileSync(resolve(root, manifest.validationDiagnostic), "utf8");
+  if (!/vendify_pre_v231_baseline_validation/i.test(validationSql) || !/'ok'/i.test(validationSql)) fail("baseline validation diagnostic lacks its result contract");
+  const validationStatements = validationSql.replace(/^\s*--.*$/gm, "");
+  if (/^\s*(?:insert|update|delete|alter|drop|create|truncate|grant|revoke)\b/im.test(validationStatements)) fail("baseline validation diagnostic must remain read-only");
 }
 if (!capture) fail("baseline capture evidence is missing");
 else {
