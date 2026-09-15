@@ -1,5 +1,11 @@
 # Vendify v2.31.1 — Auditoría real previa a estabilización comercial
 
+> **Documento histórico.** Esta auditoría describe la baseline v2.31.1 antes de
+> las correcciones posteriores. No debe usarse como tablero del estado actual.
+> El estado verificado de la rama `refactor/modular-runtime` se mantiene en
+> [`ESTADO-ACTUAL-2026-09-15.md`](./ESTADO-ACTUAL-2026-09-15.md) y la evidencia
+> pendiente en [`MATRIZ-QA-v2.31.1.md`](./MATRIZ-QA-v2.31.1.md).
+
 ## Alcance auditado
 
 Build actual inspeccionada:
