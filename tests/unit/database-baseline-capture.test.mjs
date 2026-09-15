@@ -60,6 +60,9 @@ test("baseline package generator is deterministic and restricted to disposable p
   assert.match(generator, /GENERATED FILE\. DO NOT EDIT/);
   assert.match(generator, /empty disposable Supabase project only/i);
   assert.match(generator, /process\.argv\.includes\("--check"\)/);
+  assert.match(generator, /Unbalanced baseline transactions/);
+  assert.match(generator, /Destructive DROP TABLE\/SCHEMA is forbidden/);
+  assert.match(generator, /service_role\|SUPABASE_SERVICE/);
 });
 
 test("post-bootstrap validation is read-only and checks structural dependencies", () => {

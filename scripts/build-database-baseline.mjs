@@ -32,12 +32,24 @@ const generated = [
   ""
 ].join("\n\n");
 
+const transactionBegins = generated.match(/^\s*begin;\s*$/gim)?.length ?? 0;
+const transactionCommits = generated.match(/^\s*commit;\s*$/gim)?.length ?? 0;
+if (transactionBegins !== transactionCommits) {
+  throw new Error(`Unbalanced baseline transactions: ${transactionBegins} BEGIN / ${transactionCommits} COMMIT`);
+}
+if (/^\s*drop\s+(?:table|schema)\b/im.test(generated)) {
+  throw new Error("Destructive DROP TABLE/SCHEMA is forbidden in the clean bootstrap package");
+}
+if (/service_role|SUPABASE_SERVICE/i.test(generated)) {
+  throw new Error("Privileged service credentials or roles are forbidden in the bootstrap package");
+}
+
 if (process.argv.includes("--check")) {
   if (!existsSync(outputPath) || readFileSync(outputPath, "utf8").replace(/\r\n/g, "\n") !== generated) {
     console.error("FAIL: generated database baseline is stale; run npm run build:database-baseline");
     process.exit(1);
   }
-  console.log(`PASS: generated database baseline matches ${assembly.steps.length} ordered sources`);
+  console.log(`PASS: generated database baseline matches ${assembly.steps.length} ordered sources with ${transactionBegins} balanced transactions`);
 } else {
   writeFileSync(outputPath, generated, "utf8");
   console.log(`Vendify database baseline generated from ${assembly.steps.length} ordered sources.`);
