@@ -30,6 +30,7 @@
     "venta_items"
   ],
   "allowedRecoveryMethod": "Obtain a schema-only dump from an authorized non-production clone or production schema export, review it, remove ownership/data/secrets, and validate it in a disposable Supabase project.",
+  "captureDiagnostic": "supabase/diagnostics/pre_v231_baseline_capture.sql",
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",
     "Do not execute supabase/sources as a migration directory.",

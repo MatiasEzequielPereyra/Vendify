@@ -31,6 +31,7 @@ if (JSON.stringify(derivedMissing.sort()) !== JSON.stringify(declaredMissing)) f
 if (declaredMissing.length > 0 && manifest.status !== "incomplete") fail("baseline with missing definitions must remain incomplete");
 if (declaredMissing.length === 0 && manifest.status !== "ready_for_disposable_test") fail("complete source inventory must advance to disposable testing");
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
+if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
 
 if (process.exitCode) process.exit(process.exitCode);
 pass(`${names.size} pre-v2.31 relations inventoried; ${declaredMissing.length} authoritative definitions missing`);
