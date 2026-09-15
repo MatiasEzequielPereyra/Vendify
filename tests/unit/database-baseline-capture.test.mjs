@@ -54,6 +54,13 @@ test("baseline draft builds core tables before branch stock", () => {
   assert.match(branchStockBaselineSql, /after insert or delete or update of stock/i);
 });
 
+test("baseline package generator is deterministic and restricted to disposable projects", () => {
+  const generator = readFileSync(resolve(root, "scripts/build-database-baseline.mjs"), "utf8");
+  assert.match(generator, /GENERATED FILE\. DO NOT EDIT/);
+  assert.match(generator, /empty disposable Supabase project only/i);
+  assert.match(generator, /process\.argv\.includes\("--check"\)/);
+});
+
 test("baseline capture includes security and structural metadata", () => {
   for (const marker of ["pg_get_constraintdef", "pg_get_triggerdef", "pg_indexes", "pg_policies", "role_table_grants", "relrowsecurity"]) {
     assert.ok(sql.includes(marker), `missing capture marker ${marker}`);

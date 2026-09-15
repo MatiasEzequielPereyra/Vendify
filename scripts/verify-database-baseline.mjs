@@ -47,6 +47,7 @@ if (JSON.stringify(derivedMissing.sort()) !== JSON.stringify(declaredMissing)) f
 if (declaredMissing.length > 0 && manifest.status !== "incomplete") fail("baseline with missing definitions must remain incomplete");
 if (declaredMissing.length === 0 && !manifest.executableBaseline && manifest.status !== "captured_core_relations") fail("captured source inventory must remain in assembly state");
 if (manifest.executableBaseline && manifest.status !== "ready_for_disposable_test") fail("an executable baseline must advance to disposable testing");
+if (manifest.executableBaseline && !existsSync(resolve(root, manifest.executableBaseline))) fail("executable baseline file is missing");
 if (!manifest.allowedRecoveryMethod || !Array.isArray(manifest.forbiddenShortcuts)) fail("baseline recovery safety policy is incomplete");
 if (!manifest.captureDiagnostic || !existsSync(resolve(root, manifest.captureDiagnostic))) fail("baseline capture diagnostic is missing");
 if (!manifest.dependencyCaptureDiagnostic || !existsSync(resolve(root, manifest.dependencyCaptureDiagnostic))) fail("baseline dependency capture diagnostic is missing");
@@ -81,7 +82,7 @@ const assembly = assemblyPath && existsSync(assemblyPath)
   : null;
 if (!assembly) fail("baseline assembly draft is missing");
 else {
-  if (assembly.status !== "assembling" || assembly.target !== "empty_disposable_supabase_project") fail("baseline assembly draft has an unsafe status or target");
+  if (!["assembling", "ready_for_disposable_test"].includes(assembly.status) || assembly.target !== "empty_disposable_supabase_project") fail("baseline assembly draft has an unsafe status or target");
   if (!Array.isArray(assembly.steps) || assembly.steps.length === 0) fail("baseline assembly has no ordered steps");
   for (const step of assembly.steps ?? []) {
     if (!existsSync(resolve(root, step))) fail(`baseline assembly references missing step: ${step}`);
@@ -113,5 +114,6 @@ if (process.exitCode) process.exit(process.exitCode);
 pass(`${names.size} pre-v2.31 relations inventoried; ${declaredMissing.length} authoritative definitions missing`);
 for (const name of declaredMissing) console.log(`MISSING: public.${name}`);
 if (!manifest.executableBaseline) console.log(`PENDING: dependency-ordered executable baseline assembly; ${manifest.missingExecutableDependencies.length} executable dependencies require authoritative capture`);
+else console.log(`READY: ${manifest.executableBaseline} awaits disposable-project execution`);
 for (const dependency of manifest.missingExecutableDependencies) console.log(`MISSING DEPENDENCY: ${dependency}`);
 pass("database baseline gap is explicit and safe recovery rules are present");

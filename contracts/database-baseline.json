@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "captured_core_relations",
+  "status": "ready_for_disposable_test",
   "updatedAt": "2026-09-15",
   "purpose": "Minimum pre-v2.31 schema required before the reviewed incremental migration chain can run.",
   "requiredRelations": [
@@ -31,7 +31,7 @@
   "transitiveDependencyCaptureEvidence": "contracts/captures/pre-v231-stock-helper-20260915.json",
   "missingExecutableDependencies": [],
   "assemblyDraft": "supabase/baseline/assembly.json",
-  "executableBaseline": null,
+  "executableBaseline": "supabase/baseline/vendify_pre_v231_baseline.sql",
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",
     "Do not execute supabase/sources as a migration directory.",

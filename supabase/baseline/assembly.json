@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "assembling",
+  "status": "ready_for_disposable_test",
   "target": "empty_disposable_supabase_project",
   "steps": [
     "supabase/baseline/000_v1_core.sql",
@@ -15,7 +15,7 @@
     "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
   ],
   "validation": {
-    "static": "pending",
+    "static": "pass",
     "disposableProject": "pending"
   }
 }
