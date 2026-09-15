@@ -30,6 +30,7 @@
   "transitiveDependencyCaptureDiagnostic": "supabase/diagnostics/pre_v231_stock_helper_capture.sql",
   "transitiveDependencyCaptureEvidence": "contracts/captures/pre-v231-stock-helper-20260915.json",
   "missingExecutableDependencies": [],
+  "assemblyDraft": "supabase/baseline/assembly.json",
   "executableBaseline": null,
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",

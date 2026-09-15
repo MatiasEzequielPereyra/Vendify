@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "status": "assembling",
+  "target": "empty_disposable_supabase_project",
+  "steps": [
+    "supabase/baseline/000_v1_core.sql",
+    "supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql",
+    "supabase/baseline/010_v226_branch_stock.sql",
+    "supabase/legacy/modules/011_caja_profesional.sql",
+    "supabase/legacy/modules/012_ventas_profesionales.sql",
+    "supabase/legacy/modules/inventario_profesional.sql",
+    "supabase/legacy/modules/stock_inicial_flexible.sql",
+    "supabase/legacy/modules/compras_proveedores.sql",
+    "supabase/legacy/modules/stock_inteligente.sql",
+    "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+  ],
+  "validation": {
+    "static": "pending",
+    "disposableProject": "pending"
+  }
+}

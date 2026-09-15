@@ -8,6 +8,8 @@ const sql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_baseline_c
 const functionSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_trigger_function_capture.sql"), "utf8");
 const stockHelperSql = readFileSync(resolve(root, "supabase/diagnostics/pre_v231_stock_helper_capture.sql"), "utf8");
 const stockHelperCapture = JSON.parse(readFileSync(resolve(root, "contracts/captures/pre-v231-stock-helper-20260915.json"), "utf8"));
+const coreBaselineSql = readFileSync(resolve(root, "supabase/baseline/000_v1_core.sql"), "utf8");
+const branchStockBaselineSql = readFileSync(resolve(root, "supabase/baseline/010_v226_branch_stock.sql"), "utf8");
 
 test("pre-v2.31 baseline capture is read-only and covers every missing relation", () => {
   const statements = sql.replace(/^\s*--.*$/gm, "");
@@ -41,6 +43,15 @@ test("captured stock helper preserves the aggregate and security contract", () =
   assert.match(helper.definition, /set search_path to 'public'/i);
   assert.match(helper.definition, /sum\(ps\.stock\)/i);
   assert.match(helper.definition, /where ps\.producto_id = p_producto_id/i);
+});
+
+test("baseline draft builds core tables before branch stock", () => {
+  for (const relation of ["categorias", "productos", "movimientos", "ventas", "venta_items"]) {
+    assert.match(coreBaselineSql, new RegExp(`create\\s+table\\s+public\\.${relation}\\b`, "i"));
+  }
+  assert.match(branchStockBaselineSql, /create table public\.producto_stock_sucursal/i);
+  assert.match(branchStockBaselineSql, /sum\(ps\.stock\)/i);
+  assert.match(branchStockBaselineSql, /after insert or delete or update of stock/i);
 });
 
 test("baseline capture includes security and structural metadata", () => {

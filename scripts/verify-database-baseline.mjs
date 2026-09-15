@@ -75,6 +75,31 @@ else {
   }
 }
 if (!Array.isArray(manifest.missingExecutableDependencies)) fail("baseline executable dependency inventory is missing");
+const assemblyPath = manifest.assemblyDraft ? resolve(root, manifest.assemblyDraft) : null;
+const assembly = assemblyPath && existsSync(assemblyPath)
+  ? JSON.parse(readFileSync(assemblyPath, "utf8"))
+  : null;
+if (!assembly) fail("baseline assembly draft is missing");
+else {
+  if (assembly.status !== "assembling" || assembly.target !== "empty_disposable_supabase_project") fail("baseline assembly draft has an unsafe status or target");
+  if (!Array.isArray(assembly.steps) || assembly.steps.length === 0) fail("baseline assembly has no ordered steps");
+  for (const step of assembly.steps ?? []) {
+    if (!existsSync(resolve(root, step))) fail(`baseline assembly references missing step: ${step}`);
+  }
+  if (assembly.steps?.[0] !== "supabase/baseline/000_v1_core.sql") fail("baseline assembly must start with the v1 core");
+  const multiTenantIndex = assembly.steps?.indexOf("supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql");
+  const branchStockIndex = assembly.steps?.indexOf("supabase/baseline/010_v226_branch_stock.sql");
+  if (multiTenantIndex < 0 || branchStockIndex <= multiTenantIndex) fail("branch stock must be assembled after multi-tenant foundations");
+
+  const coreSql = readFileSync(resolve(root, "supabase/baseline/000_v1_core.sql"), "utf8");
+  for (const relation of ["categorias", "productos", "movimientos", "ventas", "venta_items"]) {
+    if (!new RegExp(`create\\s+table\\s+public\\.${relation}\\b`, "i").test(coreSql)) fail(`v1 core does not create public.${relation}`);
+  }
+  const branchStockSql = readFileSync(resolve(root, "supabase/baseline/010_v226_branch_stock.sql"), "utf8");
+  for (const marker of ["producto_stock_sucursal", "recalcular_stock_total_producto_v1", "stock_sucursal_recalcular_total_trigger_v1", "crear_stock_sucursales_producto_v1"]) {
+    if (!branchStockSql.includes(marker)) fail(`branch-stock foundation lacks ${marker}`);
+  }
+}
 if (!capture) fail("baseline capture evidence is missing");
 else {
   if (capture.capture_version !== 1) fail("unsupported baseline capture version");
