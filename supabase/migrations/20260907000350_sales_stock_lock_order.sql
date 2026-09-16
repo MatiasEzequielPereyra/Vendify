@@ -99,6 +99,14 @@ begin
 end;
 $$;
 
+revoke execute on function public.registrar_venta_v4(
+  jsonb, jsonb, text, numeric, text, uuid, uuid, text
+) from public, anon;
+
+grant execute on function public.registrar_venta_v4(
+  jsonb, jsonb, text, numeric, text, uuid, uuid, text
+) to authenticated, service_role;
+
 do $$
 declare
   v_v4 regprocedure := to_regprocedure(

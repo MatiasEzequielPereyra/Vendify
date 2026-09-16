@@ -31,12 +31,13 @@ const recoveredRpcNames = [
   "obtener_perfil_empleado_actual"
 ];
 
-test("recovered RPC definitions close the source coverage gap without entering migrations", async () => {
+test("recovered RPC definitions close the source coverage gap as executable baseline input", async () => {
   const [source, coverage] = await Promise.all([
     readFile(recoveredSourcePath, "utf8"),
     readFile(coveragePath, "utf8").then(JSON.parse)
   ]);
-  assert.match(source, /Source reference only: do not include this file in the migration execution chain/i);
+  assert.match(source, /Recovered baseline source/i);
+  assert.equal(source.match(/^\$function\$;\s*$/gm)?.length, recoveredRpcNames.length);
   assert.equal(coverage.missingCount, 0);
   for (const rpc of recoveredRpcNames) {
     assert.match(source, new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${rpc}\\b`, "i"));

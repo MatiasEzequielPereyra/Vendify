@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "status": "ready_for_disposable_test",
-  "updatedAt": "2026-09-15",
+  "status": "validated_local_disposable",
+  "updatedAt": "2026-09-16",
   "purpose": "Minimum pre-v2.31 schema required before the reviewed incremental migration chain can run.",
   "requiredRelations": [
     { "name": "negocios", "definitionSources": ["supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql"] },
@@ -19,7 +19,11 @@
     { "name": "proveedores", "definitionSources": ["supabase/legacy/modules/compras_proveedores.sql", "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"] },
     { "name": "compras", "definitionSources": ["supabase/legacy/modules/compras_proveedores.sql", "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"] },
     { "name": "compra_items", "definitionSources": ["supabase/legacy/modules/compras_proveedores.sql", "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"] },
-    { "name": "audit_log", "definitionSources": ["supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql"] }
+    { "name": "audit_log", "definitionSources": ["supabase/legacy/001_multiempresa_roles_sucursales_FIX.sql"] },
+    { "name": "empleados", "definitionSources": ["supabase/baseline/015_v230_employee_discount_support.sql"] },
+    { "name": "descuento_pin_intentos", "definitionSources": ["supabase/baseline/015_v230_employee_discount_support.sql"] },
+    { "name": "descuento_autorizaciones", "definitionSources": ["supabase/baseline/015_v230_employee_discount_support.sql"] },
+    { "name": "venta_idempotencia_v23011", "definitionSources": ["supabase/baseline/020_v23011_sales_idempotency.sql"] }
   ],
   "missingAuthoritativeDefinitions": [],
   "allowedRecoveryMethod": "Obtain a schema-only dump from an authorized non-production clone or production schema export, review it, remove ownership/data/secrets, and validate it in a disposable Supabase project.",
@@ -33,6 +37,14 @@
   "assemblyDraft": "supabase/baseline/assembly.json",
   "executableBaseline": "supabase/baseline/vendify_pre_v231_baseline.sql",
   "validationDiagnostic": "supabase/baseline/validate_pre_v231_baseline.sql",
+  "localValidation": {
+    "observedAt": "2026-09-16",
+    "postgresVersion": "17.6.1.171",
+    "migrationCount": 18,
+    "resetResult": "pass",
+    "validationResult": "ok",
+    "schemaLintResult": "no_errors"
+  },
   "forbiddenShortcuts": [
     "Do not execute supabase/legacy as a migration directory.",
     "Do not execute supabase/sources as a migration directory.",

@@ -16,13 +16,13 @@ Este documento reconcilia la auditoría histórica de v2.31.1 con el repositorio
 |---|---|---|
 | C-01 persistencia offline no atómica | RESUELTO EN CÓDIGO | `src/offline/indexeddb-store.ts`, transacción conjunta de cola y snapshots |
 | H-01 release no autocontenida | RESUELTO EN BUILD | `scripts/build-release.mjs` y `scripts/verify-release.mjs` |
-| H-03 falta contrato de venta v4 | RESUELTO | migración `20260907_004_sales_runtime_contract.sql` y contrato RPC |
+| H-03 falta contrato de venta v4 | RESUELTO | migración `20260907000400_sales_runtime_contract.sql` y contrato RPC |
 | H-04 transferencia legacy v1 activa | RESUELTO | controladores tipados usan `transferir_stock_v2`; el verificador rechaza v1 |
-| H-05 helper de límite expuesto | RESUELTO | `20260904_001_tenant_plan_limit_hardening.sql` |
-| H-06 barcode sin constraint | RESUELTO | `20260907_002_product_barcode_uniqueness.sql` |
+| H-05 helper de límite expuesto | RESUELTO | `20260904000100_tenant_plan_limit_hardening.sql` |
+| H-06 barcode sin constraint | RESUELTO | `20260907000200_product_barcode_uniqueness.sql` |
 | H-07 estados/pantalla offline incompletos | RESUELTO EN CÓDIGO | máquina de estados, sync FIFO y `pending-sales-ui.ts` |
-| M-01 margen con costo actual | RESUELTO | `20260907_003_dashboard_historical_margin.sql` |
-| M-02 log sin control backend | RESUELTO | `20260907_001_error_log_hardening.sql` |
+| M-01 margen con costo actual | RESUELTO | `20260907000300_dashboard_historical_margin.sql` |
+| M-02 log sin control backend | RESUELTO | `20260907000100_error_log_hardening.sql` |
 | M-04 monolito JS | AVANCE SUSTANCIAL | `app.js` pasó de unas 12.168 a 4.660 líneas |
 | M-05 CSS monolítico | AVANCE ESTRUCTURAL | loader de 15 líneas y 10 hojas modulares |
 

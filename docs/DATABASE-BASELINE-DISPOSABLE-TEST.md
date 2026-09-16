@@ -10,7 +10,7 @@ Este procedimiento valida el bootstrap recuperado sin tocar producción.
 4. Ejecutar `npx supabase db reset`. El baseline local usa fecha `20260830`, por lo que se aplica antes del preflight y de toda la cadena v2.31.
 5. Ejecutar `supabase/baseline/validate_pre_v231_baseline.sql` contra la base local y conservar el JSON.
 
-La migración `20260830_000_pre_v231_baseline.local.sql` es generada y no debe confirmarse en Git.
+La migración `20260830000000_pre_v231_baseline.local.sql` es generada y no debe confirmarse en Git.
 
 ## Proyecto remoto descartable
 
@@ -19,6 +19,16 @@ La migración `20260830_000_pre_v231_baseline.local.sql` es generada y no debe c
 3. Abrir `supabase/baseline/vendify_pre_v231_baseline.sql` en el SQL Editor del proyecto descartable y ejecutarlo completo.
 4. Ejecutar `supabase/baseline/validate_pre_v231_baseline.sql`. El resultado debe tener `ok: true` y las cuatro listas `missing_*` vacías.
 5. Ejecutar las migraciones de `contracts/commercial-readiness.json` en el orden declarado.
-6. Ejecutar otra vez `supabase/migrations/20260831_003_verify_v231.sql` y guardar la salida como evidencia.
+6. Ejecutar otra vez `supabase/migrations/20260831000300_verify_v231.sql` y guardar la salida como evidencia.
 
-Si una etapa falla, conservar el mensaje completo y no continuar con la siguiente. El baseline permanece en estado `ready_for_disposable_test` hasta que todas las etapas terminen correctamente en el proyecto descartable.
+Si una etapa falla, conservar el mensaje completo y no continuar con la siguiente.
+
+## Evidencia local del 16 de septiembre de 2026
+
+El baseline se validó con Supabase CLI y PostgreSQL local `17.6.1.171`:
+
+- `supabase db reset` aplicó las 18 migraciones sin errores.
+- `validate_pre_v231_baseline.sql` devolvió `ok: true` y las cuatro listas `missing_*` vacías.
+- `supabase db lint --local --level warning --fail-on error` terminó con `No schema errors found`.
+
+El manifiesto queda en estado `validated_local_disposable`. Una prueba remota debe realizarse únicamente sobre un proyecto descartable; esta validación no enlazó ni modificó producción.

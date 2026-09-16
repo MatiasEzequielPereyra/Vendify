@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const contract = JSON.parse(readFileSync(resolve(root, "contracts/commercial-readiness.json"), "utf8"));
-const allowedStatuses = new Set(["pass_automated", "pass_manual", "pending_live", "pending_manual", "pending_implementation", "blocked"]);
+const allowedStatuses = new Set(["pass_automated", "pass_manual", "pass_local", "pending_live", "pending_manual", "pending_implementation", "blocked"]);
 const fail = (message) => { console.error(`FAIL: ${message}`); process.exitCode = 1; };
 const pass = (message) => console.log(`PASS: ${message}`);
 
@@ -22,13 +22,13 @@ for (const gate of contract.gates ?? []) {
     if (!existsSync(resolve(root, evidence))) fail(`gate ${gate.id} references missing evidence: ${evidence}`);
   }
   if (gate.status === "blocked" && !gate.reason) fail(`blocked gate ${gate.id} has no reason`);
-  if (gate.status === "pass_manual" && !/^\d{4}-\d{2}-\d{2}$/.test(gate.observedAt ?? "")) fail(`manual gate ${gate.id} needs an observation date`);
+  if (["pass_manual", "pass_local"].includes(gate.status) && !/^\d{4}-\d{2}-\d{2}$/.test(gate.observedAt ?? "")) fail(`observed gate ${gate.id} needs an observation date`);
 }
 if (!process.exitCode) pass(`${ids.size} commercial readiness gates have valid evidence`);
 
 const declaredMigrations = contract.migrationChain?.files ?? [];
 const actualMigrations = readdirSync(resolve(root, "supabase/migrations"))
-  .filter((file) => file.endsWith(".sql"))
+  .filter((file) => file.endsWith(".sql") && !file.endsWith(".local.sql"))
   .sort()
   .map((file) => `supabase/migrations/${file}`);
 if (JSON.stringify(declaredMigrations) !== JSON.stringify(actualMigrations)) fail("commercial readiness migration inventory is stale or out of order");

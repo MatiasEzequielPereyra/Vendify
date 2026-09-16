@@ -1,6 +1,6 @@
 -- Recovered from the deployed Supabase project on 2026-09-10.
--- Source reference only: do not include this file in the migration execution chain.
--- The definitions are versioned here for auditability and contract coverage.
+-- Recovered baseline source. Keep the definitions executable so a clean local
+-- database can reproduce the RPC surface that predates the v2.31 migrations.
 
 CREATE OR REPLACE FUNCTION public.actualizar_rol_miembro_v2(p_membership_id uuid, p_rol text)
  RETURNS jsonb
@@ -35,7 +35,7 @@ begin
 
     return jsonb_build_object('ok',true,'rol',p_rol);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.actualizar_sucursal_v1(p_sucursal_id uuid, p_nombre text, p_direccion text DEFAULT NULL::text, p_telefono text DEFAULT NULL::text, p_activa boolean DEFAULT true)
  RETURNS jsonb
@@ -128,7 +128,7 @@ begin
 
     return to_jsonb(v_resultado);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.autorizar_descuento_v1(p_pin text, p_sucursal_id uuid, p_subtotal numeric, p_descuento_tipo text, p_descuento_valor numeric)
  RETURNS jsonb
@@ -353,7 +353,7 @@ begin
         'expira_segundos', 180
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.cambiar_estado_caja_v1(p_caja_id uuid, p_activa boolean)
  RETURNS jsonb
@@ -405,7 +405,7 @@ begin
 
     return to_jsonb(v_caja);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.cambiar_estado_miembro_v3(p_membership_id uuid, p_activo boolean)
  RETURNS jsonb
@@ -454,7 +454,7 @@ begin
 
     return jsonb_build_object('ok',true,'activo',p_activo);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.configurar_pin_descuento_v1(p_pin text)
  RETURNS jsonb
@@ -526,7 +526,7 @@ begin
         'configurado', true
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.crear_caja_v1(p_sucursal_id uuid, p_nombre text)
  RETURNS jsonb
@@ -578,7 +578,7 @@ begin
 
     return to_jsonb(v_caja);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.crear_sucursal_v1(p_nombre text, p_direccion text DEFAULT NULL::text, p_telefono text DEFAULT NULL::text)
  RETURNS jsonb
@@ -647,7 +647,7 @@ begin
         'caja', to_jsonb(v_caja)
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.diagnostico_integridad_v1()
  RETURNS jsonb
@@ -821,7 +821,7 @@ begin
         'checked_at',now()
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.estado_pin_descuento_v1()
  RETURNS jsonb
@@ -868,7 +868,7 @@ begin
         'autorizadores_configurados', v_total
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.listar_equipo_v3()
  RETURNS TABLE(membership_id uuid, user_id uuid, email text, username text, nombre text, rol text, activo boolean, debe_cambiar_password boolean, creado timestamp with time zone)
@@ -911,7 +911,7 @@ begin
       end,
       nm.creado;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.listar_sucursales_admin_v1()
  RETURNS TABLE(id uuid, nombre text, direccion text, telefono text, activa boolean, stock_total bigint, cajas jsonb)
@@ -964,7 +964,7 @@ begin
       case when lower(s.nombre) = 'principal' then 0 else 1 end,
       s.nombre;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.obtener_negocio_admin_actual()
  RETURNS jsonb
@@ -995,7 +995,7 @@ begin
         'codigo_acceso', v_negocio.codigo_acceso
     );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.obtener_perfil_empleado_actual()
  RETURNS jsonb
@@ -1029,5 +1029,5 @@ begin
         'activo', v_emp.activo
     );
 end;
-$function$
+$function$;
 

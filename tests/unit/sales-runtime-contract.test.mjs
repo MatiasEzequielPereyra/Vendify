@@ -6,33 +6,33 @@ import { fileURLToPath } from "node:url";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const migration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260907_004_sales_runtime_contract.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907000400_sales_runtime_contract.sql"),
   "utf8"
 );
 const executeHardeningMigration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260907_005_sales_rpc_execute_hardening.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907000500_sales_rpc_execute_hardening.sql"),
   "utf8"
 );
 const v3InternalMigration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260907_006_sales_v3_internal_only.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907000600_sales_v3_internal_only.sql"),
   "utf8"
 );
 const stockLockMigration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260907_007_sales_stock_lock_order.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907000350_sales_stock_lock_order.sql"),
   "utf8"
 );
 const idempotencyIntegrityMigration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260908000800_sales_idempotency_payload_integrity.sql"),
   "utf8"
 );
 const accessReassertionMigration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260908_009_sales_rpc_access_reassertion.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260908000900_sales_rpc_access_reassertion.sql"),
   "utf8"
 );
 const v2InternalMigration = fs.readFileSync(
   path.resolve(
     currentDirectory,
-    "../../supabase/migrations/20260909_012_sales_v2_internal_only.sql"
+    "../../supabase/migrations/20260909001200_sales_v2_internal_only.sql"
   ),
   "utf8"
 );

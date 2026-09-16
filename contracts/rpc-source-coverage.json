@@ -16,14 +16,14 @@
       "rpc": "actualizar_permiso_stock_miembro_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
       "rpc": "actualizar_plan_negocio_plataforma_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -44,21 +44,21 @@
       "rpc": "ajustar_stock_inicial_rapido_v2",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
       "rpc": "ajustar_stock_inventario_v2",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
       "rpc": "alertas_operativas_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -80,7 +80,7 @@
       "rpc": "aplicar_conteo_fisico_v2",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
@@ -144,8 +144,8 @@
       "rpc": "dashboard_propietario_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql",
-        "supabase/migrations/20260907_003_dashboard_historical_margin.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql",
+        "supabase/migrations/20260907000300_dashboard_historical_margin.sql"
       ]
     },
     {
@@ -187,14 +187,14 @@
       "rpc": "es_admin_plataforma_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
       "rpc": "estado_onboarding_comercial_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -208,7 +208,7 @@
       "rpc": "exportar_respaldo_operativo_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -230,14 +230,14 @@
       "rpc": "guardar_config_operativa_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
       "rpc": "guardar_producto_seguro_v2",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
@@ -252,7 +252,7 @@
       "rpc": "importar_productos_masivo_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -302,7 +302,7 @@
       "rpc": "listar_errores_plataforma_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -330,14 +330,14 @@
       "rpc": "listar_negocios_plataforma_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
       "rpc": "listar_permisos_stock_equipo_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
@@ -381,7 +381,7 @@
       "rpc": "obtener_config_operativa_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -424,14 +424,14 @@
       "rpc": "obtener_permisos_personalizados_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_001_permisos_stock_empleados.sql"
+        "supabase/migrations/20260831000100_permisos_stock_empleados.sql"
       ]
     },
     {
       "rpc": "obtener_plan_actual_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -445,7 +445,7 @@
       "rpc": "platform_overview_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql"
       ]
     },
     {
@@ -460,8 +460,8 @@
       "rpc": "registrar_error_cliente_v1",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260831_002_v231_commercial_foundation.sql",
-        "supabase/migrations/20260907_001_error_log_hardening.sql"
+        "supabase/migrations/20260831000200_v231_commercial_foundation.sql",
+        "supabase/migrations/20260907000100_error_log_hardening.sql"
       ]
     },
     {
@@ -475,8 +475,8 @@
       "rpc": "registrar_venta_v4",
       "sourceFound": true,
       "files": [
-        "supabase/migrations/20260907_007_sales_stock_lock_order.sql",
-        "supabase/migrations/20260908_008_sales_idempotency_payload_integrity.sql"
+        "supabase/migrations/20260907000350_sales_stock_lock_order.sql",
+        "supabase/migrations/20260908000800_sales_idempotency_payload_integrity.sql"
       ]
     },
     {

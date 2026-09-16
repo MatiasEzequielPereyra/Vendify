@@ -20,6 +20,7 @@ create extension if not exists pgcrypto;
 -- ============================================================
 
 alter table public.movimientos
+    add column if not exists sucursal_id uuid references public.sucursales(id) on delete restrict,
     add column if not exists motivo text,
     add column if not exists detalle jsonb not null default '{}'::jsonb;
 

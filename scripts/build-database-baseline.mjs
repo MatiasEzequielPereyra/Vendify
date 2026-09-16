@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 const assemblyPath = resolve(root, "supabase/baseline/assembly.json");
 const outputPath = resolve(root, "supabase/baseline/vendify_pre_v231_baseline.sql");
-const localMigrationPath = resolve(root, "supabase/migrations/20260830_000_pre_v231_baseline.local.sql");
+const localMigrationPath = resolve(root, "supabase/migrations/20260830000000_pre_v231_baseline.local.sql");
 const assembly = JSON.parse(readFileSync(assemblyPath, "utf8"));
 
 if (!Array.isArray(assembly.steps) || assembly.steps.length === 0) {

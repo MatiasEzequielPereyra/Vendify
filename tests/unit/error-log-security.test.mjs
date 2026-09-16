@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const migration = fs.readFileSync(
-  path.resolve(currentDirectory, "../../supabase/migrations/20260907_001_error_log_hardening.sql"),
+  path.resolve(currentDirectory, "../../supabase/migrations/20260907000100_error_log_hardening.sql"),
   "utf8"
 );
 

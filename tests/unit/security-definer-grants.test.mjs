@@ -8,7 +8,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const migration = fs.readFileSync(
   path.resolve(
     currentDirectory,
-    "../../supabase/migrations/20260908_010_security_definer_api_grants.sql"
+    "../../supabase/migrations/20260908001000_security_definer_api_grants.sql"
   ),
   "utf8"
 );
