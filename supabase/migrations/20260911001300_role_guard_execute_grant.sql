@@ -13,11 +13,17 @@ begin
   if to_regprocedure('public.tiene_rol_negocio(uuid,text[])') is null then
     raise exception 'Falta public.tiene_rol_negocio(uuid,text[])';
   end if;
+  if to_regprocedure('public.es_miembro_negocio(uuid)') is null then
+    raise exception 'Falta public.es_miembro_negocio(uuid)';
+  end if;
 end;
 $$;
 
 revoke all on function public.tiene_rol_negocio(uuid, text[]) from public, anon;
 grant execute on function public.tiene_rol_negocio(uuid, text[]) to authenticated, service_role;
+
+revoke all on function public.es_miembro_negocio(uuid) from public, anon;
+grant execute on function public.es_miembro_negocio(uuid) to authenticated, service_role;
 
 do $$
 begin
@@ -27,6 +33,14 @@ begin
 
   if not has_function_privilege('authenticated', 'public.tiene_rol_negocio(uuid,text[])', 'execute') then
     raise exception 'authenticated debe ejecutar tiene_rol_negocio para evaluar RLS';
+  end if;
+
+  if has_function_privilege('anon', 'public.es_miembro_negocio(uuid)', 'execute') then
+    raise exception 'anon no debe ejecutar es_miembro_negocio';
+  end if;
+
+  if not has_function_privilege('authenticated', 'public.es_miembro_negocio(uuid)', 'execute') then
+    raise exception 'authenticated debe ejecutar es_miembro_negocio para evaluar RLS';
   end if;
 end;
 $$;

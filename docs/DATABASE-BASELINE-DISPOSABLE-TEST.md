@@ -30,5 +30,6 @@ El baseline se validó con Supabase CLI y PostgreSQL local `17.6.1.171`:
 - `supabase db reset` aplicó las 18 migraciones sin errores.
 - `validate_pre_v231_baseline.sql` devolvió `ok: true` y las cuatro listas `missing_*` vacías.
 - `supabase db lint --local --level warning --fail-on error` terminó con `No schema errors found`.
+- `npm run test:integration:local` verificó Auth real, aislamiento entre dos comercios, rechazo atómico sin cambios parciales, dos ventas concurrentes, reintento idempotente y stock exacto.
 
 El manifiesto queda en estado `validated_local_disposable`. Una prueba remota debe realizarse únicamente sobre un proyecto descartable; esta validación no enlazó ni modificó producción.

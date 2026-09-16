@@ -2,6 +2,22 @@
 
 Requires staging Supabase credentials. No production mutation tests are allowed here.
 
+## Local disposable gate
+
+With Docker Desktop and Supabase local running, the complete Auth/RLS/sales gate
+can create its own temporary users and fixtures. It resets only the local
+database and refuses to run without the explicit local confirmation:
+
+```powershell
+$env:VENDIFY_TEST_CONFIRM_LOCAL_RESET="RESET_LOCAL_SUPABASE_FOR_INTEGRATION"
+npm run test:integration:local
+```
+
+This command rebuilds every migration, creates two isolated businesses and two
+cashiers in separate registers, and executes tenant isolation, failed-sale
+atomicity, concurrent sales, idempotent retry, and exact stock assertions. It
+does not read or modify a linked Supabase project and stores no credentials.
+
 ## Tenant A/B isolation
 
 `tenant-isolation.mjs` exercises the real Supabase Auth and PostgREST path so

@@ -16,6 +16,8 @@ const migration = fs.readFileSync(
 test("RLS role guard remains unavailable to anon and executable by authenticated", () => {
   assert.match(migration, /revoke all on function public\.tiene_rol_negocio\(uuid, text\[\]\) from public, anon/i);
   assert.match(migration, /grant execute on function public\.tiene_rol_negocio\(uuid, text\[\]\) to authenticated, service_role/i);
+  assert.match(migration, /revoke all on function public\.es_miembro_negocio\(uuid\) from public, anon/i);
+  assert.match(migration, /grant execute on function public\.es_miembro_negocio\(uuid\) to authenticated, service_role/i);
   assert.match(migration, /has_function_privilege\('anon'.*'execute'\)/is);
   assert.match(migration, /has_function_privilege\('authenticated'.*'execute'\)/is);
 });
