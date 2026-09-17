@@ -129,6 +129,15 @@ branch-settings transfer modal now delegate to the typed Inventory service and
 
 Large shared state surface. Introduce a typed products store before moving `renderGrid`, scanner and product editing.
 
+Status: completed on `refactor/modular-runtime`. A tenant/branch-scoped typed store now owns
+catalog products, categories, barcode indexes, smart-stock data and load generations. Products,
+scanner, POS product selection, Inventory, Purchases and Offline consume that store; the legacy
+product/category arrays and setters were removed. The cache, CSV export, sale-product renderer and
+offline stock snapshot adapter are typed and tested. Anti-regression markers prevent restoration of
+the legacy catalog authority. Validation: 221 unit tests, lint, full `npm run ci`, modular/staging QA,
+and an unauthenticated browser bootstrap with no console errors; the authenticated two-register
+stock-concurrency flow was previously confirmed manually on this branch.
+
 ### Phase 8 — cash
 
 Move cash state/session/movements with typed state and explicit API boundaries.

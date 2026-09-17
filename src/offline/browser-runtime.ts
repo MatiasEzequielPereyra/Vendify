@@ -1,5 +1,4 @@
 import type { OfflineSale, OfflineSaleStatus, StockSnapshot } from "../types/offline.js";
-import type { ProductId } from "../types/ids.js";
 import { VendifyOfflineDb } from "./indexeddb-store.js";
 import {
   OFFLINE_ENGINE_STORAGE_KEY,
@@ -18,6 +17,7 @@ import {
   type OfflineSyncOptions,
   type OfflineSyncSummary
 } from "./sync-engine.js";
+import { stockSnapshotsFromCatalog } from "./stock-reservations.js";
 
 export interface OfflineRuntimeDiagnostics {
   readonly version: "2.31.2";
@@ -141,10 +141,10 @@ async function captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<v
     throw new Error("Business and branch are required for offline stock snapshot");
   }
 
-  const snapshots: StockSnapshot[] = input.products.map((product) => ({
-    productId: product.productId.trim() as ProductId,
-    serverStock: product.serverStock
-  }));
+  const snapshots: StockSnapshot[] = stockSnapshotsFromCatalog(input.products.map((product) => ({
+    id: product.productId,
+    stock: product.serverStock
+  })));
 
   for (const snapshot of snapshots) {
     if (!snapshot.productId || !Number.isFinite(snapshot.serverStock) || snapshot.serverStock < 0) {

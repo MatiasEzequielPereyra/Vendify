@@ -1,6 +1,26 @@
 import type { OfflineSale, StockSnapshot } from "../types/offline.js";
 import type { ProductId } from "../types/ids.js";
 
+export interface CatalogStockProduct {
+  readonly id: string;
+  readonly stock: number;
+}
+
+export function stockSnapshotsFromCatalog(
+  products: readonly CatalogStockProduct[]
+): StockSnapshot[] {
+  return products.map((product) => {
+    const productId = product.id.trim();
+    if (!productId || !Number.isFinite(product.stock) || product.stock < 0) {
+      throw new Error("Invalid product received for offline stock snapshot");
+    }
+    return {
+      productId: productId as ProductId,
+      serverStock: product.stock
+    };
+  });
+}
+
 const RESERVING_STATUSES = new Set<OfflineSale["status"]>([
   "pending",
   "syncing",

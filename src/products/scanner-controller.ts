@@ -1,5 +1,6 @@
 import { queryOne } from "../core/dom.js";
 import type { Product } from "./product-model.js";
+import type { ProductsStore } from "./products-store.js";
 import {
   confirmScannedStock,
   type ProductsRpcClientPort
@@ -7,6 +8,23 @@ import {
 
 type ScannerMode = "producto" | "venta";
 type ScannerEngine = string;
+
+export interface ScannedProductResolution {
+  readonly kind: "missing" | "current" | "existing";
+  readonly product: Product | null;
+}
+
+export function resolveScannedProduct(
+  store: ProductsStore,
+  code: string,
+  editingProductId: string | null
+): ScannedProductResolution {
+  const product = store.findByBarcode(code.replace(/\D/g, "").trim());
+  if (!product) return { kind: "missing", product: null };
+  return product.id === editingProductId
+    ? { kind: "current", product }
+    : { kind: "existing", product };
+}
 
 interface CartItem {
   readonly id: string;
@@ -90,7 +108,7 @@ interface ExtendedTrackSettings extends MediaTrackSettings {
 
 export interface ScannerControllerDependencies {
   readonly client: ProductsRpcClientPort;
-  readonly getProducts: () => Product[];
+  readonly store: ProductsStore;
   readonly getCart: () => CartItem[];
   readonly getBranchId: () => string | null;
   readonly getEditingProductId: () => string | null;
@@ -588,7 +606,7 @@ export function createScannerController(
     setAnimating(false);
     if (engine !== "manual" && engine !== "usb") registerSuccess(engine, format);
     if (mode === "venta") {
-      const product = dependencies.getProducts().find((candidate) => candidate.codigoBarras === normalized);
+      const product = resolveScannedProduct(dependencies.store, normalized, null).product;
       if (!product) {
         showMissingCode(normalized);
         return;
@@ -610,9 +628,12 @@ export function createScannerController(
       return;
     }
     if (mode === "producto") {
-      const existing = dependencies.getProducts().find(
-        (candidate) => candidate.codigoBarras === normalized && candidate.id !== dependencies.getEditingProductId()
+      const resolution = resolveScannedProduct(
+        dependencies.store,
+        normalized,
+        dependencies.getEditingProductId()
       );
+      const existing = resolution.kind === "existing" ? resolution.product : null;
       close();
       if (existing) {
         dependencies.showToast(`El código ya corresponde a ${existing.nombre}`, "info");

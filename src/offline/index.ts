@@ -4,7 +4,8 @@ export {
 } from "./state-machine.js";
 export {
   availableOfflineStock,
-  reservedQuantityForProduct
+  reservedQuantityForProduct,
+  stockSnapshotsFromCatalog
 } from "./stock-reservations.js";
 export {
   OfflineIdempotencyConflictError,

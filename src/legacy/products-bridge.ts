@@ -5,6 +5,14 @@ import {
 } from "../products/product-model.js";
 import { createProductsController } from "../products/products-controller.js";
 import { createScannerController } from "../products/scanner-controller.js";
+import { createProductsStore } from "../products/products-store.js";
+import {
+  migrateLegacyProductCache,
+  parseProductCatalogCache,
+  serializeProductCatalogCache
+} from "../products/products-offline-cache.js";
+import { buildProductsCsv } from "../products/products-export.js";
+import { renderSaleProductsHtml } from "../products/sale-products-view.js";
 import { normalizeCsvHeader, parseCsvLine } from "../products/products-service.js";
 import {
   adjustInitialStock,
@@ -25,6 +33,12 @@ import {
 export interface VendifyProductsV232Api {
   readonly createController: typeof createProductsController;
   readonly createScannerController: typeof createScannerController;
+  readonly createStore: typeof createProductsStore;
+  readonly serializeOfflineCache: typeof serializeProductCatalogCache;
+  readonly parseOfflineCache: typeof parseProductCatalogCache;
+  readonly migrateLegacyOfflineCache: typeof migrateLegacyProductCache;
+  readonly buildCsv: typeof buildProductsCsv;
+  readonly renderSaleProductsHtml: typeof renderSaleProductsHtml;
   readonly mapProductRow: typeof mapProductRow;
   readonly productLabel: typeof productLabel;
   readonly isOutOfStock: typeof isOutOfStock;
@@ -54,6 +68,12 @@ declare global {
 window.VendifyProductsV232 = Object.freeze({
   createController: createProductsController,
   createScannerController,
+  createStore: createProductsStore,
+  serializeOfflineCache: serializeProductCatalogCache,
+  parseOfflineCache: parseProductCatalogCache,
+  migrateLegacyOfflineCache: migrateLegacyProductCache,
+  buildCsv: buildProductsCsv,
+  renderSaleProductsHtml,
   mapProductRow,
   productLabel,
   isOutOfStock,

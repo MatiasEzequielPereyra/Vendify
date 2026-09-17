@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   availableOfflineStock,
-  reservedQuantityForProduct
+  reservedQuantityForProduct,
+  stockSnapshotsFromCatalog
 } from "../../dist-ts/offline/stock-reservations.js";
 
 const productA = "product-a";
@@ -50,5 +51,19 @@ test("synced sales do not reserve stock", () => {
   assert.equal(
     availableOfflineStock({ productId: productA, serverStock: 5 }, sales),
     5
+  );
+});
+
+test("typed catalog creates authoritative server stock snapshots", () => {
+  assert.deepEqual(stockSnapshotsFromCatalog([
+    { id: "product-a", stock: 7 },
+    { id: "product-b", stock: 0 }
+  ]), [
+    { productId: "product-a", serverStock: 7 },
+    { productId: "product-b", serverStock: 0 }
+  ]);
+  assert.throws(
+    () => stockSnapshotsFromCatalog([{ id: "product-a", stock: -1 }]),
+    /Invalid product/
   );
 });

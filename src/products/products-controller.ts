@@ -25,6 +25,7 @@ import {
   type ProductRecord,
   type ProductsRpcClientPort
 } from "./products-service.js";
+import type { ProductsStore } from "./products-store.js";
 
 type ProductField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 type CatalogKind = "kiosco" | "almacen" | "minimercado";
@@ -47,10 +48,8 @@ interface RemotePayload {
 
 export interface ProductsControllerDependencies {
   readonly client: ProductsRpcClientPort;
-  readonly getProducts: () => Product[];
-  readonly setProducts: (products: Product[]) => void;
-  readonly getCategories: () => string[];
-  readonly setCategories: (categories: string[]) => void;
+  readonly store: ProductsStore;
+  readonly getBusinessId: () => string | null;
   readonly getBranch: () => BranchContext;
   readonly getRole: () => string;
   readonly hasPermission: (permission: string) => boolean;
@@ -160,7 +159,6 @@ function mapExternalCategory(categories: string): string {
 export function createProductsController(
   dependencies: ProductsControllerDependencies
 ): ProductsController {
-  let smartStock = new Map<string, SmartStockInfo>();
   let legacyLowStockFilter = false;
   let catalogKind: CatalogKind = "kiosco";
   let catalogSelection = new Set<string>();
@@ -168,16 +166,16 @@ export function createProductsController(
   let setupComplete = false;
 
   function products(): Product[] {
-    return dependencies.getProducts();
+    return dependencies.store.list();
   }
 
   function categories(): string[] {
-    return dependencies.getCategories();
+    return dependencies.store.listCategories();
   }
 
   function getSmartStock(product: ProductRecord): SmartStockInfo | null {
     const id = text(product.id);
-    return id ? smartStock.get(id) ?? null : null;
+    return id ? dependencies.store.getSmartStock(id) : null;
   }
 
   function productIsLow(product: ProductRecord): boolean {
@@ -185,15 +183,19 @@ export function createProductsController(
   }
 
   async function loadSmartStock(): Promise<void> {
-    smartStock = new Map();
     const branchId = dependencies.getBranch().id;
-    if (!branchId) return;
+    if (!branchId) {
+      dependencies.store.replaceSmartStock(new Map());
+      return;
+    }
     try {
       const rows = await listSmartStock(dependencies.client, branchId);
+      const smartStock = new Map<string, SmartStockInfo>();
       rows.forEach((row) => {
         const productId = text(row.producto_id);
         if (productId) smartStock.set(productId, mapSmartStockRow(row));
       });
+      dependencies.store.replaceSmartStock(smartStock);
     } catch (error) {
       console.warn("[Vendify] Stock inteligente no disponible:", errorMessage(error, "Sin datos"));
     }
@@ -201,14 +203,17 @@ export function createProductsController(
 
   async function loadProducts(): Promise<void> {
     const branchId = dependencies.getBranch().id;
-    if (!branchId) {
-      dependencies.setProducts([]);
+    const businessId = dependencies.getBusinessId();
+    if (!branchId || !businessId) {
+      dependencies.store.clear();
       return;
     }
+    const token = dependencies.store.beginLoad({ businessId, branchId });
     try {
       const rows = await listProducts(dependencies.client, branchId);
       const mapped = rows.map(mapProductRow);
-      dependencies.setProducts(mapped);
+      if (!dependencies.store.replaceProducts(mapped, token)) return;
+      dependencies.store.markReady();
       await dependencies.captureOfflineStockSnapshot(mapped);
       dependencies.saveProductsOffline();
       await loadSmartStock();
@@ -216,11 +221,15 @@ export function createProductsController(
     } catch (error) {
       console.error("[V2.26] Error cargando productos de sucursal:", error);
       if (!navigator.onLine && dependencies.loadProductsOffline()) {
+        dependencies.store.markOffline();
         dependencies.showToast("Sin conexión · mostrando el último catálogo guardado", "info");
         return;
       }
       dependencies.showToast("No se pudieron cargar los productos de la sucursal", "error");
-      dependencies.setProducts([]);
+      if (dependencies.store.accepts(token)) {
+        dependencies.store.replaceProducts([], token);
+        dependencies.store.markError(errorMessage(error, "No se pudieron cargar los productos"));
+      }
     }
   }
 
@@ -228,11 +237,11 @@ export function createProductsController(
     try {
       const rows = await initializeCategories(dependencies.client, DEFAULT_CATEGORIES);
       const names = rows.map((row) => text(row.nombre)).filter(Boolean);
-      dependencies.setCategories(names.length ? names : [...DEFAULT_CATEGORIES]);
+      dependencies.store.replaceCategories(names.length ? names : [...DEFAULT_CATEGORIES]);
       dependencies.saveCategoriesOffline();
     } catch (error) {
       console.error("[Security] categorías iniciales:", error);
-      dependencies.setCategories([...DEFAULT_CATEGORIES]);
+      dependencies.store.replaceCategories([...DEFAULT_CATEGORIES]);
     }
   }
 
@@ -241,12 +250,12 @@ export function createProductsController(
       const rows = await listCategories(dependencies.client);
       const names = rows.map((row) => text(row.nombre)).filter(Boolean);
       if (!names.length) await initializeDefaultCategories();
-      else dependencies.setCategories(names);
+      else dependencies.store.replaceCategories(names);
       dependencies.saveCategoriesOffline();
     } catch (error) {
       console.error("[Security] categorías:", error);
       if (!navigator.onLine && dependencies.loadCategoriesOffline()) return;
-      dependencies.setCategories([...DEFAULT_CATEGORIES]);
+      dependencies.store.replaceCategories([...DEFAULT_CATEGORIES]);
     }
   }
 
@@ -310,7 +319,7 @@ export function createProductsController(
     }
     try {
       await saveCategory(dependencies.client, name);
-      dependencies.setCategories([...categories(), name].sort((a, b) => a.localeCompare(b, "es")));
+      dependencies.store.replaceCategories([...categories(), name]);
       renderCategoryList();
       renderCategoryFilter();
       input.value = "";
@@ -333,11 +342,9 @@ export function createProductsController(
     try {
       await deleteCategory(dependencies.client, name);
       if (inUse) {
-        dependencies.setProducts(products().map((product) =>
-          product.categoria === name ? { ...product, categoria: "" } : product
-        ));
+        dependencies.store.updateCategory(name, "");
       }
-      dependencies.setCategories(categories().filter((_, current) => current !== index));
+      dependencies.store.replaceCategories(categories().filter((_, current) => current !== index));
       renderCategoryList();
       renderCategoryFilter();
       render();
@@ -571,9 +578,7 @@ export function createProductsController(
       });
       const mapped = mapProductRow(row);
       const editing = Boolean(editingId);
-      if (editing) {
-        dependencies.setProducts(products().map((product) => product.id === editingId ? mapped : product));
-      } else dependencies.setProducts([...products(), mapped]);
+      dependencies.store.upsert(mapped);
       await loadSmartStock();
       renderCategoryFilter();
       render();
@@ -615,7 +620,7 @@ export function createProductsController(
     )) return;
     try {
       await deleteProduct(dependencies.client, productId);
-      dependencies.setProducts(products().filter((candidate) => candidate.id !== productId));
+      dependencies.store.remove(productId);
       renderCategoryFilter();
       render();
       dependencies.showToast("Producto eliminado", "success");
@@ -649,7 +654,7 @@ export function createProductsController(
     }
     try {
       await deleteAllProducts(dependencies.client);
-      dependencies.setProducts([]);
+      dependencies.store.replaceProducts([]);
       renderCategoryFilter();
       render();
       dependencies.showToast(`${String(amount)} productos eliminados`, "success");
@@ -682,7 +687,7 @@ export function createProductsController(
         dependencies.openInventoryAdjustment(productId, delta);
         return;
       }
-      product.stock = number(data.stock ?? number(product.stock) + delta);
+      dependencies.store.patchStock(productId, number(data.stock ?? number(product.stock) + delta));
       dependencies.emitStockChange("stock_inicial");
       render();
       dependencies.scheduleSmartRefresh();
@@ -708,7 +713,7 @@ export function createProductsController(
     if (!name || categories().includes(name)) return;
     try {
       await saveCategory(dependencies.client, name);
-      dependencies.setCategories([...categories(), name].sort((a, b) => a.localeCompare(b, "es")));
+      dependencies.store.replaceCategories([...categories(), name]);
       renderCategoryFilter();
     } catch {
       // External barcode lookup remains useful even if its suggested category cannot be stored.
@@ -857,15 +862,14 @@ export function createProductsController(
   }
 
   function applyRemoteChange(payload: RemotePayload): void {
-    const current = products();
     const next = payload.new;
     const old = payload.old;
-    if (payload.eventType === "INSERT" && next && !current.some((product) => product.id === text(next.id))) {
-      dependencies.setProducts([...current, mapProductRow(next)]);
+    if (payload.eventType === "INSERT" && next) {
+      dependencies.store.upsert(mapProductRow(next));
     } else if (payload.eventType === "UPDATE" && next) {
-      dependencies.setProducts(current.map((product) => product.id === text(next.id) ? mapProductRow(next) : product));
+      dependencies.store.upsert(mapProductRow(next));
     } else if (payload.eventType === "DELETE" && old) {
-      dependencies.setProducts(current.filter((product) => product.id !== text(old.id)));
+      dependencies.store.remove(text(old.id));
     }
     renderCategoryFilter();
     render();

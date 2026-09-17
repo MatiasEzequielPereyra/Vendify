@@ -69,6 +69,7 @@ export interface OfflineCompatDependencies {
   readonly storage: Storage;
   readonly getContext: () => OfflineContext;
   readonly getProducts: () => OfflineProduct[];
+  readonly updateProductStock: (productId: string, stock: number) => void;
   readonly getCartSize: () => number;
   readonly isSaleConfirming: () => boolean;
   readonly hasSellPermission: () => boolean;
@@ -356,7 +357,10 @@ export function createOfflineCompatController(
     for (const item of items) {
       const product = dependencies.getProducts().find((candidate) => candidate.id === item.id);
       if (product) {
-        product.stock = Math.max(0, product.stock - item.cantidad);
+        dependencies.updateProductStock(
+          product.id,
+          Math.max(0, product.stock - item.cantidad)
+        );
       }
     }
     dependencies.persistProducts();

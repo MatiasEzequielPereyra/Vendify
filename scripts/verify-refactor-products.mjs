@@ -18,7 +18,10 @@ const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
 for (const marker of [
   "VendifyProductsV232",
   "createProductsController",
+  "createProductsStore",
   "createScannerController",
+  "renderSaleProductsHtml",
+  "serializeProductCatalogCache",
   "mapProductRow",
   "productLabel",
   "listProducts",
@@ -41,6 +44,7 @@ for (const marker of [
 
 for (const marker of [
   "window.VendifyProductsV232.createController({",
+  "window.VendifyProductsV232.createStore()",
   "window.VendifyProductsV232.createScannerController({",
   "productsControllerV232.loadProducts()",
   "productsControllerV232.render()",
@@ -76,6 +80,10 @@ for (const obsoleteMarker of [
   "let scannerTrackVPro",
   "let stockInteligente",
   "let filtroStockBajo",
+  "let productos =",
+  "let categorias =",
+  "getProducts: () => productos",
+  "setProducts:",
   "function filtrarYOrdenar",
   "function guardarProducto(",
   "function eliminarProducto(",

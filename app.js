@@ -93,8 +93,7 @@ let realtimeChannel = null;
 
 // El catálogo inicial vive en src/products/catalog-data.ts.
 
-let productos = [];
-let categorias = [];
+const productsStoreV232 = window.VendifyProductsV232.createStore();
 let productoEditandoId = null;
 let fotoActualBase64 = null;
 
@@ -444,7 +443,7 @@ const authControllerV232 = window.VendifyAuthV232.createController({
     appBootUserIdVQA = null;
     appBootPromiseVQA = null;
     limpiarContextoApp();
-    productos = [];
+    productsStoreV232.clear();
     posControllerV232.clearCart();
     if (realtimeChannel) {
       supabaseClient.removeChannel(realtimeChannel);
@@ -698,7 +697,7 @@ async function sincronizarStockLigero({ render = true } = {}) {
       (data || []).map((row) => [row.producto_id, row])
     );
 
-    productos.forEach((p) => {
+    productsStoreV232.list().forEach((p) => {
       const row = stockMap.get(p.id);
       if (!row) return;
 
@@ -709,8 +708,7 @@ async function sincronizarStockLigero({ render = true } = {}) {
         Number(p.stock || 0) !== nuevoStock ||
         Number(p.stockMinimo || 0) !== nuevoMin
       ) {
-        p.stock = nuevoStock;
-        p.stockMinimo = nuevoMin;
+        productsStoreV232.patchStock(p.id, nuevoStock, nuevoMin);
         huboCambios = true;
       }
     });
@@ -980,10 +978,8 @@ let scannerControllerV232 = null;
 const productsControllerV232 =
   window.VendifyProductsV232.createController({
     client: supabaseClient,
-    getProducts: () => productos,
-    setProducts: (next) => { productos = next; },
-    getCategories: () => categorias,
-    setCategories: (next) => { categorias = next; },
+    store: productsStoreV232,
+    getBusinessId: () => appContext.business?.id || null,
     getBranch: () => ({
       id: appContext.branch?.id || null,
       name: appContext.branch?.nombre || "Sucursal",
@@ -1038,7 +1034,7 @@ const productsControllerV232 =
 scannerControllerV232 =
   window.VendifyProductsV232.createScannerController({
     client: supabaseClient,
-    getProducts: () => productos,
+    store: productsStoreV232,
     getCart: () => posControllerV232.getCart(),
     getBranchId: () => appContext.branch?.id || null,
     getEditingProductId: () => productoEditandoId,
@@ -1426,7 +1422,7 @@ function cerrarConfig() {
 // Modal Stock (ajuste manual — usa la función atómica ajustar_stock)
 // =====================
 function abrirModalStock(id) {
-  const p = productos.find((x) => x.id === id);
+  const p = productsStoreV232.getById(id);
   if (!p) return;
   stockAjusteId = id;
   stockAjusteValor = p.stock;
@@ -1453,7 +1449,7 @@ async function confirmarAjusteStock() {
   if (!exigirPermisoV2("adjustStock", "No tenés permiso para ajustar stock")) return;
   if (!stockAjusteId) return;
 
-  const p = productos.find((x) => x.id === stockAjusteId);
+  const p = productsStoreV232.getById(stockAjusteId);
   if (!p) return;
 
   const manual = parseInt($("#stock-manual").value, 10);
@@ -1492,7 +1488,7 @@ async function confirmarAjusteStock() {
     return;
   }
 
-  p.stock = Number(data.stock || valorFinal);
+  productsStoreV232.patchStock(p.id, Number(data.stock || valorFinal));
   emitirCambioStockRealtime("ajuste_inventario");
   await cargarStockInteligente();
   renderGrid();
@@ -2372,6 +2368,7 @@ const VENDIFY_CART_PREFIX_V231 = "vendify_cart_v231";
 const VENDIFY_CONTEXT_PREFIX_V231 = "vendify_context_v231";
 const VENDIFY_PRODUCTS_PREFIX_V231 = "vendify_products_v231";
 const VENDIFY_CATEGORIES_PREFIX_V231 = "vendify_categories_v231";
+const VENDIFY_CATALOG_PREFIX_V232 = "vendify_catalog_v232";
 const VENDIFY_ONBOARDING_HIDE_PREFIX_V231 = "vendify_onboarding_hide_v231";
 
 let commercialConfigV231 = {
@@ -2471,26 +2468,37 @@ function guardarProductosOfflineV231() {
 
   try {
     localStorage.setItem(
-      safeBusinessKeyV231(VENDIFY_PRODUCTS_PREFIX_V231),
-      JSON.stringify({
-        savedAt: new Date().toISOString(),
-        productos,
-      })
+      safeBusinessKeyV231(VENDIFY_CATALOG_PREFIX_V232),
+      window.VendifyProductsV232.serializeOfflineCache(
+        { businessId: appContext.business.id, branchId: appContext.branch.id },
+        productsStoreV232.list(),
+        productsStoreV232.listCategories()
+      )
     );
   } catch {}
 }
 
 function cargarProductosOfflineV231() {
   try {
-    const raw = localStorage.getItem(
-      safeBusinessKeyV231(VENDIFY_PRODUCTS_PREFIX_V231)
+    if (!appContext?.business?.id || !appContext?.branch?.id) return false;
+    const scope = { businessId: appContext.business.id, branchId: appContext.branch.id };
+    const snapshot = window.VendifyProductsV232.parseOfflineCache(
+      localStorage.getItem(safeBusinessKeyV231(VENDIFY_CATALOG_PREFIX_V232)),
+      scope
+    ) || window.VendifyProductsV232.migrateLegacyOfflineCache(
+      localStorage.getItem(safeBusinessKeyV231(VENDIFY_PRODUCTS_PREFIX_V231)),
+      localStorage.getItem(safeBusinessKeyV231(VENDIFY_CATEGORIES_PREFIX_V231)),
+      scope
     );
-    if (!raw) return false;
-
-    const snapshot = JSON.parse(raw);
-    if (!Array.isArray(snapshot?.productos)) return false;
-
-    productos = snapshot.productos;
+    if (!snapshot) return false;
+    productsStoreV232.restoreProducts(scope, snapshot.products);
+    productsStoreV232.replaceCategories(snapshot.categories);
+    localStorage.setItem(
+      safeBusinessKeyV231(VENDIFY_CATALOG_PREFIX_V232),
+      window.VendifyProductsV232.serializeOfflineCache(
+        scope, snapshot.products, snapshot.categories, snapshot.savedAt
+      )
+    );
     return true;
   } catch {
     return false;
@@ -2498,38 +2506,11 @@ function cargarProductosOfflineV231() {
 }
 
 function guardarCategoriasOfflineV231() {
-  if (!appContext?.business?.id) return;
-
-  try {
-    localStorage.setItem(
-      safeBusinessKeyV231(VENDIFY_CATEGORIES_PREFIX_V231),
-      JSON.stringify({
-        savedAt: new Date().toISOString(),
-        categorias,
-      })
-    );
-  } catch {}
+  guardarProductosOfflineV231();
 }
 
 function cargarCategoriasOfflineV231() {
-  try {
-    const raw = localStorage.getItem(
-      safeBusinessKeyV231(VENDIFY_CATEGORIES_PREFIX_V231)
-    );
-
-    if (!raw) return false;
-
-    const snapshot = JSON.parse(raw);
-
-    if (!Array.isArray(snapshot?.categorias)) {
-      return false;
-    }
-
-    categorias = snapshot.categorias;
-    return true;
-  } catch {
-    return false;
-  }
+  return cargarProductosOfflineV231();
 }
 
 function guardarCarritoV231() {
@@ -2555,7 +2536,7 @@ function guardarCarritoV231() {
 }
 
 function restaurarCarritoV231() {
-  if (posControllerV232.getCart().length || !productos.length) return false;
+  if (posControllerV232.getCart().length || !productsStoreV232.list().length) return false;
 
   try {
     const raw = localStorage.getItem(
@@ -2566,7 +2547,7 @@ function restaurarCarritoV231() {
     const snapshot = JSON.parse(raw);
     const restored = (snapshot?.carrito || [])
       .map((item) => {
-        const product = productos.find((p) => p.id === item.id);
+        const product = productsStoreV232.getById(item.id);
         if (!product || Number(product.stock || 0) <= 0) return null;
 
         return {
@@ -3621,7 +3602,7 @@ const inventoryControllerV232 =
       name: appContext.branch?.nombre || "Sucursal",
     }),
     listBranches: listarSucursalesV2,
-    getProducts: () => productos,
+    getProducts: () => productsStoreV232.list(),
     mapProduct: mapearProductoDB,
     productLabel: productoEtiquetaV29,
     formatDate: formatearFechaHoraV227,
@@ -3672,7 +3653,7 @@ const purchasesControllerV232 =
       name: appContext.branch?.nombre || "Sucursal",
     }),
     listBranches: listarSucursalesV2,
-    getProducts: () => productos,
+    getProducts: () => productsStoreV232.list(),
     productLabel: productoEtiquetaV29,
     formatDate: formatearFechaHoraV227,
     showToast: mostrarToast,
@@ -3722,7 +3703,7 @@ async function abrirDestinoDesdeDashboardV235(destination) {
     await inventoryControllerV232.openFiltered(destination.filter);
     return;
   }
-  const product = productos.find((item) => item.id === destination.productId);
+  const product = productsStoreV232.getById(destination.productId);
   if (!product) {
     mostrarToast("El producto ya no está disponible. Actualizamos el Dashboard.", "info");
     await dashboardControllerV232.load();
@@ -3788,7 +3769,7 @@ const posControllerV232 =
       cashRegisterId: appContext.cashRegister?.id || null,
     }),
     canSell: (message) => exigirPermisoV2("sell", message),
-    getProducts: () => productos,
+    getProducts: () => productsStoreV232.list(),
     isCashOpenByCurrentUser: cajaAbiertaMiaV227,
     hasCashSession: () => Boolean(cashControllerV232.getState()?.sesion),
     restoreOfflineCash: () => restaurarPruebaCajaOfflineV2311?.() === true,
@@ -3839,17 +3820,12 @@ function renderCarrito() {
 // =====================
 function exportarCSV() {
   if (!exigirPermisoV2("viewReports", "No tenés permiso para exportar información")) return;
-  if (productos.length === 0) {
+  const catalog = productsStoreV232.list();
+  if (catalog.length === 0) {
     mostrarToast("No hay productos para exportar", "error");
     return;
   }
-  const headers = ["Nombre", "Categoría", "Precio compra", "Precio venta", "Stock", "Stock mínimo"];
-  const rows = productos.map((p) => [
-    `"${(p.nombre || "").replace(/"/g, '""')}"`,
-    `"${(p.categoria || "").replace(/"/g, '""')}"`,
-    p.precioCompra || 0, p.precioVenta || 0, p.stock || 0, p.stockMinimo ?? 5,
-  ]);
-  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const csv = window.VendifyProductsV232.buildCsv(catalog);
   const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -4134,34 +4110,14 @@ async function cargarEjemplos() {
 }
 
 function renderVentaProductos() {
-  const texto = $("#venta-buscador")?.value.trim().toLowerCase() || "";
-  const lista = productos
-    .filter((p) =>
-      !texto ||
-      [p.nombre, p.marca, p.presentacion, p.codigoBarras, p.categoria]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(texto)
-    )
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   const cont = $("#venta-productos-lista");
   if (!cont) return;
-  if (!lista.length) {
-    cont.innerHTML = '<p class="carrito-vacio">Sin resultados</p>';
-    return;
-  }
-  cont.innerHTML = lista.map((p) => {
-    const item = posControllerV232.getCart().find((candidate) => candidate.id === p.id);
-    const disponible = p.stock - (item?.cantidad || 0);
-    return `<div class="venta-producto-item ${disponible <= 0 ? "sin-stock" : ""}" data-id="${p.id}">
-      <div class="venta-producto-thumb">${escapeHtml((p.marca || p.nombre).slice(0, 1).toUpperCase())}</div>
-      <div class="venta-producto-info">
-        <div class="venta-producto-nombre">${escapeHtml(p.nombre)}</div>
-        <div class="venta-producto-meta">${p.codigoBarras ? `EAN ${escapeHtml(p.codigoBarras)} · ` : ""}${formatearPrecio(p.precioVenta)} · quedan ${disponible}</div>
-      </div>
-    </div>`;
-  }).join("");
+  cont.innerHTML = window.VendifyProductsV232.renderSaleProductsHtml({
+    store: productsStoreV232,
+    query: $("#venta-buscador")?.value || "",
+    cart: posControllerV232.getCart(),
+    formatCurrency: formatearPrecio,
+  });
 }
 
 function setupV29() {
@@ -4212,7 +4168,8 @@ const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
     branchId: appContext?.branch?.id || null,
     cashRegisterId: appContext?.cashRegister?.id || null,
   }),
-  getProducts: () => productos,
+  getProducts: () => productsStoreV232.list(),
+  updateProductStock: (productId, stock) => productsStoreV232.patchStock(productId, stock),
   getCartSize: () => posControllerV232.getCart().length,
   isSaleConfirming: () => posControllerV232.isConfirming(),
   hasSellPermission: () => tienePermisoV2("sell"),
