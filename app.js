@@ -89,7 +89,6 @@ async function mostrarAppSeguroVQA(session) {
 
 
 let deferredInstallPrompt = null;
-let realtimeChannel = null;
 
 // El catálogo inicial vive en src/products/catalog-data.ts.
 
@@ -428,7 +427,7 @@ async function cambiarSucursalV2(sucursalId, { recargar = true } = {}) {
     if (!$("#modal-venta")?.classList.contains("hidden")) renderVentaProductos();
   }
 
-  suscribirRealtime();
+  realtimeControllerV232.subscribe();
   return data;
 }
 
@@ -445,10 +444,7 @@ const authControllerV232 = window.VendifyAuthV232.createController({
     limpiarContextoApp();
     productsStoreV232.clear();
     posControllerV232.clearCart();
-    if (realtimeChannel) {
-      supabaseClient.removeChannel(realtimeChannel);
-      realtimeChannel = null;
-    }
+    realtimeControllerV232.disconnect();
   },
   showToast: mostrarToast,
   icon: iconV23011,
@@ -495,7 +491,7 @@ async function mostrarApp() {
     renderCarrito();
   }
 
-  suscribirRealtime();
+  realtimeControllerV232.subscribe();
   await cargarCommercialFoundationV231?.();
 }
 
@@ -602,366 +598,86 @@ const teamControllerV232 = window.VendifyTeamV232.createController({
 // =====================
 // Realtime robusto — stock sincronizado entre dispositivos
 // =====================
-let realtimeReloadTimerV226 = null;
-let realtimeReconnectTimer = null;
-let realtimeFallbackTimer = null;
-let realtimeStatus = "IDLE";
-let realtimeFullRefreshTimer = null;
-let realtimeSyncInFlight = false;
-
-let realtimeFullSyncInFlightVQA = false;
-let realtimeDependentTimerVQA = null;
-let realtimeLastFullSyncVQA = 0;
-
-async function sincronizarCatalogoCompletoVQA({ silencioso = true } = {}) {
-  if (
-    realtimeFullSyncInFlightVQA ||
-    !appContext?.ready ||
-    !appContext?.branch?.id ||
-    document.visibilityState === "hidden"
-  ) return;
-
-  realtimeFullSyncInFlightVQA = true;
-  try {
-    await cargarProductos();
-    actualizarFiltroCategorias();
-    renderGrid();
-    aplicarPermisosV2();
-
-    if (!$("#modal-venta")?.classList.contains("hidden")) {
-      renderVentaProductos();
-      renderCarrito();
-    }
-
-    realtimeLastFullSyncVQA = Date.now();
-  } catch (error) {
-    console.warn("[Vendify QA] sync completo falló:", error?.message || error);
-    if (!silencioso) mostrarToast("No se pudieron resincronizar los datos", "error");
-  } finally {
-    realtimeFullSyncInFlightVQA = false;
+async function refreshRealtimeCatalogV232() {
+  await cargarProductos();
+  actualizarFiltroCategorias();
+  renderGrid();
+  aplicarPermisosV2();
+  if (!$("#modal-venta")?.classList.contains("hidden")) {
+    renderVentaProductos();
+    renderCarrito();
   }
 }
 
-function refrescarVistasDependientesRealtimeVQA(reason = "data") {
-  clearTimeout(realtimeDependentTimerVQA);
+async function syncRealtimeStockV232(render = true) {
+  const branchId = appContext?.branch?.id;
+  if (!branchId) return false;
+  const { data, error } = await supabaseClient
+    .from("producto_stock_sucursal")
+    .select("producto_id,stock,stock_minimo")
+    .eq("sucursal_id", branchId);
+  if (error) throw error;
 
-  realtimeDependentTimerVQA = setTimeout(async () => {
-    try {
-      if (!$("#modal-historial")?.classList.contains("hidden")) {
-        await renderHistorial();
-      }
-
-      await inventoryControllerV232.refreshOpenView(false);
-
-      await purchasesControllerV232.refreshOpenViews();
-
-      if (!$("#modal-caja-operativa-v227")?.classList.contains("hidden")) {
-        await cargarEstadoCajaV227();
-        await renderPanelCajaV227();
-      }
-    } catch (error) {
-      console.debug("[Vendify QA] refresh dependiente:", reason, error?.message || error);
-    }
-  }, 260);
-}
-
-function actualizarEstadoRealtimeUI(status) {
-  realtimeStatus = status || "UNKNOWN";
-  document.documentElement.dataset.realtimeStatus = realtimeStatus.toLowerCase();
-}
-
-async function sincronizarStockLigero({ render = true } = {}) {
-  if (
-    realtimeSyncInFlight ||
-    !appContext?.ready ||
-    !appContext?.branch?.id ||
-    document.visibilityState === "hidden"
-  ) {
-    return;
-  }
-
-  realtimeSyncInFlight = true;
-
-  try {
-    const branchId = appContext.branch.id;
-
-    const { data, error } = await supabaseClient
-      .from("producto_stock_sucursal")
-      .select("producto_id,stock,stock_minimo")
-      .eq("sucursal_id", branchId);
-
-    if (error) throw error;
-
-    let huboCambios = false;
-    const stockMap = new Map(
-      (data || []).map((row) => [row.producto_id, row])
-    );
-
-    productsStoreV232.list().forEach((p) => {
-      const row = stockMap.get(p.id);
-      if (!row) return;
-
-      const nuevoStock = Number(row.stock || 0);
-      const nuevoMin = Number(row.stock_minimo || 0);
-
-      if (
-        Number(p.stock || 0) !== nuevoStock ||
-        Number(p.stockMinimo || 0) !== nuevoMin
-      ) {
-        productsStoreV232.patchStock(p.id, nuevoStock, nuevoMin);
-        huboCambios = true;
-      }
-    });
-
-    if (huboCambios && render) {
-      renderGrid();
-      aplicarPermisosV2();
-
-      if (!$("#modal-venta")?.classList.contains("hidden")) {
-        renderVentaProductos();
-        renderCarrito();
-      }
-    }
-
-    return huboCambios;
-  } catch (error) {
-    console.warn("[Vendify Realtime] sync ligero falló:", error?.message || error);
-    return false;
-  } finally {
-    realtimeSyncInFlight = false;
-  }
-}
-
-function programarRefreshInteligenteRealtime() {
-  clearTimeout(realtimeFullRefreshTimer);
-
-  realtimeFullRefreshTimer = setTimeout(async () => {
-    if (!appContext?.ready || !appContext?.branch?.id) return;
-
-    try {
-      await cargarStockInteligente();
-      renderGrid();
-    } catch (error) {
-      console.debug(
-        "[Vendify Realtime] stock inteligente pendiente:",
-        error?.message || error
-      );
-    }
-  }, 900);
-}
-
-function refrescarProductosRealtimeV226() {
-  clearTimeout(realtimeReloadTimerV226);
-
-  realtimeReloadTimerV226 = setTimeout(async () => {
-    await cargarProductos();
-    actualizarFiltroCategorias();
-    renderGrid();
-    aplicarPermisosV2();
-
-    if (!$("#modal-venta")?.classList.contains("hidden")) {
-      renderVentaProductos();
-      renderCarrito();
-    }
-  }, 120);
-}
-
-function recibirCambioStockRealtime(payload) {
-  const branchId =
-    payload?.new?.sucursal_id ||
-    payload?.old?.sucursal_id ||
-    payload?.payload?.branch_id ||
-    payload?.branch_id;
-
-  if (branchId && branchId !== appContext?.branch?.id) return;
-
-  sincronizarStockLigero({ render: true });
-  programarRefreshInteligenteRealtime();
-  refrescarVistasDependientesRealtimeVQA("stock");
-}
-
-function emitirCambioStockRealtime(reason = "stock") {
-  // Security hardening:
-  // no enviamos broadcasts públicos. PostgreSQL Realtime es la fuente
-  // autoritativa y el watchdog reconcilia cualquier evento perdido.
-  programarRefreshInteligenteRealtime();
-  refrescarVistasDependientesRealtimeVQA(reason);
-}
-
-function programarReconexionRealtime() {
-  clearTimeout(realtimeReconnectTimer);
-
-  if (
-    !appContext?.ready ||
-    !appContext?.business?.id ||
-    !appContext?.branch?.id ||
-    document.visibilityState === "hidden"
-  ) {
-    return;
-  }
-
-  realtimeReconnectTimer = setTimeout(() => {
-    console.info("[Vendify Realtime] reconectando canal...");
-    suscribirRealtime();
-  }, 1600);
-}
-
-function suscribirRealtime() {
-  clearTimeout(realtimeReconnectTimer);
-
-  if (realtimeChannel) {
-    try {
-      supabaseClient.removeChannel(realtimeChannel);
-    } catch {}
-    realtimeChannel = null;
-  }
-
-  if (!appContext?.business?.id || !appContext?.branch?.id) return;
-
-  const businessId = appContext.business.id;
-  const branchId = appContext.branch.id;
-
-  actualizarEstadoRealtimeUI("CONNECTING");
-
-  realtimeChannel = supabaseClient
-    .channel(`vendify-${businessId}-${branchId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "productos",
-        filter: `negocio_id=eq.${businessId}`,
-      },
-      refrescarProductosRealtimeV226
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "producto_stock_sucursal",
-        filter: `sucursal_id=eq.${branchId}`,
-      },
-      recibirCambioStockRealtime
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "ventas",
-        filter: `sucursal_id=eq.${branchId}`,
-      },
-      () => refrescarVistasDependientesRealtimeVQA("ventas")
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "movimientos",
-        filter: `sucursal_id=eq.${branchId}`,
-      },
-      () => refrescarVistasDependientesRealtimeVQA("movimientos")
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "compras",
-        filter: `sucursal_id=eq.${branchId}`,
-      },
-      () => refrescarVistasDependientesRealtimeVQA("compras")
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "proveedores",
-        filter: `negocio_id=eq.${businessId}`,
-      },
-      () => refrescarVistasDependientesRealtimeVQA("proveedores")
-    )
-    .subscribe(async (status) => {
-      console.info("[Vendify Realtime]", status);
-      actualizarEstadoRealtimeUI(status);
-
-      if (status === "SUBSCRIBED") {
-        clearTimeout(realtimeReconnectTimer);
-
-        // Al reconectar no confiamos en la memoria local:
-        // se compara inmediatamente contra PostgreSQL.
-        if (Date.now() - realtimeLastFullSyncVQA > 30000) {
-          await sincronizarCatalogoCompletoVQA();
-        } else {
-          await sincronizarStockLigero({ render: true });
-        }
-        programarRefreshInteligenteRealtime();
-        refrescarVistasDependientesRealtimeVQA("reconnect");
-        return;
-      }
-
-      if (
-        status === "CHANNEL_ERROR" ||
-        status === "TIMED_OUT" ||
-        status === "CLOSED"
-      ) {
-        programarReconexionRealtime();
-      }
-    });
-}
-
-function iniciarWatchdogRealtime() {
-  if (realtimeFallbackTimer) return;
-
-  // Respaldo liviano. Realtime debe ser instantáneo; esto corrige
-  // teléfonos que suspenden el WebSocket al bloquear la pantalla.
-  realtimeFallbackTimer = setInterval(async () => {
-    if (
-      document.visibilityState !== "visible" ||
-      !appContext?.ready ||
-      !appContext?.branch?.id
-    ) {
-      return;
-    }
-
-    if (Date.now() - realtimeLastFullSyncVQA > 60000) {
-      await sincronizarCatalogoCompletoVQA();
-    } else {
-      await sincronizarStockLigero({ render: true });
-    }
-
-    if (realtimeStatus !== "SUBSCRIBED") {
-      programarReconexionRealtime();
-    }
-  }, 10000);
-
-  const resincronizar = async () => {
-    if (!appContext?.ready || !appContext?.branch?.id) return;
-
-    // Teléfonos suelen suspender WebSocket. Al volver a primer plano
-    // reconstruimos el catálogo completo, no solo las filas que ya estaban en memoria.
-    await sincronizarCatalogoCompletoVQA();
-    programarRefreshInteligenteRealtime();
-    refrescarVistasDependientesRealtimeVQA("focus");
-
-    if (realtimeStatus !== "SUBSCRIBED") {
-      suscribirRealtime();
-    }
-  };
-
-  window.addEventListener("focus", resincronizar);
-  window.addEventListener("online", resincronizar);
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      resincronizar();
+  let changed = false;
+  const stockMap = new Map((data || []).map((row) => [row.producto_id, row]));
+  productsStoreV232.list().forEach((product) => {
+    const row = stockMap.get(product.id);
+    if (!row) return;
+    const stock = Number(row.stock || 0);
+    const minimum = Number(row.stock_minimo || 0);
+    if (Number(product.stock || 0) !== stock || Number(product.stockMinimo || 0) !== minimum) {
+      productsStoreV232.patchStock(product.id, stock, minimum);
+      changed = true;
     }
   });
+  if (changed && render) {
+    renderGrid();
+    aplicarPermisosV2();
+    if (!$("#modal-venta")?.classList.contains("hidden")) {
+      renderVentaProductos();
+      renderCarrito();
+    }
+  }
+  return changed;
 }
+
+async function refreshRealtimeDependentViewsV232() {
+  if (!$("#modal-historial")?.classList.contains("hidden")) await renderHistorial();
+  await inventoryControllerV232.refreshOpenView(false);
+  await purchasesControllerV232.refreshOpenViews();
+  if (!$("#modal-caja-operativa-v227")?.classList.contains("hidden")) {
+    await cargarEstadoCajaV227();
+    await renderPanelCajaV227();
+  }
+}
+
+const realtimeControllerV232 = window.VendifyRealtimeV232.createController({
+  client: supabaseClient,
+  getScope: () => ({
+    ready: appContext?.ready === true,
+    businessId: appContext?.business?.id || null,
+    branchId: appContext?.branch?.id || null,
+  }),
+  getVisibility: () => document.visibilityState,
+  setStatus: (status) => {
+    document.documentElement.dataset.realtimeStatus = status.toLowerCase();
+  },
+  refreshCatalog: refreshRealtimeCatalogV232,
+  refreshProducts: refreshRealtimeCatalogV232,
+  syncStock: syncRealtimeStockV232,
+  refreshSmartStock: async () => {
+    await cargarStockInteligente();
+    renderGrid();
+  },
+  refreshDependentViews: refreshRealtimeDependentViewsV232,
+  addWindowListener: (event, listener) => window.addEventListener(event, listener),
+  addVisibilityListener: (listener) => document.addEventListener("visibilitychange", listener),
+  report: (level, context, error) => {
+    const detail = error?.message || error;
+    console[level](`[Vendify Realtime] ${context}`, ...(detail ? [detail] : []));
+  },
+  notifyCatalogFailure: () => mostrarToast("No se pudieron resincronizar los datos", "error"),
+});
 
 
 /* QA: implementación legacy removida (mapearProductoDB) */
@@ -1007,8 +723,8 @@ const productsControllerV232 =
     loadCategoriesOffline: () => Boolean(cargarCategoriasOfflineV231?.()),
     saveCategoriesOffline: () => { guardarCategoriasOfflineV231?.(); },
     refreshOnboarding: () => { refrescarOnboardingComercialV231?.(); },
-    emitStockChange: emitirCambioStockRealtime,
-    scheduleSmartRefresh: programarRefreshInteligenteRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
+    scheduleSmartRefresh: realtimeControllerV232.scheduleSmartRefresh,
     renderSaleProducts: () => { renderVentaProductos(); },
     renderCart: () => { renderCarrito(); },
     isSaleOpen: () => !$("#modal-venta")?.classList.contains("hidden"),
@@ -1039,7 +755,7 @@ scannerControllerV232 =
     getBranchId: () => appContext.branch?.id || null,
     getEditingProductId: () => productoEditandoId,
     showToast: mostrarToast,
-    emitStockChange: emitirCambioStockRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
     renderProducts: () => { productsControllerV232.render(); },
     renderSaleProducts: () => { renderVentaProductos(); },
     addToCart: agregarAlCarrito,
@@ -1489,7 +1205,7 @@ async function confirmarAjusteStock() {
   }
 
   productsStoreV232.patchStock(p.id, Number(data.stock || valorFinal));
-  emitirCambioStockRealtime("ajuste_inventario");
+  realtimeControllerV232.emitStockChange("ajuste_inventario");
   await cargarStockInteligente();
   renderGrid();
 
@@ -3611,7 +3327,7 @@ const inventoryControllerV232 =
     getSmartStock: obtenerStockInteligente,
     showToast: mostrarToast,
     confirm: confirmar,
-    emitStockChange: emitirCambioStockRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
     onClose: () => {
@@ -3632,7 +3348,7 @@ const branchTransferControllerV232 =
     mapProduct: mapearProductoDB,
     productLabel: productoEtiquetaV29,
     showToast: mostrarToast,
-    emitStockChange: emitirCambioStockRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
     refreshBranchSettings: renderSucursalesConfigV226,
@@ -3658,7 +3374,7 @@ const purchasesControllerV232 =
     formatDate: formatearFechaHoraV227,
     showToast: mostrarToast,
     confirm: confirmar,
-    emitStockChange: emitirCambioStockRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
   });
@@ -3752,7 +3468,7 @@ const salesHistoryControllerV232 =
     showToast: mostrarToast,
     getAutoPrint: () => commercialConfigV231?.auto_imprimir_ticket === true,
     getTicketWidth: () => Number(commercialConfigV231?.ancho_ticket_mm) === 58 ? 58 : 80,
-    emitStockChange: emitirCambioStockRealtime,
+    emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
     reloadCash: cargarEstadoCajaV227,
@@ -3792,8 +3508,8 @@ const posControllerV232 =
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
     reloadCash: cargarEstadoCajaV227,
-    emitStockChange: emitirCambioStockRealtime,
-    refreshDependentViews: refrescarVistasDependientesRealtimeVQA,
+    emitStockChange: realtimeControllerV232.emitStockChange,
+    refreshDependentViews: realtimeControllerV232.refreshDependentViews,
     showTicket: (data) => salesHistoryControllerV232.showTicket(data),
     afterOnlineSale: () => {
       refrescarOnboardingComercialV231?.();
@@ -4604,7 +4320,7 @@ function init() {
   setupStabilityV23011();
   setupBackGuardV2311();
   setupCommercialFoundationV231();
-  iniciarWatchdogRealtime();
+  realtimeControllerV232.startWatchdog();
   setupInstallPrompt();
   setupOnboarding();
   void authControllerV232.initialize();

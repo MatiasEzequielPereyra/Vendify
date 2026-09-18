@@ -44,7 +44,7 @@ for (const marker of [
   "purchasesControllerV232.setup()",
   "listBranches: listarSucursalesV2",
   "reloadProducts: cargarProductos",
-  "emitStockChange: emitirCambioStockRealtime"
+  "emitStockChange: realtimeControllerV232.emitStockChange"
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Purchases delegation: ${marker}`);

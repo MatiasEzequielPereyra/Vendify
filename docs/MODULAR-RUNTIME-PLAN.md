@@ -171,9 +171,28 @@ disabled until the separate PWA device-matrix gate is completed.
 
 CSS is currently layered chronologically by release. Split by tokens/base/components/features while preserving cascade order first. Remove obsolete layers only after visual regression checks.
 
+Status: completed. The validated cascade is split into ten ordered modules, loaded in parallel while
+`styles.css` remains a compact compatibility entrypoint. SHA verification prevents reordering or
+silent rule loss in root, release, staging and modular outputs.
+
 ### Phase 12 — HTML decomposition
 
 Decompose large static modal/page fragments only after JS module ownership is clear. Avoid changing JS, CSS and HTML architecture simultaneously.
+
+Status: completed. The compatibility shell loads seven ordered static fragments before runtime
+scripts. Verification preserves the legacy markup hash, all 570 unique functional IDs and the
+critical DOM order across every build output.
+
+### Phase 13 — legacy composition retirement
+
+With feature ownership, CSS and HTML extracted, reduce `app.js` to composition and temporary
+adapters. Move one coordinator at a time, preserve browser behavior, and add an anti-regression
+verifier before removing each legacy implementation.
+
+Status: in progress. Realtime channel ownership, tenant/branch filters, reconnection, debounce and
+the foreground watchdog moved to `src/context/realtime-controller.ts`; `app.js` supplies only the
+existing catalog, stock and dependent-view adapters. Event composition and remaining UI-only
+workflows stay legacy until separately extracted and browser-verified.
 
 ## Definition of done
 

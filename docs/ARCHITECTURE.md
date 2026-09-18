@@ -54,3 +54,11 @@ POS and Cash consume the IndexedDB engine through the typed Offline integration 
 `src/offline/`; no standalone browser bridge may duplicate its context, validation or synchronization
 rules. The compatibility runtime delegates through that interface while production activation stays
 behind the Offline feature flag.
+
+## Realtime coordination
+
+`src/context/realtime-controller.ts` owns the scoped Realtime channel lifecycle for the active
+business and branch: subscriptions, reconnection, debounce, foreground recovery and the watchdog.
+Domain refresh operations remain explicit injected adapters while the compatibility runtime is
+retired. PostgreSQL events are hints; reconciliation reads authoritative data again and no public
+broadcast is treated as authority.

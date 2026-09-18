@@ -10,6 +10,7 @@ import "./offline-bridge.js";
 import "./platform-bridge.js";
 import "./products-bridge.js";
 import "./purchases-bridge.js";
+import "./realtime-bridge.js";
 import "./sales-bridge.js";
 import "./team-bridge.js";
 import { escapeHtml, queryAll, queryOne } from "../core/dom.js";

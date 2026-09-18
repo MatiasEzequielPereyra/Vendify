@@ -46,7 +46,7 @@ for (const marker of [
   "branchTransferControllerV232.setup()",
   "listBranches: listarSucursalesV2",
   "reloadProducts: cargarProductos",
-  "emitStockChange: emitirCambioStockRealtime"
+  "emitStockChange: realtimeControllerV232.emitStockChange"
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Inventory delegation: ${marker}`);
