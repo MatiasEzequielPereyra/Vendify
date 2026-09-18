@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { generateDatabaseBaseline } from "../dist-ts/platform/database-baseline-contract.js";
 
 const root = resolve(import.meta.dirname, "..");
 const assemblyPath = resolve(root, "supabase/baseline/assembly.json");
@@ -11,46 +12,22 @@ if (!Array.isArray(assembly.steps) || assembly.steps.length === 0) {
   throw new Error("Baseline assembly has no ordered steps");
 }
 
-const sections = assembly.steps.map((relativePath, index) => {
+const sourceSql = Object.fromEntries(assembly.steps.map((relativePath) => {
   const absolutePath = resolve(root, relativePath);
-  if (!existsSync(absolutePath)) throw new Error(`Missing baseline step: ${relativePath}`);
-  const sql = readFileSync(absolutePath, "utf8").replace(/\r\n/g, "\n").trimEnd();
-  return [
-    `-- ============================================================================`,
-    `-- STEP ${String(index + 1).padStart(2, "0")}: ${relativePath}`,
-    `-- ============================================================================`,
-    sql
-  ].join("\n");
-});
-
-const generated = [
-  "-- GENERATED FILE. DO NOT EDIT.",
-  "-- Vendify pre-v2.31 clean bootstrap candidate.",
-  "-- Target: empty disposable Supabase project only until live validation passes.",
-  "-- Source order: supabase/baseline/assembly.json",
-  "",
-  ...sections,
-  ""
-].join("\n\n");
-
-const transactionBegins = generated.match(/^\s*begin;\s*$/gim)?.length ?? 0;
-const transactionCommits = generated.match(/^\s*commit;\s*$/gim)?.length ?? 0;
-if (transactionBegins !== transactionCommits) {
-  throw new Error(`Unbalanced baseline transactions: ${transactionBegins} BEGIN / ${transactionCommits} COMMIT`);
+  return [relativePath, existsSync(absolutePath) ? readFileSync(absolutePath, "utf8") : undefined];
+}));
+const generation = generateDatabaseBaseline({ assembly, sourceSql });
+if (generation.errors.length > 0 || generation.content === null) {
+  throw new Error(generation.errors.join("\n"));
 }
-if (/^\s*drop\s+(?:table|schema)\b/im.test(generated)) {
-  throw new Error("Destructive DROP TABLE/SCHEMA is forbidden in the clean bootstrap package");
-}
-if (/service_role|SUPABASE_SERVICE/i.test(generated)) {
-  throw new Error("Privileged service credentials or roles are forbidden in the bootstrap package");
-}
+const generated = generation.content;
 
 if (process.argv.includes("--check")) {
   if (!existsSync(outputPath) || readFileSync(outputPath, "utf8").replace(/\r\n/g, "\n") !== generated) {
     console.error("FAIL: generated database baseline is stale; run npm run build:database-baseline");
     process.exit(1);
   }
-  console.log(`PASS: generated database baseline matches ${assembly.steps.length} ordered sources with ${transactionBegins} balanced transactions`);
+  console.log(`PASS: generated database baseline matches ${generation.stepCount} ordered sources with ${generation.transactionCount} balanced transactions`);
 } else {
   writeFileSync(outputPath, generated, "utf8");
   if (process.argv.includes("--local-migration")) {
