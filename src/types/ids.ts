@@ -6,3 +6,4 @@ export type BranchId = Brand<string, "BranchId">;
 export type CashRegisterId = Brand<string, "CashRegisterId">;
 export type ProductId = Brand<string, "ProductId">;
 export type RequestId = Brand<string, "RequestId">;
+export type OfflineLeaseId = Brand<string, "OfflineLeaseId">;

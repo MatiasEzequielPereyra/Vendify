@@ -1,5 +1,6 @@
 import type {
   OfflinePaymentMethod,
+  OfflineSaleLease,
   OfflineSale,
   OfflineSaleItem
 } from "../types/offline.js";
@@ -32,6 +33,7 @@ export interface LegacyPosOfflineSaleInput {
   readonly cashRegisterId: string;
   readonly userId: string;
   readonly createdAt?: string;
+  readonly lease?: OfflineSaleLease;
   readonly items: readonly LegacyPosSaleItemInput[];
   readonly payments: readonly LegacyPosPaymentInput[];
   readonly subtotal: number;
@@ -75,6 +77,7 @@ export function legacyPosSaleToOfflineSale(
     cashRegisterId: requiredId(input.cashRegisterId, "cashRegisterId") as CashRegisterId,
     userId: requiredId(input.userId, "userId") as UserId,
     createdAt: input.createdAt ?? new Date().toISOString(),
+    ...(input.lease === undefined ? {} : { lease: input.lease }),
     items: input.items.map(mapItem),
     payments: input.payments.map((payment) => ({
       method: paymentMethod(payment.medio_pago),

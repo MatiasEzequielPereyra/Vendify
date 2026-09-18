@@ -1,4 +1,4 @@
-import type { OfflineSale, OfflineSaleStatus, StockSnapshot } from "../types/offline.js";
+import type { OfflineLease, OfflineSale, OfflineSaleStatus, StockSnapshot } from "../types/offline.js";
 import { VendifyOfflineDb } from "./indexeddb-store.js";
 import {
   OFFLINE_ENGINE_STORAGE_KEY,
@@ -9,7 +9,11 @@ import {
   legacyPosSaleToOfflineSale,
   type LegacyPosOfflineSaleInput
 } from "./legacy-adapter.js";
-import { createRegistrarVentaV4Transport, type SupabaseRpcClientLike } from "./supabase-transport.js";
+import {
+  createRegistrarVentaV4Transport,
+  requestOfflineLease,
+  type SupabaseRpcClientLike
+} from "./supabase-transport.js";
 import {
   OfflineQueueSynchronizer,
   createScopedOfflineQueueStore,
@@ -45,6 +49,10 @@ export interface VendifyOfflineRuntimePublic {
   diagnostics(scope: OfflineQueueScope): Promise<OfflineRuntimeDiagnostics>;
   listSales(scope: OfflineQueueScope): Promise<readonly OfflineSale[]>;
   captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<void>;
+  acquireLease(
+    client: SupabaseRpcClientLike,
+    scope: OfflineQueueScope & { readonly cashRegisterId: string }
+  ): Promise<OfflineLease>;
   enqueueLegacySale(input: LegacyPosOfflineSaleInput): Promise<OfflineSale>;
   syncNow(
     client: SupabaseRpcClientLike,
@@ -157,8 +165,37 @@ async function captureStockSnapshot(input: CaptureStockSnapshotInput): Promise<v
 
 async function enqueueLegacySale(input: LegacyPosOfflineSaleInput): Promise<OfflineSale> {
   await ready;
-  const sale = legacyPosSaleToOfflineSale(input);
-  return requireDb().enqueueSale(sale);
+  const activeDb = requireDb();
+  const lease = await activeDb.getLease(input);
+  const sale = legacyPosSaleToOfflineSale({
+    ...input,
+    ...(lease === null ? {} : {
+      lease: { leaseId: lease.leaseId, token: lease.token, authorizedAt: lease.issuedAt }
+    })
+  });
+  return activeDb.enqueueSale(sale);
+}
+
+async function acquireLease(
+  client: SupabaseRpcClientLike,
+  scope: OfflineQueueScope & { readonly cashRegisterId: string }
+): Promise<OfflineLease> {
+  await ready;
+  const activeDb = requireDb();
+  const stored = await activeDb.getLease(scope);
+  const now = Date.now();
+  if (stored && Date.parse(stored.issuedAt) <= now && now <= Date.parse(stored.expiresAt)) {
+    return stored;
+  }
+  const lease = await requestOfflineLease(client, scope.branchId, scope.cashRegisterId);
+  if (
+    lease.businessId !== scope.businessId || lease.branchId !== scope.branchId ||
+    lease.cashRegisterId !== scope.cashRegisterId
+  ) {
+    throw new Error("Supabase returned an offline lease outside the active scope");
+  }
+  await activeDb.saveLease(lease);
+  return lease;
 }
 
 async function syncNow(
@@ -202,6 +239,7 @@ window.VendifyOfflineV2312 = {
   diagnostics,
   listSales,
   captureStockSnapshot,
+  acquireLease,
   enqueueLegacySale,
   syncNow,
   enableForThisBrowser,

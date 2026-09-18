@@ -1,4 +1,4 @@
-import type { OfflineSale, StockSnapshot } from "../types/offline.js";
+import type { OfflineLease, OfflineSale, StockSnapshot } from "../types/offline.js";
 import type { ProductId, RequestId } from "../types/ids.js";
 import { assertOfflineSaleTransition } from "./state-machine.js";
 import {
@@ -6,11 +6,17 @@ import {
   assertSameOfflineRequest,
   validateOfflineSale
 } from "./queue-policy.js";
+import { assertOfflineLeaseAllowsSale, leaseScopeKey } from "./offline-lease.js";
 
 const DB_NAME = "vendify-offline-v2312";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const SALES_STORE = "offline_sales";
 const STOCK_STORE = "stock_snapshots";
+const LEASES_STORE = "offline_leases";
+
+interface StoredOfflineLease extends OfflineLease {
+  readonly scopeKey: string;
+}
 
 interface StoredStockSnapshot extends StockSnapshot {
   readonly businessId: string;
@@ -83,6 +89,12 @@ export class VendifyOfflineDb {
         const stock = db.createObjectStore(STOCK_STORE, { keyPath: "key" });
         stock.createIndex("branch", ["businessId", "branchId"], { unique: false });
       }
+
+      if (!db.objectStoreNames.contains(LEASES_STORE)) {
+        const leases = db.createObjectStore(LEASES_STORE, { keyPath: "scopeKey" });
+        leases.createIndex("leaseId", "leaseId", { unique: true });
+        leases.createIndex("expiresAt", "expiresAt", { unique: false });
+      }
     };
 
     const db = await requestToPromise(request);
@@ -129,6 +141,45 @@ export class VendifyOfflineDb {
     return sales as OfflineSale[];
   }
 
+  async saveLease(lease: OfflineLease): Promise<void> {
+    const transaction = this.db.transaction(LEASES_STORE, "readwrite");
+    const stored: StoredOfflineLease = {
+      ...lease,
+      scopeKey: leaseScopeKey(lease)
+    };
+    transaction.objectStore(LEASES_STORE).put(stored);
+    await transactionDone(transaction);
+  }
+
+  async getLease(scope: {
+    readonly businessId: string;
+    readonly branchId: string;
+    readonly cashRegisterId: string;
+  }): Promise<OfflineLease | null> {
+    const transaction = this.db.transaction(LEASES_STORE, "readonly");
+    const stored = (await requestToPromise(
+      transaction.objectStore(LEASES_STORE).get(leaseScopeKey(scope))
+    )) as StoredOfflineLease | undefined;
+    await transactionDone(transaction);
+    if (!stored) return null;
+    return {
+      version: stored.version,
+      leaseId: stored.leaseId,
+      token: stored.token,
+      businessId: stored.businessId,
+      branchId: stored.branchId,
+      cashRegisterId: stored.cashRegisterId,
+      issuedByUserId: stored.issuedByUserId,
+      issuedAt: stored.issuedAt,
+      expiresAt: stored.expiresAt,
+      maxSales: stored.maxSales,
+      maxAmount: stored.maxAmount,
+      usedSales: stored.usedSales,
+      usedAmount: stored.usedAmount,
+      productQuotas: stored.productQuotas
+    };
+  }
+
   async listBranchSales(businessId: string, branchId: string): Promise<readonly OfflineSale[]> {
     const transaction = this.db.transaction(SALES_STORE, "readonly");
     const sales = await requestToPromise(
@@ -159,9 +210,10 @@ export class VendifyOfflineDb {
       throw new Error("New offline sales must start as pending with attempts=0");
     }
 
-    const transaction = this.db.transaction([SALES_STORE, STOCK_STORE], "readwrite");
+    const transaction = this.db.transaction([SALES_STORE, STOCK_STORE, LEASES_STORE], "readwrite");
     const salesStore = transaction.objectStore(SALES_STORE);
     const stockStore = transaction.objectStore(STOCK_STORE);
+    const leasesStore = transaction.objectStore(LEASES_STORE);
 
     try {
       const existing = (await requestToPromise(
@@ -172,6 +224,15 @@ export class VendifyOfflineDb {
         assertSameOfflineRequest(existing, sale);
         await transactionDone(transaction);
         return existing;
+      }
+
+
+      const storedLease = (await requestToPromise(
+        leasesStore.get(leaseScopeKey(sale))
+      )) as StoredOfflineLease | undefined;
+      assertOfflineLeaseAllowsSale(storedLease ?? null, sale);
+      if (!sale.lease || sale.lease.leaseId !== storedLease?.leaseId || sale.lease.token !== storedLease.token) {
+        throw new Error("Offline sale lease does not match the active authorization");
       }
 
       const queued = (await requestToPromise(
@@ -188,6 +249,17 @@ export class VendifyOfflineDb {
       }));
 
       assertSaleCanReserveStock(sale, snapshots, queued);
+      const requested = new Map<string, number>();
+      for (const item of sale.items) requested.set(item.productId, (requested.get(item.productId) ?? 0) + item.quantity);
+      leasesStore.put({
+        ...storedLease,
+        usedSales: storedLease.usedSales + 1,
+        usedAmount: storedLease.usedAmount + sale.total,
+        productQuotas: storedLease.productQuotas.map((quota) => ({
+          ...quota,
+          usedQuantity: quota.usedQuantity + (requested.get(quota.productId) ?? 0)
+        }))
+      });
       salesStore.add(sale);
       await transactionDone(transaction);
       return sale;

@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   buildRegistrarVentaV4Args,
-  createRegistrarVentaV4Transport
+  createRegistrarVentaV4Transport,
+  revokeOfflineLease
 } from "../../dist-ts/offline/supabase-transport.js";
 
 const sale = {
@@ -26,6 +27,12 @@ const sale = {
   total: 2000,
   status: "syncing",
   attempts: 1
+};
+
+sale.lease = {
+  leaseId: "lease-1",
+  token: "a".repeat(64),
+  authorizedAt: "2026-09-01T09:00:00.000Z"
 };
 
 test("maps offline sale to registrar_venta_v4 contract", () => {
@@ -70,6 +77,33 @@ test("returns success when registrar_venta_v4 succeeds", async () => {
 
   const result = await createRegistrarVentaV4Transport(client).send(sale);
   assert.deepEqual(result, { ok: true });
-  assert.equal(calls[0].name, "registrar_venta_v4");
+  assert.equal(calls[0].name, "registrar_venta_offline_v1");
   assert.equal(calls[0].args.p_request_id, "req-123");
+  assert.equal(calls[0].args.p_lease_id, "lease-1");
+  assert.equal(calls[0].args.p_lease_token, "a".repeat(64));
+  assert.equal(calls[0].args.p_created_by_user_id, "user-1");
+});
+
+test("historical sales without a lease are sent to review without an RPC", async () => {
+  let called = false;
+  const client = { async rpc() { called = true; return { data: null, error: null }; } };
+  const { lease: _lease, ...historical } = sale;
+  const result = await createRegistrarVentaV4Transport(client).send(historical);
+  assert.equal(result.ok, false);
+  assert.equal(called, false);
+});
+
+test("revokes an offline lease through the authoritative RPC", async () => {
+  const calls = [];
+  const client = {
+    async rpc(name, args) {
+      calls.push({ name, args });
+      return { data: { ok: true }, error: null };
+    }
+  };
+  await revokeOfflineLease(client, "lease-1");
+  assert.deepEqual(calls, [{
+    name: "revocar_lease_venta_offline_v1",
+    args: { p_lease_id: "lease-1" }
+  }]);
 });

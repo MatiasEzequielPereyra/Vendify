@@ -6,10 +6,10 @@ import { build } from "vite";
 const root = resolve(import.meta.dirname, "..");
 const out = resolve(root, "dist-staging-v2312");
 const runtimeBuildDir = resolve(root, ".vendify-build/v2312");
-const bridgeBuildDir = resolve(root, ".vendify-build/v2312-bridge");
+const coreBuildDir = resolve(root, ".vendify-build/modular-core");
 const pendingUiBuildDir = resolve(root, ".vendify-build/v2312-pending-ui");
 const runtimeFile = resolve(runtimeBuildDir, "vendify-offline-v2312.js");
-const bridgeFile = resolve(bridgeBuildDir, "vendify-offline-v2312-bridge.js");
+const coreFile = resolve(coreBuildDir, "vendify-core-v232.js");
 const pendingUiFile = resolve(pendingUiBuildDir, "vendify-offline-v2312-pending-ui.js");
 
 function fingerprint(content) {
@@ -27,13 +27,13 @@ await build({
   configFile: resolve(root, "vite.offline-v2312.config.ts")
 });
 await build({
-  configFile: resolve(root, "vite.offline-v2312-bridge.config.ts")
+  configFile: resolve(root, "vite.modular-core.config.ts")
 });
 await build({
   configFile: resolve(root, "vite.offline-v2312-pending-ui.config.ts")
 });
 
-for (const file of [runtimeFile, bridgeFile, pendingUiFile]) {
+for (const file of [runtimeFile, coreFile, pendingUiFile]) {
   if (!existsSync(file)) {
     throw new Error(`v2.31.2 bundle was not generated: ${file}`);
   }
@@ -60,27 +60,27 @@ cpSync(resolve(root, "html"), resolve(out, "html"), { recursive: true });
 const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
 
 const runtimeContent = stripSourceMapReference(readFileSync(runtimeFile, "utf8"));
-const bridgeContent = stripSourceMapReference(readFileSync(bridgeFile, "utf8"));
+const coreContent = stripSourceMapReference(readFileSync(coreFile, "utf8"));
 const pendingUiContent = stripSourceMapReference(readFileSync(pendingUiFile, "utf8"));
 const appHash = fingerprint(stagedApp);
 const runtimeHash = fingerprint(runtimeContent);
-const bridgeHash = fingerprint(bridgeContent);
+const coreHash = fingerprint(coreContent);
 const pendingUiHash = fingerprint(pendingUiContent);
 
 const stagedAppName = `app-staging-v2312-${appHash}.js`;
 const runtimeName = `vendify-offline-v2312-${runtimeHash}.js`;
-const bridgeName = `vendify-offline-v2312-bridge-${bridgeHash}.js`;
+const coreName = `vendify-core-v232-${coreHash}.js`;
 const pendingUiName = `vendify-offline-v2312-pending-ui-${pendingUiHash}.js`;
 
 writeFileSync(resolve(out, stagedAppName), stagedApp, "utf8");
 writeFileSync(resolve(out, runtimeName), runtimeContent, "utf8");
-writeFileSync(resolve(out, bridgeName), bridgeContent, "utf8");
+writeFileSync(resolve(out, coreName), coreContent, "utf8");
 writeFileSync(resolve(out, pendingUiName), pendingUiContent, "utf8");
 
 const indexPath = resolve(out, "index.html");
 const index = readFileSync(indexPath, "utf8");
 const appEntry = 'Object.freeze({ src: "app.js?v=2311" })';
-const stagedEntries = [runtimeName, stagedAppName, bridgeName, pendingUiName]
+const stagedEntries = [runtimeName, coreName, stagedAppName, pendingUiName]
   .map((name) => `Object.freeze({ src: "${name}" })`)
   .join(",\n        ");
 

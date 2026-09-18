@@ -21,11 +21,6 @@ interface SyncSummary {
 
 type SyncFunction = (options?: SyncOptions) => Promise<SyncSummary>;
 
-type WindowWithOfflineSync = Window & {
-  readonly sincronizarVentasOfflineIndexedDbV2312?: SyncFunction;
-  readonly listarVentasOfflineIndexedDbV2312?: () => Promise<readonly OfflineSale[]>;
-};
-
 const STYLE_ID = "vendify-pending-sales-v2312-style";
 const BUTTON_ID = "vendify-pending-sales-v2312-button";
 const PANEL_ID = "vendify-pending-sales-v2312-panel";
@@ -44,11 +39,11 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
 });
 
 function syncFunction(): SyncFunction | undefined {
-  return (window as WindowWithOfflineSync).sincronizarVentasOfflineIndexedDbV2312;
+  return window.VendifyOfflineIntegrationV232?.sync;
 }
 
 function listSalesFunction(): (() => Promise<readonly OfflineSale[]>) | undefined {
-  return (window as WindowWithOfflineSync).listarVentasOfflineIndexedDbV2312;
+  return window.VendifyOfflineIntegrationV232?.listSales;
 }
 
 function statusLabel(status: PendingSaleRow["status"]): string {

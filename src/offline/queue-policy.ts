@@ -156,6 +156,7 @@ export function offlineSalePayloadFingerprint(sale: OfflineSale): string {
     cashRegisterId: sale.cashRegisterId,
     userId: sale.userId,
     createdAt: sale.createdAt,
+    leaseId: sale.lease?.leaseId ?? null,
     items: normalizedItems(sale),
     payments: normalizedPayments(sale),
     subtotal: sale.subtotal,

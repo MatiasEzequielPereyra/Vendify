@@ -142,13 +142,30 @@ stock-concurrency flow was previously confirmed manually on this branch.
 
 Move cash state/session/movements with typed state and explicit API boundaries.
 
+Status: completed on `refactor/modular-runtime`. The root and generated compatibility runtimes
+delegate cash ownership to the typed module, and the modular anti-regression verifier enforces that
+boundary.
+
 ### Phase 9 — sales / POS
 
 Only after products, cash and shared UI dependencies are modular. Move cart, checkout, payments, discounts, tickets and sales history.
 
+Status: completed on `refactor/modular-runtime`. The root and generated compatibility runtimes
+delegate Sales/POS to the typed module while preserving the explicit Offline routing boundary; the
+modular anti-regression verifier enforces both delegations.
+
 ### Phase 10 — offline integration consolidation
 
 The v2.31.2 IndexedDB engine is already modular. Once POS and cash are modular, replace the temporary legacy bridge with direct typed imports and complete the signed offline-lease contract.
+
+Status: completed on `refactor/modular-runtime`. The backend-issued,
+tenant/branch/cash-scoped and expiring offline lease is
+implemented, persisted with the local sale, validated authoritatively during synchronization and
+covered by clean-database integration tests for authorization, scope, idempotency, stock and
+revocation. POS, Cash, the durable queue and the pending-sales UI now meet at one typed integration
+interface; the standalone POS bridge bundle and its browser globals were removed, and staging loads
+the Offline runtime and modular core before the compatibility app. Production activation remains
+disabled until the separate PWA device-matrix gate is completed.
 
 ### Phase 11 — CSS split
 

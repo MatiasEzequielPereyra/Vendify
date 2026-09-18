@@ -25,9 +25,18 @@ export {
   syncOfflineQueue
 } from "./sync-engine.js";
 export {
+  buildRegistrarVentaOfflineArgs,
   buildRegistrarVentaV4Args,
-  createRegistrarVentaV4Transport
+  createRegistrarVentaV4Transport,
+  requestOfflineLease,
+  revokeOfflineLease
 } from "./supabase-transport.js";
+export {
+  OfflineLeaseError,
+  assertOfflineLeaseAllowsSale,
+  leaseScopeKey,
+  parseOfflineLease
+} from "./offline-lease.js";
 export type {
   OfflineSyncErrorClassification,
   OfflineSyncErrorKind

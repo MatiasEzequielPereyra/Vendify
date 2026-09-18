@@ -5,6 +5,10 @@ const root = resolve(import.meta.dirname, "..");
 const contract = JSON.parse(
   readFileSync(resolve(root, "contracts/rpc-contract.json"), "utf8")
 );
+const GENERATED_SQL_PATHS = new Set([
+  "supabase/baseline/vendify_pre_v231_baseline.sql",
+  "supabase/migrations/20260830000000_pre_v231_baseline.local.sql"
+]);
 
 function walk(dir) {
   const files = [];
@@ -17,7 +21,9 @@ function walk(dir) {
   return files;
 }
 
-const sqlFiles = walk(resolve(root, "supabase"));
+const sqlFiles = walk(resolve(root, "supabase")).filter((file) => (
+  !GENERATED_SQL_PATHS.has(relative(root, file).replaceAll("\\", "/"))
+));
 const definitions = new Map();
 const regex = /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-zA-Z0-9_]+)/gi;
 

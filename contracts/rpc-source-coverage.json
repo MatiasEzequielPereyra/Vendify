@@ -1,7 +1,7 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 67,
-  "definitionsFound": 67,
+  "rpcCount": 70,
+  "definitionsFound": 70,
   "missingCount": 0,
   "missing": [],
   "rows": [
@@ -181,6 +181,13 @@
       "sourceFound": true,
       "files": [
         "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "emitir_lease_venta_offline_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260917140801_offline_signed_lease.sql"
       ]
     },
     {
@@ -472,11 +479,25 @@
       ]
     },
     {
+      "rpc": "registrar_venta_offline_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260917140801_offline_signed_lease.sql"
+      ]
+    },
+    {
       "rpc": "registrar_venta_v4",
       "sourceFound": true,
       "files": [
         "supabase/migrations/20260907000350_sales_stock_lock_order.sql",
         "supabase/migrations/20260908000800_sales_idempotency_payload_integrity.sql"
+      ]
+    },
+    {
+      "rpc": "revocar_lease_venta_offline_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260917140801_offline_signed_lease.sql"
       ]
     },
     {

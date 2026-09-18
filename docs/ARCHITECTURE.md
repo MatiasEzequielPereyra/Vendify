@@ -43,4 +43,14 @@ UI locks are UX only. PostgreSQL remains authoritative for:
 
 ## Offline direction
 
-The final offline implementation will use IndexedDB transactions and derive available stock from server snapshots minus unsynced local reservations.
+The offline implementation uses IndexedDB transactions and derives local availability from the
+server snapshot minus unsynchronized local reservations. That calculation is additionally capped
+by a backend-issued authorization with explicit tenant, branch, cash-register and expiration scope.
+The snapshot and local reservation are operational inputs, not authority: synchronization always
+uses an idempotent backend RPC that validates the authorization and performs the final stock, sale
+and cash mutations atomically.
+
+POS and Cash consume the IndexedDB engine through the typed Offline integration owned by
+`src/offline/`; no standalone browser bridge may duplicate its context, validation or synchronization
+rules. The compatibility runtime delegates through that interface while production activation stays
+behind the Offline feature flag.

@@ -1,16 +1,19 @@
 {
   "generatedFrom": "app.js + src/**/*.ts",
   "baselineVersion": "2.31.1",
-  "rpcCount": 67,
+  "rpcCount": 70,
   "critical": [
     "ajustar_stock_inventario_v2",
     "aplicar_conteo_fisico_v2",
     "devolver_venta_v1",
+    "emitir_lease_venta_offline_v1",
     "obtener_contexto_app",
     "obtener_estado_caja_v1",
     "obtener_permisos_personalizados_v1",
     "recibir_compra_v1",
+    "registrar_venta_offline_v1",
     "registrar_venta_v4",
+    "revocar_lease_venta_offline_v1",
     "transferir_stock_v2"
   ],
   "rpcs": [
@@ -39,6 +42,7 @@
     "eliminar_categoria_segura_v1",
     "eliminar_producto_seguro_v1",
     "eliminar_todos_productos_seguro_v1",
+    "emitir_lease_venta_offline_v1",
     "es_admin_plataforma_v1",
     "estado_onboarding_comercial_v1",
     "estado_pin_descuento_v1",
@@ -79,7 +83,9 @@
     "recibir_compra_v1",
     "registrar_error_cliente_v1",
     "registrar_movimiento_caja_v1",
+    "registrar_venta_offline_v1",
     "registrar_venta_v4",
+    "revocar_lease_venta_offline_v1",
     "transferir_stock_v2"
   ]
 }

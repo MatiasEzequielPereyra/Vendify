@@ -14,6 +14,7 @@ const recoveredSourcePath = new URL(
   import.meta.url
 );
 const coveragePath = new URL("../../contracts/rpc-source-coverage.json", import.meta.url);
+const coverageGeneratorPath = new URL("../../scripts/rpc-source-coverage.mjs", import.meta.url);
 const recoveredRpcNames = [
   "actualizar_rol_miembro_v2",
   "actualizar_sucursal_v1",
@@ -44,4 +45,11 @@ test("recovered RPC definitions close the source coverage gap as executable base
     const row = coverage.rows.find((entry) => entry.rpc === rpc);
     assert.deepEqual(row?.files, ["supabase/sources/recovered_rpc_definitions_20260910.sql"]);
   }
+});
+
+test("RPC source coverage ignores generated baseline assemblies", async () => {
+  const generator = await readFile(coverageGeneratorPath, "utf8");
+  assert.match(generator, /GENERATED_SQL_PATHS/);
+  assert.match(generator, /supabase\/baseline\/vendify_pre_v231_baseline\.sql/);
+  assert.match(generator, /supabase\/migrations\/20260830000000_pre_v231_baseline\.local\.sql/);
 });

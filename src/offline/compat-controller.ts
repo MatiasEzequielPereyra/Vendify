@@ -1,4 +1,5 @@
 import type { LegacyPosPaymentInput, LegacyPosSaleItemInput } from "./legacy-adapter.js";
+import type { VendifyOfflineRuntimePublic } from "./browser-runtime.js";
 import {
   buildLegacyOfflineTicket,
   createLegacyOfflineSale,
@@ -14,6 +15,11 @@ import {
   type LegacyOfflineTotals
 } from "./legacy-fallback.js";
 import type { OfflineSyncSummary } from "./sync-engine.js";
+import {
+  createOfflinePosIntegration,
+  type OfflinePosIntegration
+} from "./pos-integration.js";
+import type { SupabaseRpcClientLike } from "./supabase-transport.js";
 
 const CASH_PROOF_PREFIX = "vendify_cash_proof_v2311";
 const MAX_OFFLINE_SALES = 200;
@@ -49,7 +55,7 @@ interface OfflineCashState {
 
 interface OfflineRpcError { readonly message?: string; }
 interface OfflineRpcResult { readonly data: unknown; readonly error: OfflineRpcError | null; }
-interface OfflineRpcClient {
+interface OfflineRpcClient extends SupabaseRpcClientLike {
   rpc(name: string, args: Record<string, unknown>): Promise<OfflineRpcResult>;
 }
 
@@ -89,8 +95,17 @@ export interface OfflineCompatDependencies {
   readonly reloadCommercialFoundation: () => Promise<void>;
   readonly setConnectionState: (state: string, label?: string) => void;
   readonly showToast: (message: string, type: string) => void;
+  readonly getIndexedDbRuntime?: () => VendifyOfflineRuntimePublic | undefined;
+  readonly getLocationSearch?: () => string;
+  readonly notifyOfflineChanged?: (detail: unknown) => void;
   readonly now?: () => number;
   readonly isOnline?: () => boolean;
+}
+
+declare global {
+  interface Window {
+    VendifyOfflineIntegrationV232?: Pick<OfflinePosIntegration, "listSales" | "sync">;
+  }
 }
 
 export interface OfflineCompatController {
@@ -147,8 +162,49 @@ export function createOfflineCompatController(
 ): OfflineCompatController {
   const now = dependencies.now ?? Date.now;
   const isOnline = dependencies.isOnline ?? (() => navigator.onLine);
+  const getIndexedDbRuntime = dependencies.getIndexedDbRuntime
+    ?? (() => window.VendifyOfflineV2312);
+  const getLocationSearch = dependencies.getLocationSearch
+    ?? (() => window.location.search);
+  const notifyOfflineChanged = dependencies.notifyOfflineChanged
+    ?? ((detail: unknown) => window.dispatchEvent(
+      new CustomEvent("vendify:offline-v2312-changed", { detail })
+    ));
   let syncPromise: Promise<LegacyOfflineSyncSummary> | null = null;
+  let indexedDb: OfflinePosIntegration | null = null;
   let setupComplete = false;
+
+  function indexedDbIntegration(): OfflinePosIntegration {
+    indexedDb ??= createOfflinePosIntegration({
+      client: dependencies.client,
+      getRuntime: getIndexedDbRuntime,
+      getScope: () => {
+        const context = dependencies.getContext();
+        return {
+          userId: context.userId,
+          businessId: context.businessId,
+          branchId: context.branchId,
+          cashRegisterId: context.cashRegisterId
+        };
+      },
+      ensureRequestId: dependencies.ensureRequestId,
+      validatePayments: validateLegacyOfflinePayments,
+      validateLocalStock,
+      applySaleToLocalStock,
+      applySaleToLocalCash,
+      buildTicket,
+      reloadProducts: dependencies.reloadProducts,
+      reloadCash: dependencies.reloadCash,
+      showToast: dependencies.showToast,
+      notifyChanged: notifyOfflineChanged,
+      warn: (message, error) => {
+        console.warn(`[Vendify Offline] ${message}`, error);
+      },
+      isOnline,
+      getLocationSearch
+    });
+    return indexedDb;
+  }
 
   function salesKey(): string {
     return legacyOfflineSalesStorageKey(currentLegacyScope());
@@ -441,11 +497,9 @@ export function createOfflineCompatController(
     totals: LegacyOfflineTotals,
     observation: string
   ): Promise<unknown> {
-    if (
-      window.VendifyOfflineV2312?.enabled &&
-      typeof window.registrarVentaOfflineIndexedDbV2312 === "function"
-    ) {
-      return window.registrarVentaOfflineIndexedDbV2312(items, payments, totals, observation);
+    const integration = indexedDbIntegration();
+    if (integration.enabled()) {
+      return integration.registerSale(items, payments, totals, observation);
     }
     return registerLegacySale(items, payments, totals, observation);
   }
@@ -545,11 +599,9 @@ export function createOfflineCompatController(
   async function sync(
     options: OfflineCompatSyncOptions = {}
   ): Promise<LegacyOfflineSyncSummary | OfflineSyncSummary> {
-    if (
-      window.VendifyOfflineV2312?.enabled &&
-      typeof window.sincronizarVentasOfflineIndexedDbV2312 === "function"
-    ) {
-      return window.sincronizarVentasOfflineIndexedDbV2312(options);
+    const integration = indexedDbIntegration();
+    if (integration.enabled()) {
+      return integration.sync(options);
     }
     return syncLegacy(options);
   }
@@ -557,6 +609,13 @@ export function createOfflineCompatController(
   function setup(): void {
     if (setupComplete) return;
     setupComplete = true;
+    const integration = indexedDbIntegration();
+    if (integration.enabled()) {
+      window.VendifyOfflineIntegrationV232 = Object.freeze({
+        listSales: integration.listSales,
+        sync: integration.sync
+      });
+    }
     button("#btn-sync-offline-sales-v2311")
       ?.addEventListener("click", () => void sync({
         mostrarResumen: true,
@@ -586,9 +645,12 @@ export function createOfflineCompatController(
     });
     window.addEventListener("focus", () => {
       if (isOnline() && (
-        readLegacySales().length > 0 || window.VendifyOfflineV2312?.enabled === true
+        readLegacySales().length > 0 || integration.enabled()
       )) void sync({ mostrarResumen: false });
     });
+    if (isOnline() && integration.enabled()) {
+      window.setTimeout(() => void sync({ mostrarResumen: false }), 800);
+    }
   }
 
   return {

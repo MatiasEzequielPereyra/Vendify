@@ -14,6 +14,7 @@ import {
   loadSalesConcurrencyConfig,
   runSalesConcurrency
 } from "../tests/integration/sales-concurrency.mjs";
+import { runOfflineSignedLease } from "../tests/integration/offline-signed-lease.mjs";
 
 const confirmation = "RESET_LOCAL_SUPABASE_FOR_INTEGRATION";
 if (process.env.VENDIFY_TEST_CONFIRM_LOCAL_RESET !== confirmation) {
@@ -160,5 +161,10 @@ await runSalesConcurrency(loadSalesConcurrencyConfig({
   ...salesEnv,
   VENDIFY_TEST_CONFIRM_STAGING_SALES: "RUN_SALES_CONCURRENCY"
 }));
+const offlineLeaseConfig = loadSalesConcurrencyConfig({
+  ...salesEnv,
+  VENDIFY_TEST_CONFIRM_STAGING_SALES: "RUN_SALES_CONCURRENCY"
+});
+await runOfflineSignedLease({ ...offlineLeaseConfig, outsiderUser: ownerB });
 
-console.log("PASS: local Auth, RLS, atomicity and sales concurrency gates completed");
+console.log("PASS: local Auth, RLS, atomicity, sales concurrency and offline lease gates completed");

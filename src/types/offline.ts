@@ -2,6 +2,7 @@ import type {
   BranchId,
   BusinessId,
   CashRegisterId,
+  OfflineLeaseId,
   ProductId,
   RequestId,
   UserId
@@ -16,6 +17,36 @@ export type OfflineSaleStatus =
   | "synced";
 
 export type OfflinePaymentMethod = "Efectivo" | "Transferencia";
+
+export interface OfflineLeaseReference {
+  readonly leaseId: OfflineLeaseId;
+  readonly token: string;
+}
+
+export interface OfflineSaleLease extends OfflineLeaseReference {
+  readonly authorizedAt: string;
+}
+
+export interface OfflineProductQuota {
+  readonly productId: ProductId;
+  readonly maxQuantity: number;
+  readonly usedQuantity: number;
+}
+
+export interface OfflineLease extends OfflineLeaseReference {
+  readonly version: 1;
+  readonly businessId: BusinessId;
+  readonly branchId: BranchId;
+  readonly cashRegisterId: CashRegisterId;
+  readonly issuedByUserId: UserId;
+  readonly issuedAt: string;
+  readonly expiresAt: string;
+  readonly maxSales: number;
+  readonly maxAmount: Money;
+  readonly usedSales: number;
+  readonly usedAmount: Money;
+  readonly productQuotas: readonly OfflineProductQuota[];
+}
 
 export interface OfflineSaleItem {
   readonly productId: ProductId;
@@ -36,6 +67,7 @@ export interface OfflineSale {
   readonly cashRegisterId: CashRegisterId;
   readonly userId: UserId;
   readonly createdAt: string;
+  readonly lease?: OfflineSaleLease;
   readonly items: readonly OfflineSaleItem[];
   readonly payments: readonly OfflinePayment[];
   readonly subtotal: Money;

@@ -26,7 +26,20 @@ test("SECURITY DEFINER grants expose only the versioned frontend contract", () =
   assert.match(migration, /v_remaining_anon <> 0/);
   assert.match(migration, /registrar_venta_v3 debe permanecer sólo para llamadas internas/i);
 
-  for (const { rpc } of contract.rows) {
-    assert.match(migration, new RegExp(`'${rpc}'`));
+  for (const { rpc, files } of contract.rows) {
+    if (migration.includes(`'${rpc}'`)) continue;
+
+    const laterSources = files.map((file) => fs.readFileSync(
+      path.resolve(currentDirectory, "../..", file),
+      "utf8"
+    )).join("\n");
+    assert.match(laterSources, new RegExp(
+      `revoke execute on function public\\.${rpc}[\\s\\S]*from public,\\s*anon`,
+      "i"
+    ));
+    assert.match(laterSources, new RegExp(
+      `grant execute on function public\\.${rpc}[\\s\\S]*to authenticated,\\s*service_role`,
+      "i"
+    ));
   }
 });

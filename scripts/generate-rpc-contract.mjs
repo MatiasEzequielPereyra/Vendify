@@ -10,6 +10,9 @@ const rpcs = findRuntimeRpcNames(root);
 
 const criticalCandidates = new Set([
   "registrar_venta_v4",
+  "registrar_venta_offline_v1",
+  "emitir_lease_venta_offline_v1",
+  "revocar_lease_venta_offline_v1",
   "registrar_venta_v3",
   "obtener_estado_caja_v1",
   "ajustar_stock_inventario_v2",
