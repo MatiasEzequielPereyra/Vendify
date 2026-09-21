@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Incorporar al motor offline v2.31.2 una autorización temporal con alcance de usuario, negocio, sucursal y caja. El cliente debe rechazar leases vencidos, ajenos, mal formados o sin capacidad antes de encolar una venta. El backend seguirá siendo la autoridad que emite el lease y lo valida/consume al sincronizar.
+Incorporar al motor offline v2.31.2 una autorización temporal con alcance de negocio, sucursal y caja. El cupo pertenece a la caja y cada venta conserva el usuario que la creó. El cliente debe rechazar leases vencidos, ajenos, mal formados o sin capacidad antes de encolar una venta. El backend seguirá siendo la autoridad que emite el lease y lo valida/consume al sincronizar.
 
 Este trabajo sigue Strangler Fig: primero se construye y prueba el dominio TypeScript aislado; el bridge legacy se considera únicamente después de que esa capa pase todas sus validaciones.
 
@@ -27,7 +27,7 @@ Este trabajo sigue Strangler Fig: primero se construye y prueba el dominio TypeS
 
 1. Versionar la base IndexedDB mediante upgrade compatible y agregar un store de leases por alcance.
 2. Guardar el lease y la venta de forma que la cola nunca pueda referenciar silenciosamente una autorización inexistente.
-3. Invalidar de forma local leases vencidos o de otro usuario/negocio/sucursal/caja.
+3. Invalidar de forma local leases vencidos o de otro negocio/sucursal/caja.
 4. Mantener migración compatible para ventas existentes; deben quedar en revisión explícita, no eliminarse.
 
 ## Fase 3 — transporte tipado
@@ -43,7 +43,7 @@ Agregar tests unitarios que cubran:
 
 - lease válido dentro de su scope y vigencia;
 - vencimiento y fecha de emisión futura;
-- usuario, negocio, sucursal o caja distintos;
+- negocio, sucursal o caja distintos, permitiendo otro usuario autorizado en la misma caja;
 - payload incompleto o tipos inválidos;
 - límite de cantidad e importe agotado;
 - fingerprint distinto si cambia el lease;
@@ -100,3 +100,7 @@ Solo cuando las fases TypeScript y backend estén aprobadas:
 - Pasan integración local y `npx supabase db lint --local --level warning --fail-on error`.
 - La regresión de navegador queda registrada.
 - Solo entonces se actualiza `contracts/commercial-readiness.json` para retirar el bloqueo `offline-signed-lease`.
+
+## Cierre de revisión 2026-09-21
+
+El contrato incorpora reconciliación autoritativa al recuperar conexión. El navegador consulta el estado remoto, conserva el mayor consumo entre servidor e IndexedDB para no liberar reservas pendientes y elimina localmente leases revocados o vencidos. Un lease agotado solo se reemplaza cuando el dispositivo ya no tiene ventas sin sincronizar asociadas; la renovación revoca el anterior bajo lock y emite uno nuevo para la misma caja.

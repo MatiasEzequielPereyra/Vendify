@@ -11,9 +11,12 @@ import {
 } from "./legacy-adapter.js";
 import {
   createRegistrarVentaV4Transport,
+  fetchOfflineLeaseStatus,
+  renewOfflineLease,
   requestOfflineLease,
   type SupabaseRpcClientLike
 } from "./supabase-transport.js";
+import { isOfflineLeaseExhausted, mergeOfflineLeaseUsage } from "./offline-lease.js";
 import {
   OfflineQueueSynchronizer,
   createScopedOfflineQueueStore,
@@ -183,19 +186,38 @@ async function acquireLease(
   await ready;
   const activeDb = requireDb();
   const stored = await activeDb.getLease(scope);
-  const now = Date.now();
-  if (stored && Date.parse(stored.issuedAt) <= now && now <= Date.parse(stored.expiresAt)) {
-    return stored;
+  if (stored) {
+    const serverState = await fetchOfflineLeaseStatus(client, stored);
+    const reconciled = mergeOfflineLeaseUsage(stored, serverState.lease);
+    if (serverState.status === "active") {
+      await activeDb.saveLease(reconciled);
+      return reconciled;
+    }
+    if (serverState.status === "exhausted") {
+      if (await activeDb.hasUnsyncedSalesForLease(stored.leaseId)) {
+        await activeDb.saveLease(reconciled);
+        return reconciled;
+      }
+      const renewed = await renewOfflineLease(client, stored);
+      assertLeaseScope(renewed, scope);
+      await activeDb.saveLease(renewed);
+      return renewed;
+    }
+    await activeDb.deleteLease(scope);
   }
   const lease = await requestOfflineLease(client, scope.branchId, scope.cashRegisterId);
-  if (
-    lease.businessId !== scope.businessId || lease.branchId !== scope.branchId ||
-    lease.cashRegisterId !== scope.cashRegisterId
-  ) {
-    throw new Error("Supabase returned an offline lease outside the active scope");
-  }
+  assertLeaseScope(lease, scope);
   await activeDb.saveLease(lease);
   return lease;
+}
+
+function assertLeaseScope(lease: OfflineLease, scope: OfflineQueueScope & { readonly cashRegisterId: string }): void {
+  if (lease.businessId !== scope.businessId || lease.branchId !== scope.branchId || lease.cashRegisterId !== scope.cashRegisterId) {
+    throw new Error("Supabase returned an offline lease outside the active scope");
+  }
+  if (isOfflineLeaseExhausted(lease)) {
+    throw new Error("Supabase returned an exhausted offline lease");
+  }
 }
 
 async function syncNow(

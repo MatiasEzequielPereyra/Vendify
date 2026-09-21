@@ -48,6 +48,13 @@ export interface OfflineLease extends OfflineLeaseReference {
   readonly productQuotas: readonly OfflineProductQuota[];
 }
 
+export type OfflineLeaseServerStatus = "active" | "revoked" | "expired" | "exhausted";
+
+export interface OfflineLeaseStatus {
+  readonly status: OfflineLeaseServerStatus;
+  readonly lease: OfflineLease;
+}
+
 export interface OfflineSaleItem {
   readonly productId: ProductId;
   readonly productName: string;

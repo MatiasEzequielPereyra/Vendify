@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import {
   buildRegistrarVentaV4Args,
   createRegistrarVentaV4Transport,
+  fetchOfflineLeaseStatus,
+  renewOfflineLease,
   revokeOfflineLease
 } from "../../dist-ts/offline/supabase-transport.js";
 
@@ -45,6 +47,57 @@ test("maps offline sale to registrar_venta_v4 contract", () => {
     p_sucursal_id: "branch-1",
     p_caja_id: "cash-1",
     p_request_id: "req-123"
+  });
+});
+
+const leasePayload = (overrides = {}) => ({
+  version: 1,
+  lease_id: "lease-1",
+  business_id: "business-1",
+  branch_id: "branch-1",
+  cash_register_id: "cash-1",
+  issued_by_user_id: "user-1",
+  issued_at: "2026-09-01T09:00:00.000Z",
+  expires_at: "2026-09-01T17:00:00.000Z",
+  max_sales: 50,
+  max_amount: 1000000,
+  used_sales: 2,
+  used_amount: 4000,
+  product_quotas: [{ product_id: "product-1", max_quantity: 4, used_quantity: 2 }],
+  ...overrides
+});
+
+test("reconciles a stored lease without sending its token back in the response", async () => {
+  const calls = [];
+  const client = {
+    async rpc(name, args) {
+      calls.push({ name, args });
+      return { data: leasePayload({ status: "active" }), error: null };
+    }
+  };
+  const state = await fetchOfflineLeaseStatus(client, { leaseId: "lease-1", token: "a".repeat(64) });
+  assert.equal(state.status, "active");
+  assert.equal(state.lease.usedSales, 2);
+  assert.equal(state.lease.token, "a".repeat(64));
+  assert.deepEqual(calls[0], {
+    name: "obtener_estado_lease_venta_offline_v1",
+    args: { p_lease_id: "lease-1", p_lease_token: "a".repeat(64) }
+  });
+});
+
+test("renews an exhausted lease through the replacement RPC", async () => {
+  const calls = [];
+  const client = {
+    async rpc(name, args) {
+      calls.push({ name, args });
+      return { data: leasePayload({ lease_id: "lease-2", token: "b".repeat(64), used_sales: 0 }), error: null };
+    }
+  };
+  const lease = await renewOfflineLease(client, { leaseId: "lease-1", token: "a".repeat(64) });
+  assert.equal(lease.leaseId, "lease-2");
+  assert.deepEqual(calls[0], {
+    name: "renovar_lease_venta_offline_v1",
+    args: { p_lease_id: "lease-1", p_lease_token: "a".repeat(64) }
   });
 });
 

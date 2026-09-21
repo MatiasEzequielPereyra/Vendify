@@ -1,4 +1,10 @@
-import type { OfflineLease, OfflineProductQuota, OfflineSale } from "../types/offline.js";
+import type {
+  OfflineLease,
+  OfflineLeaseServerStatus,
+  OfflineLeaseStatus,
+  OfflineProductQuota,
+  OfflineSale
+} from "../types/offline.js";
 import type {
   BranchId,
   BusinessId,
@@ -109,6 +115,45 @@ export function parseOfflineLease(value: unknown): OfflineLease {
     usedSales,
     usedAmount,
     productQuotas
+  };
+}
+
+export function parseOfflineLeaseStatus(value: unknown, token: string): OfflineLeaseStatus {
+  const source = record(value);
+  const status = text(source?.status);
+  if (!isOfflineLeaseServerStatus(status)) {
+    throw new OfflineLeaseError("invalid", "El estado de la autorización offline no es válido.");
+  }
+  return {
+    status,
+    lease: parseOfflineLease({ ...source, token })
+  };
+}
+
+function isOfflineLeaseServerStatus(value: string | null): value is OfflineLeaseServerStatus {
+  return value === "active" || value === "revoked" || value === "expired" || value === "exhausted";
+}
+
+export function isOfflineLeaseExhausted(lease: OfflineLease): boolean {
+  return lease.usedSales >= lease.maxSales || lease.usedAmount >= lease.maxAmount;
+}
+
+export function mergeOfflineLeaseUsage(local: OfflineLease, server: OfflineLease): OfflineLease {
+  if (
+    local.leaseId !== server.leaseId || local.businessId !== server.businessId ||
+    local.branchId !== server.branchId || local.cashRegisterId !== server.cashRegisterId
+  ) {
+    throw new OfflineLeaseError("scope_mismatch", "El estado remoto pertenece a otra autorización offline.");
+  }
+  const localQuotas = new Map(local.productQuotas.map((quota) => [quota.productId, quota]));
+  return {
+    ...server,
+    usedSales: Math.max(local.usedSales, server.usedSales),
+    usedAmount: Math.max(local.usedAmount, server.usedAmount),
+    productQuotas: server.productQuotas.map((quota) => ({
+      ...quota,
+      usedQuantity: Math.max(localQuotas.get(quota.productId)?.usedQuantity ?? 0, quota.usedQuantity)
+    }))
   };
 }
 

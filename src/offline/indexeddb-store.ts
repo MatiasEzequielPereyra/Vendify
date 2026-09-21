@@ -180,6 +180,21 @@ export class VendifyOfflineDb {
     };
   }
 
+  async deleteLease(scope: {
+    readonly businessId: string;
+    readonly branchId: string;
+    readonly cashRegisterId: string;
+  }): Promise<void> {
+    const transaction = this.db.transaction(LEASES_STORE, "readwrite");
+    transaction.objectStore(LEASES_STORE).delete(leaseScopeKey(scope));
+    await transactionDone(transaction);
+  }
+
+  async hasUnsyncedSalesForLease(leaseId: string): Promise<boolean> {
+    const sales = await this.listSales();
+    return sales.some((sale) => sale.lease?.leaseId === leaseId && sale.status !== "synced");
+  }
+
   async listBranchSales(businessId: string, branchId: string): Promise<readonly OfflineSale[]> {
     const transaction = this.db.transaction(SALES_STORE, "readonly");
     const sales = await requestToPromise(

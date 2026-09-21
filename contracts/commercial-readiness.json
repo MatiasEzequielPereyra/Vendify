@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-09-17",
+  "updatedAt": "2026-09-21",
   "branch": "refactor/modular-runtime",
   "migrationChain": {
     "kind": "incremental",
@@ -25,7 +25,8 @@
       "supabase/migrations/20260909001100_critical_table_grants_hardening.sql",
       "supabase/migrations/20260909001200_sales_v2_internal_only.sql",
       "supabase/migrations/20260911001300_role_guard_execute_grant.sql",
-      "supabase/migrations/20260917140801_offline_signed_lease.sql"
+      "supabase/migrations/20260917140801_offline_signed_lease.sql",
+      "supabase/migrations/20260921120000_offline_lease_reconciliation.sql"
     ]
   },
   "gates": [
@@ -39,7 +40,7 @@
     { "id": "tenant-isolation-live", "status": "pass_local", "blocksPilot": true, "observedAt": "2026-09-16", "evidence": ["tests/integration/tenant-isolation.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"] },
     { "id": "sales-atomicity-live", "status": "pass_local", "blocksPilot": true, "observedAt": "2026-09-16", "evidence": ["tests/integration/sales-atomicity.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"] },
     { "id": "sales-concurrency-live", "status": "pass_local", "blocksPilot": true, "observedAt": "2026-09-16", "evidence": ["tests/integration/sales-concurrency.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"] },
-    { "id": "offline-signed-lease", "status": "pass_local", "blocksPilot": true, "observedAt": "2026-09-17", "evidence": ["supabase/migrations/20260917140801_offline_signed_lease.sql", "src/offline/offline-lease.ts", "tests/integration/offline-signed-lease.mjs", "scripts/run-local-integration-gates.mjs", "docs/adr/0003-autorizacion-offline-con-cupos-por-caja.md"] },
+    { "id": "offline-signed-lease", "status": "pass_local", "blocksPilot": true, "observedAt": "2026-09-21", "evidence": ["supabase/migrations/20260917140801_offline_signed_lease.sql", "supabase/migrations/20260921120000_offline_lease_reconciliation.sql", "src/offline/offline-lease.ts", "tests/integration/offline-signed-lease.mjs", "scripts/run-local-integration-gates.mjs", "docs/adr/0003-autorizacion-offline-con-cupos-por-caja.md"] },
     { "id": "pwa-device-matrix", "status": "pending_manual", "blocksPilot": true, "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md"] },
     { "id": "self-hosted-critical-runtime", "status": "pending_implementation", "blocksPilot": false, "evidence": ["index.html", "sw.js"] },
     { "id": "backup-restore-at-scale", "status": "pending_implementation", "blocksPilot": true, "evidence": ["src/commercial/commercial-service.ts"] }

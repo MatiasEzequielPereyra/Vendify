@@ -3,7 +3,10 @@ import test from "node:test";
 import {
   OfflineLeaseError,
   assertOfflineLeaseAllowsSale,
-  parseOfflineLease
+  isOfflineLeaseExhausted,
+  mergeOfflineLeaseUsage,
+  parseOfflineLease,
+  parseOfflineLeaseStatus
 } from "../../dist-ts/offline/offline-lease.js";
 
 const rawLease = (overrides = {}) => ({
@@ -22,6 +25,37 @@ const rawLease = (overrides = {}) => ({
   used_amount: 0,
   product_quotas: [{ product_id: "product-1", max_quantity: 3, used_quantity: 0 }],
   ...overrides
+});
+
+test("parses authoritative lease status while retaining the local opaque token", () => {
+  const token = "b".repeat(64);
+  const { token: _serverMustNotReturnToken, ...payload } = rawLease({ status: "revoked" });
+  const state = parseOfflineLeaseStatus(payload, token);
+  assert.equal(state.status, "revoked");
+  assert.equal(state.lease.token, token);
+  assert.throws(() => parseOfflineLeaseStatus({ ...payload, status: "unknown" }, token), OfflineLeaseError);
+});
+
+test("detects aggregate lease exhaustion", () => {
+  assert.equal(isOfflineLeaseExhausted(parseOfflineLease(rawLease())), false);
+  assert.equal(isOfflineLeaseExhausted(parseOfflineLease(rawLease({ used_sales: 2 }))), true);
+  assert.equal(isOfflineLeaseExhausted(parseOfflineLease(rawLease({ used_amount: 5000 }))), true);
+});
+
+test("reconciliation never releases usage from unsynchronized local sales", () => {
+  const local = parseOfflineLease(rawLease({
+    used_sales: 2,
+    used_amount: 2000,
+    product_quotas: [{ product_id: "product-1", max_quantity: 3, used_quantity: 2 }]
+  }));
+  const server = parseOfflineLease(rawLease({ used_sales: 1, used_amount: 1000 }));
+  const reconciled = mergeOfflineLeaseUsage(local, server);
+  assert.equal(reconciled.usedSales, 2);
+  assert.equal(reconciled.usedAmount, 2000);
+  assert.equal(reconciled.productQuotas[0].usedQuantity, 2);
+  assert.throws(() => mergeOfflineLeaseUsage(local, parseOfflineLease(rawLease({ lease_id: "other" }))), {
+    code: "scope_mismatch"
+  });
 });
 
 const sale = (overrides = {}) => ({

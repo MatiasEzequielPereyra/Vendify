@@ -162,7 +162,8 @@ Status: completed on `refactor/modular-runtime`. The backend-issued,
 tenant/branch/cash-scoped and expiring offline lease is
 implemented, persisted with the local sale, validated authoritatively during synchronization and
 covered by clean-database integration tests for authorization, scope, idempotency, stock and
-revocation. POS, Cash, the durable queue and the pending-sales UI now meet at one typed integration
+revocation. Reconnection reconciles revocation and server counters, while exhausted leases are
+replaced only after their local pending sales finish synchronizing. POS, Cash, the durable queue and the pending-sales UI now meet at one typed integration
 interface; the standalone POS bridge bundle and its browser globals were removed, and staging loads
 the Offline runtime and modular core before the compatibility app. Production activation remains
 disabled until the separate PWA device-matrix gate is completed.

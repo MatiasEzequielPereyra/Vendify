@@ -1,7 +1,7 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 70,
-  "definitionsFound": 70,
+  "rpcCount": 72,
+  "definitionsFound": 72,
   "missingCount": 0,
   "missing": [],
   "rows": [
@@ -414,6 +414,13 @@
       ]
     },
     {
+      "rpc": "obtener_estado_lease_venta_offline_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260921120000_offline_lease_reconciliation.sql"
+      ]
+    },
+    {
       "rpc": "obtener_negocio_admin_actual",
       "sourceFound": true,
       "files": [
@@ -491,6 +498,13 @@
       "files": [
         "supabase/migrations/20260907000350_sales_stock_lock_order.sql",
         "supabase/migrations/20260908000800_sales_idempotency_payload_integrity.sql"
+      ]
+    },
+    {
+      "rpc": "renovar_lease_venta_offline_v1",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260921120000_offline_lease_reconciliation.sql"
       ]
     },
     {

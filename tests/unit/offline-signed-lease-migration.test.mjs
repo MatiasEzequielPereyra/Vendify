@@ -6,6 +6,10 @@ const sql = readFileSync(
   new URL("../../supabase/migrations/20260917140801_offline_signed_lease.sql", import.meta.url),
   "utf8"
 ).toLowerCase();
+const reconciliationSql = readFileSync(
+  new URL("../../supabase/migrations/20260921120000_offline_lease_reconciliation.sql", import.meta.url),
+  "utf8"
+).toLowerCase();
 
 test("offline lease migration stores only token hashes and locks consumption", () => {
   assert.match(sql, /token_hash text not null/);
@@ -16,6 +20,32 @@ test("offline lease migration stores only token hashes and locks consumption", (
   assert.match(sql, /sha256\(pg_catalog\.convert_to\(p_lease_token/);
   assert.match(sql, /offline_sale_lease_product_quotas/);
   assert.match(sql, /primary key \(lease_id,\s*producto_id\)/);
+});
+
+test("lease reconciliation is authoritative, token-bound and tenant-scoped", () => {
+  for (const name of [
+    "obtener_estado_lease_venta_offline_v1",
+    "renovar_lease_venta_offline_v1"
+  ]) {
+    const start = reconciliationSql.indexOf(`function public.${name}`);
+    assert.notEqual(start, -1);
+    assert.match(reconciliationSql.slice(start, start + 1300), /security definer[\s\S]*set search_path\s*=\s*''/);
+  }
+  assert.match(reconciliationSql, /where l\.id=p_lease_id and l\.negocio_id=v_negocio_id/);
+  assert.match(reconciliationSql, /sha256\(pg_catalog\.convert_to\(p_lease_token/);
+  assert.match(reconciliationSql, /when v_lease\.revoked_at is not null then 'revoked'/);
+  assert.match(reconciliationSql, /when v_lease\.expires_at<=now\(\) then 'expired'/);
+  assert.match(reconciliationSql, /then 'exhausted'/);
+  assert.doesNotMatch(reconciliationSql, /'token',\s*v_/);
+});
+
+test("lease renewal revokes under lock before issuing a replacement", () => {
+  assert.match(reconciliationSql, /from public\.offline_sale_leases l[\s\S]*for update/);
+  assert.match(reconciliationSql, /pg_advisory_xact_lock/);
+  assert.match(reconciliationSql, /set revoked_at=now\(\)/);
+  assert.match(reconciliationSql, /return public\.emitir_lease_venta_offline_v1/);
+  assert.match(reconciliationSql, /revoke execute on function public\.obtener_estado_lease_venta_offline_v1\(uuid,text\) from public,anon/);
+  assert.match(reconciliationSql, /revoke execute on function public\.renovar_lease_venta_offline_v1\(uuid,text\) from public,anon/);
 });
 
 test("offline lease RPCs pin search path and restrict execution", () => {

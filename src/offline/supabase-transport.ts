@@ -1,7 +1,7 @@
 import type { OfflineSale } from "../types/offline.js";
-import type { OfflineLease } from "../types/offline.js";
+import type { OfflineLease, OfflineLeaseStatus } from "../types/offline.js";
 import type { OfflineSaleTransport, OfflineTransportResult } from "./sync-engine.js";
-import { parseOfflineLease } from "./offline-lease.js";
+import { parseOfflineLease, parseOfflineLeaseStatus } from "./offline-lease.js";
 
 interface SupabaseRpcResponse {
   readonly data: unknown;
@@ -60,6 +60,35 @@ export async function requestOfflineLease(
     throw new Error(message);
   }
   return parseOfflineLease(response.data);
+}
+
+export async function fetchOfflineLeaseStatus(
+  client: SupabaseRpcClientLike,
+  lease: Pick<OfflineLease, "leaseId" | "token">
+): Promise<OfflineLeaseStatus> {
+  const response = await client.rpc("obtener_estado_lease_venta_offline_v1", {
+    p_lease_id: lease.leaseId,
+    p_lease_token: lease.token
+  });
+  if (response.error) throw new Error(rpcErrorMessage(response.error, "No se pudo verificar la autorización offline."));
+  return parseOfflineLeaseStatus(response.data, lease.token);
+}
+
+export async function renewOfflineLease(
+  client: SupabaseRpcClientLike,
+  lease: Pick<OfflineLease, "leaseId" | "token">
+): Promise<OfflineLease> {
+  const response = await client.rpc("renovar_lease_venta_offline_v1", {
+    p_lease_id: lease.leaseId,
+    p_lease_token: lease.token
+  });
+  if (response.error) throw new Error(rpcErrorMessage(response.error, "No se pudo renovar la autorización offline."));
+  return parseOfflineLease(response.data);
+}
+
+function rpcErrorMessage(error: unknown, fallback: string): string {
+  return typeof error === "object" && error !== null && "message" in error
+    && typeof error.message === "string" ? error.message : fallback;
 }
 
 export async function revokeOfflineLease(
