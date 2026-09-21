@@ -171,11 +171,139 @@ const offlineLeaseConfig = loadSalesConcurrencyConfig({
   VENDIFY_TEST_CONFIRM_STAGING_SALES: "RUN_SALES_CONCURRENCY"
 });
 await runOfflineSignedLease({ ...offlineLeaseConfig, outsiderUser: ownerB });
-await runOperationalBackupV2({
+const backupFixture = await runOperationalBackupV2({
   ...offlineLeaseConfig,
   owner: ownerA,
   otherOwner: ownerB,
   cashier: cashierA
 });
+
+execute(process.execPath, ["scripts/run-operational-backup-worker.mjs"], {
+  shell: false,
+  env: {
+    ...process.env,
+    SUPABASE_URL: status.API_URL,
+    SUPABASE_ANON_KEY: status.ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: adminToken,
+    VENDIFY_BACKUP_USER_JWT: backupFixture.ownerToken,
+    VENDIFY_BACKUP_ID: backupFixture.backupId
+  }
+});
+
+const readyResponse = await fetch(`${status.API_URL}/rest/v1/rpc/estado_respaldo_operativo_v2`, {
+  method: "POST",
+  headers: {
+    apikey: status.ANON_KEY,
+    Authorization: `Bearer ${backupFixture.ownerToken}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ p_backup_id: backupFixture.backupId })
+});
+const readyBackup = await readyResponse.json();
+if (!readyResponse.ok || readyBackup.status !== "ready" || !readyBackup.manifest?.rootSha256) {
+  throw new Error("El worker no dejó un respaldo listo y verificable");
+}
+const privateProbe = await fetch(
+  `${status.API_URL}/storage/v1/object/vendify-operational-backups/${readyBackup.manifest.parts[0].storagePath}`,
+  { headers: { apikey: status.ANON_KEY } }
+);
+if (privateProbe.ok) throw new Error("El bucket de respaldos no debe ser público");
+const manifestPath = `${backupFixture.businessId}/${backupFixture.backupId}/manifest.json`;
+const signedResponse = await fetch(
+  `${status.API_URL}/storage/v1/object/sign/vendify-operational-backups/${manifestPath}`,
+  {
+    method: "POST",
+    headers: { apikey: adminToken, Authorization: `Bearer ${adminToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ expiresIn: 300 })
+  }
+);
+const signedBody = await signedResponse.json();
+if (!signedResponse.ok || typeof signedBody.signedURL !== "string") throw new Error("No se pudo emitir la URL firmada corta");
+const signedDownload = await fetch(`${status.API_URL}/storage/v1${signedBody.signedURL}`);
+if (!signedDownload.ok || (await signedDownload.json()).rootSha256 !== readyBackup.manifest.rootSha256) {
+  throw new Error("La URL firmada no descargó el manifiesto esperado");
+}
+console.log("PASS: backup v2 worker, private Storage, short signed URL, manifest and checksummed parts");
+
+const scaleBranchId = crypto.randomUUID();
+const scaleSql = `
+begin;
+set local session_replication_role=replica;
+insert into public.sucursales(id,negocio_id,nombre) values
+('${scaleBranchId}','${ids.businessA}','Secundaria escala');
+insert into public.productos(id,user_id,nombre,precio_compra,precio_venta,stock,stock_minimo,negocio_id,codigo_barras)
+select gen_random_uuid(),'${ownerA.id}','Producto Escala '||lpad(n::text,5,'0'),5,10,0,1,
+  '${ids.businessA}','QA-SCALE-${stamp}-'||n::text
+from generate_series(1,4793) n;
+create temp table scale_products on commit drop as
+select id,row_number() over(order by id) rn from public.productos
+where negocio_id='${ids.businessA}' order by id limit 5000;
+create temp table scale_sales(n integer primary key,id uuid not null) on commit drop;
+insert into scale_sales select n,gen_random_uuid() from generate_series(1,50000) n;
+insert into public.ventas(id,user_id,total,medio_pago,negocio_id,sucursal_id,caja_id,caja_sesion_id,estado,subtotal,creado)
+select s.id,'${ownerA.id}',50,'efectivo','${ids.businessA}','${ids.branchA}','${ids.cashA}',cs.id,'completada',50,
+  now()-interval '1 minute'
+from scale_sales s cross join lateral (
+  select id from public.cajas_sesiones where negocio_id='${ids.businessA}' and caja_id='${ids.cashA}' limit 1
+) cs;
+insert into public.venta_items(id,venta_id,user_id,producto_id,producto_nombre,cantidad,precio_unitario,subtotal,negocio_id,costo_unitario,precio_neto_unitario)
+select gen_random_uuid(),s.id,'${ownerA.id}',p.id,'Producto escala',1,10,10,'${ids.businessA}',5,10
+from scale_sales s cross join generate_series(1,5) i
+join scale_products p on p.rn=((s.n*5+i-2)%5000)+1;
+set local session_replication_role=origin;
+commit;
+`;
+const scaled = spawnSync(
+  docker,
+  ["exec", "-i", "supabase_db_VendifyV3", "psql", "-U", "postgres", "-d", "postgres", "-X", "-v", "ON_ERROR_STOP=1"],
+  { input: scaleSql, encoding: "utf8", stdio: ["pipe", "inherit", "inherit"] }
+);
+if (scaled.status !== 0) throw new Error("Falló el dataset de escala para backup/restore");
+
+const scaleStartResponse = await fetch(`${status.API_URL}/rest/v1/rpc/iniciar_respaldo_operativo_v2`, {
+  method: "POST",
+  headers: { apikey: status.ANON_KEY, Authorization: `Bearer ${backupFixture.ownerToken}`, "Content-Type": "application/json" },
+  body: "{}"
+});
+const scaleStart = await scaleStartResponse.json();
+if (!scaleStartResponse.ok) throw new Error("No se pudo iniciar el respaldo de escala");
+const artifactRoot = join(process.cwd(), "qa-output", "backup-restore-v2", "scale-artifact");
+const scaleWorkerOutput = execFileSync(process.execPath, ["scripts/run-operational-backup-worker.mjs"], {
+  shell: false,
+  encoding: "utf8",
+  env: {
+    ...process.env,
+    SUPABASE_URL: status.API_URL,
+    SUPABASE_ANON_KEY: status.ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: adminToken,
+    VENDIFY_BACKUP_USER_JWT: backupFixture.ownerToken,
+    VENDIFY_BACKUP_ID: scaleStart.backup_id,
+    VENDIFY_BACKUP_OUTPUT_DIR: artifactRoot
+  }
+});
+const scaleMetrics = JSON.parse(scaleWorkerOutput.trim().split(/\r?\n/).at(-1));
+execute(process.execPath, [
+  "scripts/restore-operational-backup-v2.mjs",
+  join(artifactRoot, scaleStart.business_id, scaleStart.backup_id, "manifest.json"),
+  "--apply-local"
+], {
+  shell: false,
+  env: {
+    ...process.env,
+    SUPABASE_URL: status.API_URL,
+    VENDIFY_CONFIRM_LOCAL_RESTORE: "RESTORE_LOCAL_VENDIFY_BACKUP_V2"
+  }
+});
+const { mkdir, writeFile } = await import("node:fs/promises");
+const reportDirectory = join(process.cwd(), "qa-output", "backup-restore-v2");
+await mkdir(reportDirectory, { recursive: true });
+await writeFile(join(reportDirectory, "scale-report.json"), `${JSON.stringify({
+  format: "vendify-backup-scale-report-v2",
+  generatedAt: new Date().toISOString(),
+  requirements: { products: 5000, sales: 50000, saleItems: 250000, branches: 2, cashRegisters: 2 },
+  observed: { products: scaleMetrics.totals.products, sales: scaleMetrics.totals.sales, saleItems: scaleMetrics.totals.sale_items, branches: scaleMetrics.totals.branches, cashRegisters: scaleMetrics.totals.cash_registers, rows: scaleMetrics.rows, compressedBytes: scaleMetrics.bytes, elapsedMs: scaleMetrics.elapsedMs, workerRssBytes: scaleMetrics.rssBytes, rootSha256: scaleMetrics.rootSha256 },
+  status: "pass_local"
+}, null, 2)}\n`);
+console.log("PASS: 5k products, 50k sales, 250k items export, checksum and transactional local restore");
 
 console.log("PASS: local Auth, RLS, sales, offline lease and backup v2 gates completed");

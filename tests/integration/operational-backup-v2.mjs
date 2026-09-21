@@ -104,4 +104,5 @@ export async function runOperationalBackupV2(config, fetchImpl = globalThis.fetc
   assert.equal("cursor_secret" in state.data, false);
 
   log("PASS: backup v2 owner auth, tenant isolation, signed cursors and keyset pagination");
+  return { ownerToken, backupId: started.data.backup_id, businessId: started.data.business_id };
 }

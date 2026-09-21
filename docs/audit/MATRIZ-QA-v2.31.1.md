@@ -1,6 +1,6 @@
 # Vendify — Matriz QA vigente
 
-Actualizada: 2026-09-15
+Actualizada: 2026-09-21
 
 Rama evaluada: `refactor/modular-runtime`
 
@@ -25,8 +25,8 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 | Cola offline durable y FIFO | PASS automatizado / PENDIENTE MANUAL | IndexedDB, reservas, estados y pantalla implementados |
 | Aislamiento multiempresa | PASS estático / PENDIENTE LIVE | diagnóstico y harness disponibles; falta entorno A/B |
 | Concurrencia de stock y venta | PASS harness / PENDIENTE LIVE | el ejecutor requiere datos reales |
-| PWA multiplataforma | PENDIENTE MANUAL | Android, iOS, instalación, actualización e impresión |
-| Escala comercial | PENDIENTE | datasets grandes, paginación y backup asíncrono |
+| PWA multiplataforma | PASS automatizado / PENDIENTE MANUAL | raíz, release y modular pasan la matriz; faltan Android/iOS, instalación, cámara e impresión físicas |
+| Escala comercial | PASS local | backup paginado, worker, Storage privado y restore con 5k productos, 50k ventas y 250k ítems |
 
 ## Build y release
 
@@ -62,7 +62,8 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [x] PASS automatizado — FIFO se detiene ante el primer error para preservar el orden.
 - [x] PASS automatizado — panel de pendientes con detalle, error y reintento.
 - [x] PASS automatizado — `request_id` se conserva hasta `registrar_venta_v4`.
-- [ ] PENDIENTE — lease offline firmado y de corta duración emitido por backend.
+- [x] PASS local — lease offline firmado, acotado por caja/producto y de corta duración emitido por backend.
+- [x] PASS local — reconciliación, renovación, revocación y reintento idempotente del lease.
 - [ ] PENDIENTE — descuentos offline; la política actual los rechaza explícitamente.
 - [ ] PENDIENTE MANUAL — cierre abrupto, power loss y recuperación de `syncing` interrumpido.
 - [ ] PENDIENTE LIVE — reconexión repetida, conflicto real de stock y token expirado.
@@ -98,7 +99,8 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [x] PASS automatizado — dashboard y navegación contextual tipada.
 - [x] PASS manual local — navegación operativa validada por el usuario en desktop.
 - [ ] PENDIENTE LIVE — dashboard con 50.000 ventas y `EXPLAIN ANALYZE`.
-- [ ] PENDIENTE MANUAL — 360x640, 390x844, 430x932, 1366x768 y 1920x1080.
+- [x] PASS navegador local — catálogo y controles operativos cargaron en 390x844 sobre el runtime modular.
+- [ ] PENDIENTE MANUAL — 360x640, 430x932, 1366x768 y 1920x1080.
 - [ ] PENDIENTE MANUAL — gesto Atrás en Android y navegación PWA en iOS.
 - [ ] PENDIENTE — auditoría de accesibilidad completa con teclado y lector de pantalla.
 
@@ -107,6 +109,7 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [x] PASS estático — Supabase JS y ZXing están fijados a versiones exactas.
 - [x] PASS estático — Service Worker intenta precachear ambas dependencias.
 - [x] PASS automatizado — una falla de `cache.addAll(SHELL)` impide ejecutar `skipWaiting()`.
+- [x] PASS automatizado — manifest, íconos, registro, fallback, limpieza de caches y secretos pasan en raíz, `dist/` y `dist-refactor-modular/`.
 - [ ] PENDIENTE — self-host de Supabase JS y ZXing para eliminar dependencia CDN inicial.
 - [ ] PENDIENTE MANUAL — cold boot sin red después de instalación.
 - [ ] PENDIENTE MANUAL — actualización de versión con caja/venta en curso.
@@ -114,10 +117,10 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 
 ## Escala, recuperación y deuda técnica
 
-- [ ] PENDIENTE — backup asíncrono, paginado, comprimido y con checksum.
-- [ ] PENDIENTE — prueba documentada de restauración.
+- [x] PASS local — backup paginado, comprimido, reanudable, con SHA-256 y worker fuera del request del browser.
+- [x] PASS local — Storage privado, manifiesto, corrupción rechazada y restauración transaccional protegida.
 - [ ] PENDIENTE — historial y exportaciones paginados para datasets grandes.
-- [ ] PENDIENTE — pruebas con 5.000 productos, 50.000 ventas y 250.000 items.
+- [x] PASS local — ensayo con 5.000 productos, 50.005 ventas y 250.008 ítems, incluidos fixtures de atomicidad/concurrencia.
 - [ ] PENDIENTE — soak test Realtime con varios dispositivos.
 - [x] AVANCE — `app.js` bajó de unas 12.168 a 4.660 líneas mediante extracción modular.
 - [x] AVANCE — `styles.css` es un cargador de 15 líneas y el CSS está separado en 10 archivos.

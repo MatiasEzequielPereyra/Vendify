@@ -99,6 +99,8 @@ Crear una herramienta administrativa en `scripts/` que solo acepte Supabase loca
 
 La herramienta debe rechazar el project ref de producción y exigir una frase de confirmación específica.
 
+Las autorizaciones offline firmadas son credenciales efímeras y no forman parte del artefacto. El restaurador invalida primero su uso y sus cuotas en el destino local; después de una recuperación deben emitirse leases nuevos desde el backend.
+
 ## Fase 5 — escala y recuperación
 
 Dataset mínimo automatizado:
@@ -131,3 +133,7 @@ La UI comercial muestra estado, progreso, fecha de expiración, tamaño, descarg
 - `npm run ci` pasa.
 - `contracts/commercial-readiness.json` cambia a `pass_local` solo con evidencia reproducible.
 - El RPC v1 queda marcado como compatibilidad hasta que todos sus consumidores migren.
+
+## Estado verificado localmente
+
+El 21 de septiembre de 2026 se completó el ciclo sobre Supabase local descartable con 5.000 productos, más de 50.000 ventas y más de 250.000 ítems. El worker exportó páginas comprimidas con SHA-256, el verificador rechazó corrupción deliberada y el restaurador reconstruyó el comercio en lotes, validó conteos y referencias críticas. La evidencia de cada ejecución queda en `qa-output/backup-restore-v2/`.

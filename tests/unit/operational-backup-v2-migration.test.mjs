@@ -6,6 +6,10 @@ const sql = readFileSync(
   new URL("../../supabase/migrations/20260921130000_operational_backup_v2.sql", import.meta.url),
   "utf8"
 ).toLowerCase();
+const artifactsSql = readFileSync(
+  new URL("../../supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql", import.meta.url),
+  "utf8"
+).toLowerCase();
 
 test("backup v2 keeps jobs and parts private", () => {
   assert.match(sql, /create table public\.operational_backups/);
@@ -47,4 +51,13 @@ test("backup pages redact access codes, password material and product images", (
   assert.match(sql, /to_jsonb\(t\)-''codigo_acceso''/);
   assert.match(sql, /to_jsonb\(t\)-''pin_descuento_hash''/);
   assert.match(sql, /to_jsonb\(t\)-''foto''-''user_id''/);
+});
+
+test("backup artifacts use private Storage and persist verifiable completion metadata", () => {
+  assert.match(artifactsSql, /insert into storage\.buckets/);
+  assert.match(artifactsSql, /'vendify-operational-backups'/);
+  assert.match(artifactsSql, /public=false/);
+  assert.match(artifactsSql, /root_sha256 text check/);
+  assert.match(artifactsSql, /completed_at timestamptz/);
+  assert.doesNotMatch(artifactsSql, /create policy/);
 });
