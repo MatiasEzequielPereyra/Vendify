@@ -66,3 +66,33 @@ export async function saveOperationalConfig(
 export function exportOperationalBackup(client: CashRpcClientPort): Promise<CommercialRecord> {
   return callRecord(client, "exportar_respaldo_operativo_v1", undefined, "No se pudo generar el respaldo");
 }
+
+export function startOperationalBackupV2(client: CashRpcClientPort): Promise<CommercialRecord> {
+  return callRecord(client, "iniciar_respaldo_operativo_v2", undefined, "No se pudo iniciar el respaldo");
+}
+
+export function exportOperationalBackupPageV2(
+  client: CashRpcClientPort,
+  input: {
+    readonly backupId: string;
+    readonly section: string;
+    readonly cursor?: string | null;
+    readonly limit?: number;
+  }
+): Promise<CommercialRecord> {
+  return callRecord(client, "exportar_pagina_respaldo_operativo_v2", {
+    p_backup_id: input.backupId,
+    p_section: input.section,
+    p_cursor: input.cursor ?? null,
+    p_limit: input.limit ?? 500
+  }, "No se pudo exportar la página del respaldo");
+}
+
+export function getOperationalBackupStatusV2(
+  client: CashRpcClientPort,
+  backupId: string
+): Promise<CommercialRecord> {
+  return callRecord(client, "estado_respaldo_operativo_v2", {
+    p_backup_id: backupId
+  }, "No se pudo consultar el respaldo");
+}

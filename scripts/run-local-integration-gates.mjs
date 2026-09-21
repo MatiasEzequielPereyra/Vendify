@@ -15,6 +15,7 @@ import {
   runSalesConcurrency
 } from "../tests/integration/sales-concurrency.mjs";
 import { runOfflineSignedLease } from "../tests/integration/offline-signed-lease.mjs";
+import { runOperationalBackupV2 } from "../tests/integration/operational-backup-v2.mjs";
 
 const confirmation = "RESET_LOCAL_SUPABASE_FOR_INTEGRATION";
 if (process.env.VENDIFY_TEST_CONFIRM_LOCAL_RESET !== confirmation) {
@@ -110,6 +111,10 @@ set local request.jwt.claim.sub = '${ownerA.id}';
 insert into public.productos(id,user_id,nombre,precio_compra,precio_venta,stock,stock_minimo,negocio_id,codigo_barras) values
 ('${ids.productA}','${ownerA.id}','Producto QA A',50,100,0,1,'${ids.businessA}','QA-A-${stamp}'),
 ('${ids.productB}','${ownerA.id}','Producto QA B',60,100,0,1,'${ids.businessA}','QA-B-${stamp}');
+insert into public.productos(id,user_id,nombre,precio_compra,precio_venta,stock,stock_minimo,negocio_id,codigo_barras)
+select gen_random_uuid(),'${ownerA.id}','Producto Backup '||lpad(n::text,3,'0'),10,20,0,1,
+  '${ids.businessA}','QA-BACKUP-${stamp}-'||n::text
+from generate_series(1,205) n;
 insert into public.producto_stock_sucursal(negocio_id,sucursal_id,producto_id,stock,stock_minimo,stock_inicial_cerrado) values
 ('${ids.businessA}','${ids.branchA}','${ids.productA}',20,1,true),
 ('${ids.businessA}','${ids.branchA}','${ids.productB}',20,1,true)
@@ -166,5 +171,11 @@ const offlineLeaseConfig = loadSalesConcurrencyConfig({
   VENDIFY_TEST_CONFIRM_STAGING_SALES: "RUN_SALES_CONCURRENCY"
 });
 await runOfflineSignedLease({ ...offlineLeaseConfig, outsiderUser: ownerB });
+await runOperationalBackupV2({
+  ...offlineLeaseConfig,
+  owner: ownerA,
+  otherOwner: ownerB,
+  cashier: cashierA
+});
 
-console.log("PASS: local Auth, RLS, atomicity, sales concurrency and offline lease gates completed");
+console.log("PASS: local Auth, RLS, sales, offline lease and backup v2 gates completed");

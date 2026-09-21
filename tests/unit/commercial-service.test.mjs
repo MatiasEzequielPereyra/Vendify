@@ -2,9 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   exportOperationalBackup,
+  exportOperationalBackupPageV2,
   getCommercialOnboarding,
   getCurrentPlan,
   getOperationalConfig,
+  getOperationalBackupStatusV2,
+  startOperationalBackupV2,
   saveOperationalConfig
 } from "../../dist-ts/commercial/commercial-service.js";
 
@@ -29,6 +32,14 @@ test("commercial services preserve read, save and backup RPC contracts", async (
     ticketWidthMm: 80
   });
   await exportOperationalBackup(client);
+  await startOperationalBackupV2(client);
+  await exportOperationalBackupPageV2(client, {
+    backupId: "backup-1",
+    section: "products",
+    cursor: "cursor-1",
+    limit: 250
+  });
+  await getOperationalBackupStatusV2(client, "backup-1");
 
   assert.deepEqual(calls.map(({ name, args }) => ({ name, args })), [
     { name: "estado_onboarding_comercial_v1", args: undefined },
@@ -45,7 +56,18 @@ test("commercial services preserve read, save and backup RPC contracts", async (
         p_ancho_ticket_mm: 80
       }
     },
-    { name: "exportar_respaldo_operativo_v1", args: undefined }
+    { name: "exportar_respaldo_operativo_v1", args: undefined },
+    { name: "iniciar_respaldo_operativo_v2", args: undefined },
+    {
+      name: "exportar_pagina_respaldo_operativo_v2",
+      args: {
+        p_backup_id: "backup-1",
+        p_section: "products",
+        p_cursor: "cursor-1",
+        p_limit: 250
+      }
+    },
+    { name: "estado_respaldo_operativo_v2", args: { p_backup_id: "backup-1" } }
   ]);
 });
 

@@ -1,7 +1,7 @@
 {
   "baselineVersion": "2.31.1",
-  "rpcCount": 72,
-  "definitionsFound": 72,
+  "rpcCount": 75,
+  "definitionsFound": 75,
   "missingCount": 0,
   "missing": [],
   "rows": [
@@ -212,6 +212,20 @@
       ]
     },
     {
+      "rpc": "estado_respaldo_operativo_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260921130000_operational_backup_v2.sql"
+      ]
+    },
+    {
+      "rpc": "exportar_pagina_respaldo_operativo_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260921130000_operational_backup_v2.sql"
+      ]
+    },
+    {
       "rpc": "exportar_respaldo_operativo_v1",
       "sourceFound": true,
       "files": [
@@ -274,6 +288,13 @@
       "sourceFound": true,
       "files": [
         "supabase/legacy/Vendify-Security-FIX3-ALL-IN-ONE.sql"
+      ]
+    },
+    {
+      "rpc": "iniciar_respaldo_operativo_v2",
+      "sourceFound": true,
+      "files": [
+        "supabase/migrations/20260921130000_operational_backup_v2.sql"
       ]
     },
     {
