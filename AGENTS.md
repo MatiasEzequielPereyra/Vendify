@@ -245,3 +245,17 @@ Una tarea está terminada cuando se cumplen todos los puntos aplicables:
 - Declarar una tarea terminada con pruebas fallidas, gates pendientes ocultos o evidencia manual presentada como automatizada.
 
 Ante una duda entre rapidez e integridad de datos, preservar la integridad, mantener el alcance pequeño y dejar evidencia reproducible.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default five-label triage vocabulary is used. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.

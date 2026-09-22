@@ -25,6 +25,22 @@ supabase/.temp/
 .DS_Store
 Thumbs.db
 
+# Local skill-manager junction mirrors (canonical skills live in .agents/skills)
+.aider-desk/
+.augment/
+.autohand/
+.bob/
+.claude/
+.codeartsdoer/
+.codebuddy/
+.codemaker/
+.codestudio/
+.commandcode/
+.continue/
+.cortex/
+data/skills/
+skills/
+
 # Logs
 *.log
 npm-debug.log*
