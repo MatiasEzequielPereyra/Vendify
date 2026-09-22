@@ -33,6 +33,7 @@
     "qa:rpc-source": "node scripts/rpc-source-coverage.mjs",
     "qa:commercial": "node scripts/verify-commercial-readiness.mjs",
     "qa:pwa:matrix": "node scripts/verify-pwa-matrix.mjs && node scripts/verify-pwa-matrix.mjs dist && node scripts/verify-pwa-matrix.mjs dist-refactor-modular",
+    "qa:pwa:browser": "npm run build:refactor:modular && node scripts/run-pwa-browser-acceptance.mjs",
     "qa:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs && node scripts/verify-database-baseline.mjs && node scripts/build-database-baseline.mjs --check",
     "build:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs",
     "prepare:database-local": "npm run build:ts && node scripts/build-database-baseline.mjs --local-migration",

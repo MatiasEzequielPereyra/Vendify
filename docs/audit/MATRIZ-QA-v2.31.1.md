@@ -110,8 +110,9 @@ Este archivo conserva su nombre histórico para no romper referencias, pero refl
 - [x] PASS estático — Service Worker intenta precachear ambas dependencias.
 - [x] PASS automatizado — una falla de `cache.addAll(SHELL)` impide ejecutar `skipWaiting()`.
 - [x] PASS automatizado — manifest, íconos, registro, fallback, limpieza de caches y secretos pasan en raíz, `dist/` y `dist-refactor-modular/`.
+- [x] PASS Chrome — instalación, actualización atómica, persistencia y cold boot del shell con navegador reiniciado y servidor apagado.
 - [ ] PENDIENTE — self-host de Supabase JS y ZXing para eliminar dependencia CDN inicial.
-- [ ] PENDIENTE MANUAL — cold boot sin red después de instalación.
+- [x] PASS Chrome — cold boot sin servidor después de instalación; el perfil limpio muestra el estado recuperable esperado al no tener sesión ni snapshot.
 - [ ] PENDIENTE MANUAL — actualización de versión con caja/venta en curso.
 - [ ] PENDIENTE MANUAL — cámara, scanner e impresora en dispositivos objetivo.
 

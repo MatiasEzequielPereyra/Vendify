@@ -28,7 +28,9 @@ Cada celda requiere fecha, versión del sistema, navegador, dispositivo, resulta
 | Scanner con cámara | PENDIENTE | PENDIENTE | PENDIENTE | N/A |
 | Impresión térmica 58 mm | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |
 | Impresión térmica 80 mm | PENDIENTE | PENDIENTE | PENDIENTE | PENDIENTE |
-| Actualización de versión con cola pendiente | PENDIENTE | PENDIENTE | PENDIENTE | AUTOMATIZADO |
+| Actualización de versión con cola pendiente | PENDIENTE | PENDIENTE | PENDIENTE | PASS estado IndexedDB / PENDIENTE venta real |
+
+La aceptación de Chrome con perfil nuevo, actualización efectiva del Service Worker, cierre total y cold boot con el servidor apagado está documentada en [PWA-BROWSER-ACCEPTANCE.md](./PWA-BROWSER-ACCEPTANCE.md). El estado del gate continúa `pending_manual` porque este host no tiene Android/iOS ni impresoras térmicas conectadas.
 
 ## Protocolo físico
 
