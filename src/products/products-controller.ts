@@ -4,7 +4,6 @@ import {
   isLowStock as calculateLowStock,
   isOutOfStock,
   mapProductRow,
-  mapSmartStockRow,
   productLabel,
   smartStockText,
   type Product,
@@ -16,24 +15,16 @@ import {
   deleteCategory,
   deleteProduct,
   importCatalog,
-  initializeCategories,
-  listCategories,
-  listProducts,
-  listSmartStock,
   saveCategory,
   saveProduct,
   type ProductRecord,
   type ProductsRpcClientPort
 } from "./products-service.js";
+import { createProductCatalogLifecycle } from "./product-catalog-lifecycle.js";
 import type { ProductsStore } from "./products-store.js";
 
 type ProductField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 type CatalogKind = "kiosco" | "almacen" | "minimercado";
-
-const DEFAULT_CATEGORIES = [
-  "Bebidas", "Golosinas", "Snacks", "Cigarrillos", "Lácteos",
-  "Panadería", "Helados", "Limpieza", "Útiles", "Otros"
-] as const;
 
 interface BranchContext {
   readonly id: string | null;
@@ -61,8 +52,6 @@ export interface ProductsControllerDependencies {
   readonly loadProductsOffline: () => boolean;
   readonly saveProductsOffline: () => void;
   readonly captureOfflineStockSnapshot: (products: Product[]) => Promise<void>;
-  readonly loadCategoriesOffline: () => boolean;
-  readonly saveCategoriesOffline: () => void;
   readonly refreshOnboarding: () => void;
   readonly emitStockChange: (reason: string) => void;
   readonly scheduleSmartRefresh: () => void;
@@ -164,6 +153,15 @@ export function createProductsController(
   let catalogSelection = new Set<string>();
   const stockQueue = new Map<string, Promise<void>>();
   let setupComplete = false;
+  const catalog = createProductCatalogLifecycle({
+    client: dependencies.client,
+    store: dependencies.store,
+    isOnline: () => navigator.onLine,
+    restoreOfflineCatalog: dependencies.loadProductsOffline,
+    saveOfflineCatalog: dependencies.saveProductsOffline,
+    captureOfflineStockSnapshot: dependencies.captureOfflineStockSnapshot,
+    refreshOnboarding: dependencies.refreshOnboarding
+  });
 
   function products(): Product[] {
     return dependencies.store.list();
@@ -183,21 +181,9 @@ export function createProductsController(
   }
 
   async function loadSmartStock(): Promise<void> {
-    const branchId = dependencies.getBranch().id;
-    if (!branchId) {
-      dependencies.store.replaceSmartStock(new Map());
-      return;
-    }
-    try {
-      const rows = await listSmartStock(dependencies.client, branchId);
-      const smartStock = new Map<string, SmartStockInfo>();
-      rows.forEach((row) => {
-        const productId = text(row.producto_id);
-        if (productId) smartStock.set(productId, mapSmartStockRow(row));
-      });
-      dependencies.store.replaceSmartStock(smartStock);
-    } catch (error) {
-      console.warn("[Vendify] Stock inteligente no disponible:", errorMessage(error, "Sin datos"));
+    const result = await catalog.loadSmartStock(dependencies.getBranch().id);
+    if (result.kind === "unavailable") {
+      console.warn("[Vendify] Stock inteligente no disponible:", errorMessage(result.error, "Sin datos"));
     }
   }
 
@@ -208,54 +194,21 @@ export function createProductsController(
       dependencies.store.clear();
       return;
     }
-    const token = dependencies.store.beginLoad({ businessId, branchId });
-    try {
-      const rows = await listProducts(dependencies.client, branchId);
-      const mapped = rows.map(mapProductRow);
-      if (!dependencies.store.replaceProducts(mapped, token)) return;
-      dependencies.store.markReady();
-      await dependencies.captureOfflineStockSnapshot(mapped);
-      dependencies.saveProductsOffline();
-      await loadSmartStock();
-      dependencies.refreshOnboarding();
-    } catch (error) {
-      console.error("[V2.26] Error cargando productos de sucursal:", error);
-      if (!navigator.onLine && dependencies.loadProductsOffline()) {
-        dependencies.store.markOffline();
-        dependencies.showToast("Sin conexión · mostrando el último catálogo guardado", "info");
-        return;
-      }
+    const result = await catalog.loadBranch({ businessId, branchId });
+    if (result.kind === "ready" && result.smartStockWarning) {
+      console.warn("[Vendify] Stock inteligente no disponible:", errorMessage(result.smartStockWarning, "Sin datos"));
+    } else if (result.kind === "offline") {
+      dependencies.showToast("Sin conexión · mostrando el último catálogo guardado", "info");
+    } else if (result.kind === "error") {
+      console.error("[V2.26] Error cargando productos de sucursal:", result.error);
       dependencies.showToast("No se pudieron cargar los productos de la sucursal", "error");
-      if (dependencies.store.accepts(token)) {
-        dependencies.store.replaceProducts([], token);
-        dependencies.store.markError(errorMessage(error, "No se pudieron cargar los productos"));
-      }
-    }
-  }
-
-  async function initializeDefaultCategories(): Promise<void> {
-    try {
-      const rows = await initializeCategories(dependencies.client, DEFAULT_CATEGORIES);
-      const names = rows.map((row) => text(row.nombre)).filter(Boolean);
-      dependencies.store.replaceCategories(names.length ? names : [...DEFAULT_CATEGORIES]);
-      dependencies.saveCategoriesOffline();
-    } catch (error) {
-      console.error("[Security] categorías iniciales:", error);
-      dependencies.store.replaceCategories([...DEFAULT_CATEGORIES]);
     }
   }
 
   async function loadCategories(): Promise<void> {
-    try {
-      const rows = await listCategories(dependencies.client);
-      const names = rows.map((row) => text(row.nombre)).filter(Boolean);
-      if (!names.length) await initializeDefaultCategories();
-      else dependencies.store.replaceCategories(names);
-      dependencies.saveCategoriesOffline();
-    } catch (error) {
-      console.error("[Security] categorías:", error);
-      if (!navigator.onLine && dependencies.loadCategoriesOffline()) return;
-      dependencies.store.replaceCategories([...DEFAULT_CATEGORIES]);
+    const result = await catalog.loadCategories();
+    if (result.kind === "defaults") {
+      console.error("[Security] categorías:", result.error);
     }
   }
 
