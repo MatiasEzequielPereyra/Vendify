@@ -18,7 +18,6 @@ function iconV23011(name, className = "vendify-icon") {
 
 const THEME_KEY = "kiosco_theme";
 const ONBOARDING_KEY = "kiosco_onboarding_done";
-const INSTALL_DISMISS_KEY = "kiosco_install_dismiss";
 
 
 // ============================================================
@@ -88,7 +87,6 @@ async function mostrarAppSeguroVQA(session) {
 }
 
 
-let deferredInstallPrompt = null;
 
 // El catálogo inicial vive en src/products/catalog-data.ts.
 
@@ -744,6 +742,8 @@ const productsControllerV232 =
     clearPendingScannerProduct: () => {
       scannerControllerV232?.clearPendingProduct();
     },
+    returnToScannerFromEditor: () =>
+      Boolean(scannerControllerV232?.returnFromProductEditor()),
     onEditorClose: () => dashboardNavigationV236.complete("product"),
   });
 
@@ -3689,6 +3689,40 @@ function inicializarEventos() {
     const escribiendo = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 
     if (e.key === "Escape") {
+      const escapeTargets = [
+        ["modal-confirm", () => window.VendifyCoreV232.dismissConfirmation()],
+        ["modal-crop-foto", cerrarEditorRecorte],
+        ["modal-stock", cerrarModalStock],
+        ["modal-ticket-v228", () => $("#btn-close-ticket-v228")?.click()],
+        ["modal-return-v228", () => $("#btn-close-return-v228")?.click()],
+        ["modal-caja-movimiento-v227", () => $("#btn-close-cash-movement-v227")?.click()],
+        ["modal-cash-close-v227", () => $("#btn-close-cash-close-v227")?.click()],
+        ["modal-editar-empleado", () => teamControllerV232.closeEditor()],
+        ["modal-reset-empleado", () => teamControllerV232.closePasswordReset()],
+        ["modal-proveedor-editor", () => $("#btn-close-proveedor-editor")?.click()],
+        ["modal-compra-editor", () => $("#btn-close-compra-editor")?.click()],
+        ["modal-scanner-v29", () => scannerControllerV232.close()],
+        ["modal", () => cerrarModal()],
+        ["modal-catalogo-v29", () => $("#btn-close-catalogo-v29")?.click()],
+        ["modal-historial", () => cerrarHistorial()],
+        ["modal-compras", () => $("#btn-close-compras")?.click()],
+        ["modal-inventario", () => $("#btn-close-inventory")?.click()],
+        ["modal-caja-operativa-v227", () => $("#btn-cerrar-caja-panel-v227")?.click()],
+        ["modal-dashboard-v231", () => $("#btn-close-dashboard-v231")?.click()],
+        ["modal-equipo", () => teamControllerV232.close()],
+        ["modal-venta", () => cerrarVenta()],
+        ["modal-config", () => cerrarConfig()],
+      ].map(([id, close]) => ({
+        isOpen: () => {
+          const modal = $("#" + id);
+          return Boolean(modal && !modal.classList.contains("hidden"));
+        },
+        close,
+      }));
+      if (window.VendifyCoreV232.closeTopOpenModal(escapeTargets)) {
+        e.preventDefault();
+        return;
+      }
       if (!$("#modal").classList.contains("hidden")) cerrarModal();
       else if (!$("#modal-venta").classList.contains("hidden")) cerrarVenta();
       else if (!$("#modal-historial").classList.contains("hidden")) cerrarHistorial();
@@ -3712,36 +3746,18 @@ function inicializarEventos() {
 }
 
 // =====================
-// PWA + Onboarding
+// Onboarding
 // =====================
 function registrarServiceWorker() {
+  if (window.VendifyPwaV232) {
+    window.VendifyPwaV232.registerServiceWorker();
+    return;
+  }
+  // The classic release does not load the modular core yet; remove this fallback
+  // when its bootstrap is replaced by the typed composition.
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.register("./sw.js").catch((error) => {
     console.warn("[PWA] No se pudo registrar el service worker:", error);
-  });
-}
-
-function setupInstallPrompt() {
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-    if (localStorage.getItem(INSTALL_DISMISS_KEY)) return;
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
-    $("#install-banner")?.classList.remove("hidden");
-  });
-
-  $("#btn-install")?.addEventListener("click", async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    const { outcome } = await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    $("#install-banner")?.classList.add("hidden");
-    if (outcome === "accepted") mostrarToast("¡App instalada!", "success");
-  });
-
-  $("#btn-install-dismiss")?.addEventListener("click", () => {
-    localStorage.setItem(INSTALL_DISMISS_KEY, "1");
-    $("#install-banner")?.classList.add("hidden");
   });
 }
 
@@ -4321,7 +4337,7 @@ function init() {
   setupBackGuardV2311();
   setupCommercialFoundationV231();
   realtimeControllerV232.startWatchdog();
-  setupInstallPrompt();
+  window.VendifyPwaV232.setupInstallPrompt();
   setupOnboarding();
   void authControllerV232.initialize();
 }

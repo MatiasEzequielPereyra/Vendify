@@ -15,6 +15,7 @@ La prueba usa Google Chrome con un perfil temporal limpio y el runtime modular c
 | Caso | Resultado | Evidencia |
 |---|---|---|
 | Instalación del Service Worker | PASS | estado `activated`, manifest accesible y cache `vendify-shell-v235-pinned-runtime` creado |
+| Aviso de instalación | PASS | el evento muestra el banner, solicita instalación una vez, oculta el banner al resolver y recuerda el descarte |
 | Actualización atómica | PASS | una versión de ensayo reemplazó el cache anterior después de `activate` |
 | Estado durante actualización | PASS | `localStorage` e IndexedDB conservaron sus valores |
 | Cierre completo del navegador | PASS | Chrome terminó y se inició un proceso nuevo con el mismo perfil temporal |

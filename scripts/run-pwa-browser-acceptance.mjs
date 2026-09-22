@@ -139,6 +139,37 @@ let secondBrowser;
 try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
+  const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
+    if (!window.VendifyPwaV232) throw new Error('PWA controller unavailable');
+    window.VendifyPwaV232.setupInstallPrompt();
+    localStorage.removeItem('kiosco_install_dismiss');
+    const banner = document.querySelector('#install-banner');
+    const installButton = document.querySelector('#btn-install');
+    const dismissButton = document.querySelector('#btn-install-dismiss');
+    if (!banner || !installButton || !dismissButton) throw new Error('PWA install UI unavailable');
+    let prompted = 0;
+    const event = new Event('beforeinstallprompt', { cancelable: true });
+    Object.defineProperties(event, {
+      prompt: { value: () => { prompted += 1; } },
+      userChoice: { value: Promise.resolve({ outcome: 'dismissed' }) }
+    });
+    window.dispatchEvent(event);
+    const shown = !banner.classList.contains('hidden') && event.defaultPrevented;
+    installButton.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const hiddenAfterChoice = banner.classList.contains('hidden');
+    window.dispatchEvent(event);
+    dismissButton.click();
+    return {
+      shown,
+      prompted,
+      hiddenAfterChoice,
+      dismissed: banner.classList.contains('hidden') && localStorage.getItem('kiosco_install_dismiss') === '1'
+    };
+  })()`);
+  if (!installPrompt.shown || installPrompt.prompted !== 1 || !installPrompt.hiddenAfterChoice || !installPrompt.dismissed) {
+    throw new Error(`El aviso de instalación no conserva su flujo: ${JSON.stringify(installPrompt)}`);
+  }
   const installed = await evaluate(firstBrowser.cdp, `(async () => {
     const registration = await Promise.race([
       navigator.serviceWorker.ready,
@@ -242,6 +273,7 @@ try {
     profile: "fresh-and-reopened",
     serverStoppedBeforeReopen: true,
     installed,
+    installPrompt,
     updated,
     coldBoot,
     status: "pass",

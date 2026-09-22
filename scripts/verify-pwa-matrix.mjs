@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
@@ -27,7 +27,18 @@ for (const icon of manifest.icons ?? []) {
   check(`icon-${icon.sizes}`, Boolean(info?.isFile() && info.size > 0), `${icon.src}: ${info?.size ?? 0} bytes`);
 }
 
-check("service-worker-registration", /serviceWorker[\s\S]*register\(["']\.\/sw\.js["']\)/.test(html) || /serviceWorker[\s\S]*register\(["']\.\/sw\.js["']\)/.test(await readFile(path.join(target, "app.js"), "utf8")), "registro explícito de sw.js");
+const registrationSources = [html, await readFile(path.join(target, "app.js"), "utf8")];
+for (const file of await readdir(target)) {
+  if (/^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)) {
+    registrationSources.push(await readFile(path.join(target, file), "utf8"));
+  }
+}
+if (target === root) {
+  registrationSources.push(await readFile(path.join(root, "src/legacy/pwa-bridge.ts"), "utf8"));
+}
+check("service-worker-registration", registrationSources.some((source) =>
+  /serviceWorker[\s\S]*register\(["']\.\/sw\.js["']\)/.test(source)
+), "registro explícito de sw.js");
 check("atomic-install", /cache\.addAll\(SHELL\)[\s\S]*self\.skipWaiting\(\)/.test(sw), "la activación ocurre después de cache.addAll");
 check("navigation-fallback", /request\.mode\s*===\s*["']navigate["']/.test(sw) && sw.includes('caches.match("./index.html"'), "fallback del app shell para navegación");
 check("cache-cleanup", /caches\.keys\(\)[\s\S]*caches\.delete/.test(sw), "el activate elimina caches anteriores");

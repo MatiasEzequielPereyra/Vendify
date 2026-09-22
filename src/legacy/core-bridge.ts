@@ -8,6 +8,7 @@ import "./inventory-bridge.js";
 import "./observability-bridge.js";
 import "./offline-bridge.js";
 import "./platform-bridge.js";
+import "./pwa-bridge.js";
 import "./products-bridge.js";
 import "./purchases-bridge.js";
 import "./realtime-bridge.js";
@@ -18,6 +19,7 @@ import { formatArs, productDisplayName } from "../core/format.js";
 import { showToast } from "../core/toast.js";
 import { loadTheme, toggleTheme } from "../core/theme.js";
 import { dismissConfirmation, showConfirmation } from "../core/confirm.js";
+import { closeTopOpenModal } from "../core/modal-return.js";
 
 export interface VendifyCoreV232Api {
   readonly queryOne: typeof queryOne;
@@ -30,6 +32,7 @@ export interface VendifyCoreV232Api {
   readonly toggleTheme: typeof toggleTheme;
   readonly showConfirmation: typeof showConfirmation;
   readonly dismissConfirmation: typeof dismissConfirmation;
+  readonly closeTopOpenModal: typeof closeTopOpenModal;
 }
 
 declare global {
@@ -48,5 +51,6 @@ window.VendifyCoreV232 = Object.freeze({
   loadTheme,
   toggleTheme,
   showConfirmation,
-  dismissConfirmation
+  dismissConfirmation,
+  closeTopOpenModal
 });

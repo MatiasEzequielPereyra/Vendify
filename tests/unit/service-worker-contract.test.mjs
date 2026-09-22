@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const serviceWorker = fs.readFileSync(path.resolve(currentDirectory, "../../sw.js"), "utf8");
 const app = fs.readFileSync(path.resolve(currentDirectory, "../../app.js"), "utf8");
+const pwaBridge = fs.readFileSync(path.resolve(currentDirectory, "../../src/legacy/pwa-bridge.ts"), "utf8");
 const index = fs.readFileSync(path.resolve(currentDirectory, "../../index.html"), "utf8");
 
 test("service worker only activates a new shell after the complete cache is installed", () => {
@@ -41,5 +42,7 @@ test("service worker caches fixed versions of the external runtime dependencies"
 });
 
 test("PWA registration failures remain observable in the browser console", () => {
-  assert.match(app, /\[PWA\] No se pudo registrar el service worker:/);
+  assert.match(pwaBridge, /\[PWA\] No se pudo registrar el service worker:/);
+  assert.match(app, /window\.VendifyPwaV232\.registerServiceWorker\(\)/);
+  assert.match(app, /navigator\.serviceWorker\.register\("\.\/sw\.js"\)/);
 });

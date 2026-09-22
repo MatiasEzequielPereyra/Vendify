@@ -1,6 +1,7 @@
 import { queryOne } from "../core/dom.js";
 import type { Product } from "./product-model.js";
 import type { ProductsStore } from "./products-store.js";
+import { createScannerEditorReturn } from "./scanner-editor-return.js";
 import {
   confirmScannedStock,
   type ProductsRpcClientPort
@@ -129,6 +130,7 @@ export interface ScannerController {
   readonly processCode: (code: string, engine?: ScannerEngine, format?: string) => Promise<void>;
   readonly shouldReturnCreatedProductToSale: () => boolean;
   readonly clearPendingProduct: () => void;
+  readonly returnFromProductEditor: () => boolean;
 }
 
 const PROFILE_KEY = "vendify_scanner_profile_v2";
@@ -183,6 +185,7 @@ export function createScannerController(
   let torchSupported = false;
   let profile: ScannerProfile | null = null;
   let pendingCode: string | null = null;
+  const editorReturn = createScannerEditorReturn();
   let returnToSale = false;
   let addAfterCreate = false;
   let usbBuffer = "";
@@ -554,6 +557,7 @@ export function createScannerController(
     if (!pendingCode) return;
     const code = pendingCode;
     const fromSale = mode === "venta";
+    editorReturn.remember(fromSale ? "venta" : "producto");
     returnToSale = fromSale;
     addAfterCreate = fromSale;
     close();
@@ -634,6 +638,7 @@ export function createScannerController(
         dependencies.getEditingProductId()
       );
       const existing = resolution.kind === "existing" ? resolution.product : null;
+      if (existing) editorReturn.remember("producto");
       close();
       if (existing) {
         dependencies.showToast(`El código ya corresponde a ${existing.nombre}`, "info");
@@ -768,6 +773,15 @@ export function createScannerController(
     pendingCode = null;
     returnToSale = false;
     addAfterCreate = false;
+    editorReturn.clear();
+  }
+
+  function returnFromProductEditor(): boolean {
+    const origin = editorReturn.consume();
+    if (!origin) return false;
+    clearPendingProduct();
+    void open(origin);
+    return true;
   }
 
   function setup(): void {
@@ -829,6 +843,7 @@ export function createScannerController(
     close,
     processCode,
     shouldReturnCreatedProductToSale,
-    clearPendingProduct
+    clearPendingProduct,
+    returnFromProductEditor
   });
 }

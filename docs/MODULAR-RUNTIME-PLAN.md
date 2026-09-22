@@ -193,7 +193,9 @@ verifier before removing each legacy implementation.
 Status: in progress. Realtime channel ownership, tenant/branch filters, reconnection, debounce and
 the foreground watchdog moved to `src/context/realtime-controller.ts`; `app.js` supplies only the
 existing catalog, stock and dependent-view adapters. Event composition and remaining UI-only
-workflows stay legacy until separately extracted and browser-verified.
+workflows stay legacy until separately extracted and browser-verified. The agreed extraction order,
+acceptance gates and production-promotion boundary are recorded in
+[the Phase 13 plan](./plans/PHASE-13-LEGACY-COMPOSITION-RETIREMENT.md).
 
 ## Definition of done
 

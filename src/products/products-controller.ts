@@ -67,6 +67,7 @@ export interface ProductsControllerDependencies {
   readonly restoreSaleBehindProduct: (focus?: boolean) => void;
   readonly shouldReturnCreatedProductToSale: () => boolean;
   readonly clearPendingScannerProduct: () => void;
+  readonly returnToScannerFromEditor: () => boolean;
   readonly onEditorClose?: () => void;
 }
 
@@ -481,13 +482,14 @@ export function createProductsController(
     });
   }
 
-  function closeEditor(preserveScannerFlow = false): void {
+  function closeEditor(preserveScannerFlow = false, completed = false): void {
     queryOne("#modal")?.classList.add("hidden");
     const form = queryOne("#form-producto");
     if (form instanceof HTMLFormElement) form.reset();
     dependencies.setEditingProductId(null);
     dependencies.setCurrentPhoto(null);
     dependencies.restoreSaleBehindProduct(!preserveScannerFlow);
+    if ((!completed || !preserveScannerFlow) && dependencies.returnToScannerFromEditor()) return;
     if (!preserveScannerFlow) dependencies.clearPendingScannerProduct();
     if (!preserveScannerFlow) dependencies.onEditorClose?.();
   }
@@ -536,7 +538,7 @@ export function createProductsController(
       renderCategoryFilter();
       render();
       const returnToSale = !editing && dependencies.shouldReturnCreatedProductToSale();
-      closeEditor(returnToSale);
+      closeEditor(returnToSale, true);
       if (returnToSale) {
         dependencies.clearPendingScannerProduct();
         queryOne("#modal-venta")?.classList.remove("hidden");
