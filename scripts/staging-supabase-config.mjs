@@ -1,0 +1,234 @@
+export const PRODUCTION_SUPABASE_PROJECT_REF = "puhkmblnptntorwptvld";
+export const PRODUCTION_SUPABASE_HTTP_ORIGIN =
+  "https://" + PRODUCTION_SUPABASE_PROJECT_REF + ".supabase.co";
+export const PRODUCTION_SUPABASE_WS_ORIGIN =
+  "wss://" + PRODUCTION_SUPABASE_PROJECT_REF + ".supabase.co";
+
+export const STATIC_STAGING_CONFIG_MODE = "static-validation-only";
+export const REAL_STAGING_CONFIG_MODE = "real";
+export const STATIC_STAGING_SUPABASE_URL =
+  "https://vendify-staging-unconfigured.invalid";
+export const STATIC_STAGING_SUPABASE_ANON_KEY =
+  "vendify-staging-static-validation-only";
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function projectRefFromSupabaseUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    fail("VENDIFY_STAGING_SUPABASE_URL must be a valid URL");
+  }
+
+  if (parsed.protocol !== "https:") {
+    fail("VENDIFY_STAGING_SUPABASE_URL must use https");
+  }
+  if (
+    parsed.username ||
+    parsed.password ||
+    parsed.pathname !== "/" ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    fail("VENDIFY_STAGING_SUPABASE_URL must be a bare Supabase project origin");
+  }
+
+  const suffix = ".supabase.co";
+  if (!parsed.hostname.endsWith(suffix)) {
+    fail("VENDIFY_STAGING_SUPABASE_URL must use a standard <project-ref>.supabase.co host");
+  }
+
+  const projectRef = parsed.hostname.slice(0, -suffix.length);
+  if (!projectRef || !/^[a-z0-9]+$/u.test(projectRef)) {
+    fail("VENDIFY_STAGING_SUPABASE_URL contains an invalid Supabase project ref");
+  }
+
+  return Object.freeze({
+    url: parsed.origin,
+    projectRef
+  });
+}
+
+function decodeAnonJwt(anonKey) {
+  const parts = anonKey.split(".");
+  if (parts.length !== 3) {
+    fail("VENDIFY_STAGING_SUPABASE_ANON_KEY must be a decodable Supabase anon JWT");
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+    if (!payload || typeof payload !== "object") {
+      fail("VENDIFY_STAGING_SUPABASE_ANON_KEY JWT payload is invalid");
+    }
+    return payload;
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("VENDIFY_")) throw error;
+    fail("VENDIFY_STAGING_SUPABASE_ANON_KEY must be a decodable Supabase anon JWT");
+  }
+}
+
+export function validateRealStagingSupabaseConfig(input) {
+  const urlValue = String(input?.url ?? "").trim();
+  const anonKey = String(input?.anonKey ?? "").trim();
+  if (!urlValue || !anonKey) {
+    fail("STAGING CONFIG MISSING: both staging Supabase URL and anon key are required");
+  }
+
+  const { url, projectRef } = projectRefFromSupabaseUrl(urlValue);
+  if (projectRef === PRODUCTION_SUPABASE_PROJECT_REF) {
+    fail("STAGING SAFETY VIOLATION: production Supabase project ref is forbidden");
+  }
+
+  const payload = decodeAnonJwt(anonKey);
+  if (payload.role === "service_role") {
+    fail("STAGING SAFETY VIOLATION: service_role keys are forbidden in browser configuration");
+  }
+  if (payload.role !== "anon") {
+    fail("VENDIFY_STAGING_SUPABASE_ANON_KEY JWT role must be anon");
+  }
+  if (payload.ref === PRODUCTION_SUPABASE_PROJECT_REF) {
+    fail("STAGING SAFETY VIOLATION: production Supabase anon key is forbidden");
+  }
+  if (payload.ref !== projectRef) {
+    fail("STAGING SAFETY VIOLATION: staging anon key ref does not match staging URL");
+  }
+
+  return Object.freeze({
+    mode: REAL_STAGING_CONFIG_MODE,
+    url,
+    anonKey,
+    projectRef
+  });
+}
+
+export function resolveStagingSupabaseConfig(
+  env = process.env,
+  { requireBackend = false } = {}
+) {
+  const url = String(env.VENDIFY_STAGING_SUPABASE_URL ?? "").trim();
+  const anonKey = String(env.VENDIFY_STAGING_SUPABASE_ANON_KEY ?? "").trim();
+
+  if (Boolean(url) !== Boolean(anonKey)) {
+    fail(
+      "STAGING CONFIG INCOMPLETE: VENDIFY_STAGING_SUPABASE_URL and " +
+        "VENDIFY_STAGING_SUPABASE_ANON_KEY must be provided together"
+    );
+  }
+
+  if (!url) {
+    if (requireBackend) {
+      fail(
+        "STAGING CONFIG MISSING: real staging requires " +
+          "VENDIFY_STAGING_SUPABASE_URL and VENDIFY_STAGING_SUPABASE_ANON_KEY"
+      );
+    }
+    return Object.freeze({
+      mode: STATIC_STAGING_CONFIG_MODE,
+      url: STATIC_STAGING_SUPABASE_URL,
+      anonKey: STATIC_STAGING_SUPABASE_ANON_KEY,
+      projectRef: null
+    });
+  }
+
+  return validateRealStagingSupabaseConfig({ url, anonKey });
+}
+
+export function stagingExpectedProjectRef(config) {
+  if (config.projectRef) return config.projectRef;
+  return new URL(config.url).hostname.split(".", 1)[0];
+}
+
+export function renderStagingApplicationSource(source, config) {
+  const productionMarker =
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+    PRODUCTION_SUPABASE_PROJECT_REF +
+    '";';
+  const occurrences = source.split(productionMarker).length - 1;
+  if (occurrences !== 1) {
+    fail(
+      "staging app transformation expected exactly one production environment marker, found " +
+        occurrences
+    );
+  }
+
+  const stagingMarker =
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+    stagingExpectedProjectRef(config) +
+    '";';
+  return source.replace(productionMarker, stagingMarker);
+}
+
+export function renderStagingSupabaseConfig(config) {
+  return [
+    "/**",
+    " * Vendify — generated staging Supabase browser configuration.",
+    " * This file is generated by scripts/build-staging-v2312.mjs.",
+    " */",
+    "const VENDIFY_STAGING_CONFIG_MODE = " + JSON.stringify(config.mode) + ";",
+    "const SUPABASE_URL = " + JSON.stringify(config.url) + ";",
+    "const SUPABASE_ANON_KEY = " + JSON.stringify(config.anonKey) + ";",
+    "",
+    "const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);",
+    ""
+  ].join("\n");
+}
+
+function extractRenderedConstant(source, name) {
+  const pattern = new RegExp(
+    "const\\s+" + name + "\\s*=\\s*(\\\"[^\\\"]*\\\")\\s*;"
+  );
+  const match = source.match(pattern);
+  if (!match) fail("staging browser config is missing " + name);
+  return JSON.parse(match[1]);
+}
+
+export function inspectRenderedStagingSupabaseConfig(source) {
+  const mode = extractRenderedConstant(source, "VENDIFY_STAGING_CONFIG_MODE");
+  const url = extractRenderedConstant(source, "SUPABASE_URL");
+  const anonKey = extractRenderedConstant(source, "SUPABASE_ANON_KEY");
+
+  if (mode === STATIC_STAGING_CONFIG_MODE) {
+    if (
+      url !== STATIC_STAGING_SUPABASE_URL ||
+      anonKey !== STATIC_STAGING_SUPABASE_ANON_KEY
+    ) {
+      fail("static staging config does not match the safe validation-only sentinel");
+    }
+    return Object.freeze({
+      mode,
+      url,
+      anonKey,
+      projectRef: null
+    });
+  }
+
+  if (mode !== REAL_STAGING_CONFIG_MODE) {
+    fail("staging browser config has unknown mode " + String(mode));
+  }
+
+  return validateRealStagingSupabaseConfig({ url, anonKey });
+}
+
+export function renderStagingVercelConfig(source, stagingConfig) {
+  if (
+    !source.includes(PRODUCTION_SUPABASE_HTTP_ORIGIN) ||
+    !source.includes(PRODUCTION_SUPABASE_WS_ORIGIN)
+  ) {
+    fail("production vercel.json no longer contains the expected Supabase CSP origins");
+  }
+
+  const stagingHttpOrigin = new URL(stagingConfig.url).origin;
+  const stagingWsOrigin = stagingHttpOrigin.replace(/^https:/u, "wss:");
+  const rendered = source
+    .replaceAll(PRODUCTION_SUPABASE_HTTP_ORIGIN, stagingHttpOrigin)
+    .replaceAll(PRODUCTION_SUPABASE_WS_ORIGIN, stagingWsOrigin);
+
+  if (rendered.includes(PRODUCTION_SUPABASE_PROJECT_REF)) {
+    fail("STAGING SAFETY VIOLATION: generated vercel.json still references production");
+  }
+
+  return rendered;
+}
