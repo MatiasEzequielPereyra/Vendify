@@ -32,7 +32,52 @@
       "listMigrations": [],
       "schemaMigrationsRelationPresent": false
     },
-    "conclusion": "Historical provenance is partially unknowable. Object presence can prove current state, not the mechanism or timestamp by which production reached it."
+    "conclusion": "Historical provenance is partially unknowable. Object presence can prove current state, not the mechanism or timestamp by which production reached it.",
+    "unknownProvenanceSummary": {
+      "tables": [
+        "public.configuracion",
+        "public.equipo_invitaciones"
+      ],
+      "functions": [
+        "public.ajustar_stock",
+        "public.ajustar_stock_sucursal_v1",
+        "public.cambiar_estado_miembro_v2",
+        "public.cancelar_invitacion_v2",
+        "public.crear_entorno_nuevo_usuario",
+        "public.crear_stock_productos_nueva_sucursal_v1",
+        "public.establecer_stock_sucursal_v1",
+        "public.generar_codigo_negocio",
+        "public.invitar_miembro_v2",
+        "public.listar_equipo_v2",
+        "public.listar_productos_sucursal_v1",
+        "public.marcar_password_empleado_cambiada",
+        "public.obtener_alertas_stock_sucursal_v1",
+        "public.obtener_alertas_stock_v1",
+        "public.registrar_venta",
+        "public.transferir_stock_v1",
+        "public.validar_autorizacion_descuento_venta_v1"
+      ],
+      "indexes": [
+        "public.descuento_autorizaciones_lookup_idx",
+        "public.empleados_user_idx",
+        "public.empleados_username_negocio_unique_idx",
+        "public.equipo_invitaciones_email_idx",
+        "public.equipo_invitaciones_email_pending_unique",
+        "public.equipo_invitaciones_negocio_idx",
+        "public.movimientos_sucursal_idx",
+        "public.negocios_codigo_acceso_unique_idx",
+        "public.productos_codigo_barras_negocio_unique",
+        "public.ventas_descuento_autorizado_idx"
+      ],
+      "triggers": [
+        "public.sucursales_crear_stock_productos_v1",
+        "public.validar_autorizacion_descuento_venta_v1"
+      ],
+      "policies": [
+        "public.configuracion.configuracion_por_dueno",
+        "public.empleados.empleados_self_select"
+      ]
+    }
   },
   "repoMigrationInventory": [
     {
@@ -565,6 +610,13 @@
         "repoExpected": "migration 20260911001300 grants EXECUTE to authenticated and service_role and revokes anon",
         "livePresent": "service_role EXECUTE observed; authenticated EXECUTE absent; anon absent",
         "evidence": "Live pg_proc/has_function_privilege metadata"
+      },
+      {
+        "object": "public.venta_idempotencia_v23011_creado_idx",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "baseline/020 creates venta_idempotencia_v23011_creado_idx",
+        "livePresent": "index absent from live pg_indexes while the table and its uniqueness/PK objects are present",
+        "evidence": "Repository baseline/020 index inventory + live pg_indexes metadata"
       }
     ],
     "semanticMatches": [
@@ -583,7 +635,294 @@
         "classification": "MATCH",
         "evidence": "All five vendify_* tables, commercial triggers and hardening indexes are present live."
       }
-    ]
+    ],
+    "liveOnlyFunctions": [
+      {
+        "object": "public.ajustar_stock",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.ajustar_stock_sucursal_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.cambiar_estado_miembro_v2",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.cancelar_invitacion_v2",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.crear_entorno_nuevo_usuario",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.crear_stock_productos_nueva_sucursal_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.establecer_stock_sucursal_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.generar_codigo_negocio",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.invitar_miembro_v2",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.listar_equipo_v2",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.listar_productos_sucursal_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.marcar_password_empleado_cambiada",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.obtener_alertas_stock_sucursal_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.obtener_alertas_stock_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.registrar_venta",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.transferir_stock_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      },
+      {
+        "object": "public.validar_autorizacion_descuento_venta_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_proc. No authoritative CREATE/REPLACE definition for this exact function was found in the active baseline assembly or current migration chain at BASE_SHA."
+      }
+    ],
+    "liveOnlyIndexes": [
+      {
+        "object": "public.descuento_autorizaciones_lookup_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.empleados_user_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.empleados_username_negocio_unique_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.equipo_invitaciones_email_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.equipo_invitaciones_email_pending_unique",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.equipo_invitaciones_negocio_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.movimientos_sucursal_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.negocios_codigo_acceso_unique_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.productos_codigo_barras_negocio_unique",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      },
+      {
+        "object": "public.ventas_descuento_autorizado_idx",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_indexes but not part of the final named index inventory reconstructed from the active repository chain; replacement-name cases are also recorded under DEFINITION_DRIFT."
+      }
+    ],
+    "liveOnlyTriggers": [
+      {
+        "object": "public.sucursales_crear_stock_productos_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live information_schema.triggers with no authoritative trigger creation found in the active baseline assembly/current migrations."
+      },
+      {
+        "object": "public.validar_autorizacion_descuento_venta_v1",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live information_schema.triggers with no authoritative trigger creation found in the active baseline assembly/current migrations."
+      }
+    ],
+    "liveOnlyPolicies": [
+      {
+        "object": "public.configuracion.configuracion_por_dueno",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_policies. Critical-table legacy policies were excluded from drift after verifying the security baseline dynamically drops and replaces them; these two policies remain outside the active authoritative creation chain."
+      },
+      {
+        "object": "public.empleados.empleados_self_select",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in live pg_policies. Critical-table legacy policies were excluded from drift after verifying the security baseline dynamically drops and replaces them; these two policies remain outside the active authoritative creation chain."
+      }
+    ],
+    "objectCoverage": {
+      "tables": {
+        "live": 34,
+        "matchingPresence": 32,
+        "liveOnlyUnknown": 2,
+        "intentionallyNotDeployedExpected": 5
+      },
+      "functions": {
+        "live": 115,
+        "liveOnlyUnknown": 17,
+        "intentionallyNotDeployedExpected": 8
+      },
+      "indexes": {
+        "live": 104,
+        "liveOnlyNamed": 10,
+        "knownMissingDrift": 4,
+        "intentionallyNotDeployedExpected": 16
+      },
+      "triggers": {
+        "liveDistinct": 16,
+        "liveOnlyUnknown": 2,
+        "expectedOnlyUnexpected": 0
+      },
+      "policies": {
+        "live": 27,
+        "matchingExpected": 25,
+        "liveOnlyUnknown": 2,
+        "expectedOnlyUnexpected": 0
+      },
+      "note": "Counts distinguish named-object reconciliation from definition equality. Full live metadata remains in the capture artifact."
+    }
   },
   "baselineReproducibility": {
     "status": "PASS_WITH_VERSIONED_LOCAL_EVIDENCE",

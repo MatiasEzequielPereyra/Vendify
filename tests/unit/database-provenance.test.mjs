@@ -57,7 +57,14 @@ test("reconciliation explicitly separates live-only, intentional non-deployment 
     "public.operational_backups",
     "public.operational_backup_parts"
   ]) assert.ok(intended.includes(table));
-  assert.ok(contract.reconciliation.definitionDrift.length >= 5);
+  assert.ok(contract.reconciliation.definitionDrift.length >= 6);
+  assert.equal(contract.reconciliation.liveOnlyFunctions.length, 17);
+  assert.equal(contract.reconciliation.liveOnlyIndexes.length, 10);
+  assert.equal(contract.reconciliation.liveOnlyTriggers.length, 2);
+  assert.deepEqual(
+    contract.reconciliation.liveOnlyPolicies.map((entry) => entry.object).sort(),
+    ["public.configuracion.configuracion_por_dueno","public.empleados.empleados_self_select"]
+  );
   assert.equal(contract.historyEvidence.conclusion.includes("partially unknowable"), true);
 });
 
