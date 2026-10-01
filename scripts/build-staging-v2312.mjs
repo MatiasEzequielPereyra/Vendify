@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { resolve } from "node:path";
 import { build } from "vite";
 import {
+  renderStagingApplicationSource,
   renderStagingSupabaseConfig,
   renderStagingVercelConfig,
   resolveStagingSupabaseConfig
@@ -49,7 +50,6 @@ for (const file of [runtimeFile, coreFile, pendingUiFile]) {
 const files = [
   "index.html",
   "html-loader.js",
-  "app.js",
   "styles.css",
   "sw.js",
   "manifest.json"
@@ -73,7 +73,11 @@ writeFileSync(
   "utf8"
 );
 
-const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
+const stagedApp = renderStagingApplicationSource(
+  readFileSync(resolve(root, "app.js"), "utf8"),
+  stagingSupabaseConfig
+);
+writeFileSync(resolve(out, "app.js"), stagedApp, "utf8");
 
 const runtimeContent = stripSourceMapReference(readFileSync(runtimeFile, "utf8"));
 const coreContent = stripSourceMapReference(readFileSync(coreFile, "utf8"));

@@ -136,6 +136,31 @@ export function resolveStagingSupabaseConfig(
   return validateRealStagingSupabaseConfig({ url, anonKey });
 }
 
+export function stagingExpectedProjectRef(config) {
+  if (config.projectRef) return config.projectRef;
+  return new URL(config.url).hostname.split(".", 1)[0];
+}
+
+export function renderStagingApplicationSource(source, config) {
+  const productionMarker =
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+    PRODUCTION_SUPABASE_PROJECT_REF +
+    '";';
+  const occurrences = source.split(productionMarker).length - 1;
+  if (occurrences !== 1) {
+    fail(
+      "staging app transformation expected exactly one production environment marker, found " +
+        occurrences
+    );
+  }
+
+  const stagingMarker =
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+    stagingExpectedProjectRef(config) +
+    '";';
+  return source.replace(productionMarker, stagingMarker);
+}
+
 export function renderStagingSupabaseConfig(config) {
   return [
     "/**",

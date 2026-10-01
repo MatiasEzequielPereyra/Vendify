@@ -42,12 +42,12 @@ jobs:
         run: |
           unset VENDIFY_STAGING_SUPABASE_URL VENDIFY_STAGING_SUPABASE_ANON_KEY
           npm run qa:staging:v2312
-          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-staging-v2312; then
-            echo "production project ref leaked into static staging"
-            exit 1
-          fi
           grep -n "vendify-staging-unconfigured.invalid" dist-staging-v2312/supabase-config.js
-          echo "PASS: static staging contains zero production project references"
+          grep -n 'VENDIFY_EXPECTED_SUPABASE_REF = "vendify-staging-unconfigured"' dist-staging-v2312/app.js
+          ! grep -n "puhkmblnptntorwptvld" dist-staging-v2312/supabase-config.js
+          ! grep -n "puhkmblnptntorwptvld" dist-staging-v2312/vercel.json
+          ! grep -n 'VENDIFY_EXPECTED_SUPABASE_REF = "puhkmblnptntorwptvld"' dist-staging-v2312/app.js
+          echo "PASS: static staging has zero production backend configuration references"
 
       - name: Real staging requires explicit config
         shell: bash
@@ -69,11 +69,11 @@ jobs:
           npm run qa:staging:v2312
           grep -n "vendifystagingci12345.supabase.co" dist-staging-v2312/supabase-config.js
           grep -n "vendifystagingci12345.supabase.co" dist-staging-v2312/vercel.json
-          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-staging-v2312; then
-            echo "production project ref leaked into real staging"
-            exit 1
-          fi
-          echo "PASS: non-production staging artifact contains zero production project references"
+          grep -n 'VENDIFY_EXPECTED_SUPABASE_REF = "vendifystagingci12345"' dist-staging-v2312/app.js
+          ! grep -n "puhkmblnptntorwptvld" dist-staging-v2312/supabase-config.js
+          ! grep -n "puhkmblnptntorwptvld" dist-staging-v2312/vercel.json
+          ! grep -n 'VENDIFY_EXPECTED_SUPABASE_REF = "puhkmblnptntorwptvld"' dist-staging-v2312/app.js
+          echo "PASS: non-production staging has zero production backend configuration references"
 
       - name: Production backend is rejected by staging build
         shell: bash
@@ -107,11 +107,14 @@ jobs:
           export VENDIFY_STAGING_SUPABASE_URL="https://vendifystagingci12345.supabase.co"
           export VENDIFY_STAGING_SUPABASE_ANON_KEY="$(node -e 'const e=(v)=>Buffer.from(JSON.stringify(v)).toString("base64url"); process.stdout.write(e({alg:"HS256",typ:"JWT"})+"."+e({iss:"supabase",ref:"vendifystagingci12345",role:"anon"})+".test-signature")')"
           npm run qa:refactor:modular
-          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-refactor-modular; then
-            echo "production project ref leaked into modular preview"
+          ! grep -n "puhkmblnptntorwptvld" dist-refactor-modular/supabase-config.js
+          ! grep -n "puhkmblnptntorwptvld" dist-refactor-modular/vercel.json
+          ! grep -n 'VENDIFY_EXPECTED_SUPABASE_REF = "puhkmblnptntorwptvld"' dist-refactor-modular/app.js
+          if grep -l 'VENDIFY_EXPECTED_SUPABASE_REF = "puhkmblnptntorwptvld"' dist-refactor-modular/app-refactor-v232-*.js; then
+            echo "production environment target leaked into modular preview"
             exit 1
           fi
-          echo "PASS: modular preview contains zero production project references"
+          echo "PASS: modular preview has zero production backend configuration references"
 
       - name: Production release regression
         run: |

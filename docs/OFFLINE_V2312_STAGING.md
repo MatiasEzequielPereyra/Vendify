@@ -29,7 +29,7 @@ npm run qa:staging:v2312
 npm run preview:staging:v2312
 ```
 
-La anon key debe ser un JWT con rol `anon` y su `ref` debe coincidir con el project ref de la URL. El project ref productivo `puhkmblnptntorwptvld` y cualquier clave `service_role` son rechazados.
+La anon key debe ser un JWT con rol `anon` y su `ref` debe coincidir con el project ref de la URL. El project ref productivo `puhkmblnptntorwptvld` y cualquier clave `service_role` son rechazados. El build también reemplaza el guard de entorno del app para que valide el project ref staging. La única referencia productiva permitida dentro de bundles staging es la constante explícita de `offline/sync-safety`, cuyo propósito es detectar y bloquear sincronización offline contra producción; el verifier la clasifica como guard de seguridad, no como configuración de destino.
 
 Para exigir explícitamente un backend real desde el build:
 

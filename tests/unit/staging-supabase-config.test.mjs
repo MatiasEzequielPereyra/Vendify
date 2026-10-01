@@ -11,6 +11,7 @@ import {
   STATIC_STAGING_CONFIG_MODE,
   STATIC_STAGING_SUPABASE_URL,
   inspectRenderedStagingSupabaseConfig,
+  renderStagingApplicationSource,
   renderStagingSupabaseConfig,
   renderStagingVercelConfig,
   resolveStagingSupabaseConfig,
@@ -48,6 +49,15 @@ test("valid non-production staging config is rendered and verified", () => {
   const stagingVercel = renderStagingVercelConfig(productionVercel, resolved);
   assert.doesNotMatch(stagingVercel, new RegExp(PRODUCTION_SUPABASE_PROJECT_REF));
   assert.match(stagingVercel, new RegExp(projectRef));
+
+  const stagedApp = renderStagingApplicationSource(
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+      PRODUCTION_SUPABASE_PROJECT_REF +
+      '";',
+    resolved
+  );
+  assert.match(stagedApp, new RegExp(projectRef));
+  assert.doesNotMatch(stagedApp, new RegExp(PRODUCTION_SUPABASE_PROJECT_REF));
 });
 
 test("production Supabase is rejected by the staging contract", () => {
@@ -75,6 +85,14 @@ test("missing config is safe for static validation and fails when real backend i
   assert.equal(staticConfig.mode, STATIC_STAGING_CONFIG_MODE);
   assert.equal(staticConfig.url, STATIC_STAGING_SUPABASE_URL);
   assert.doesNotMatch(renderStagingSupabaseConfig(staticConfig), new RegExp(PRODUCTION_SUPABASE_PROJECT_REF));
+  const staticApp = renderStagingApplicationSource(
+    'const VENDIFY_EXPECTED_SUPABASE_REF = "' +
+      PRODUCTION_SUPABASE_PROJECT_REF +
+      '";',
+    staticConfig
+  );
+  assert.match(staticApp, /VENDIFY_EXPECTED_SUPABASE_REF = "vendify-staging-unconfigured"/);
+  assert.doesNotMatch(staticApp, new RegExp(PRODUCTION_SUPABASE_PROJECT_REF));
 
   assert.throws(
     () => resolveStagingSupabaseConfig({}, { requireBackend: true }),

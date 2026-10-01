@@ -3,7 +3,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import {
   PRODUCTION_SUPABASE_PROJECT_REF,
-  inspectRenderedStagingSupabaseConfig
+  inspectRenderedStagingSupabaseConfig,
+  stagingExpectedProjectRef
 } from "./staging-supabase-config.mjs";
 
 const root = resolve(import.meta.dirname, "..");
@@ -144,14 +145,52 @@ function collectTextFiles(directory) {
 }
 collectTextFiles(target);
 
-const productionLeaks = textFiles
-  .filter((file) => readFileSync(file, "utf8").includes(PRODUCTION_SUPABASE_PROJECT_REF))
-  .map((file) => relative(target, file));
-if (productionLeaks.length) {
-  fail("production Supabase project ref leaked into staging artifact: " + productionLeaks.join(", "));
+const expectedStagingRef = stagingExpectedProjectRef(stagingConfig);
+for (const [label, source] of [
+  ["stable staging app", readFileSync(resolve(target, "app.js"), "utf8")],
+  ["fingerprinted staging app", stagedApp]
+]) {
+  const expectedMarker = `VENDIFY_EXPECTED_SUPABASE_REF = "${expectedStagingRef}"`;
+  if (!source.includes(expectedMarker)) {
+    fail(`${label} does not enforce the selected staging project ref`);
+  }
+  if (source.includes(`VENDIFY_EXPECTED_SUPABASE_REF = "${PRODUCTION_SUPABASE_PROJECT_REF}"`)) {
+    fail(`${label} still enforces the production project ref`);
+  }
 }
 
-const artifactText = textFiles.map((file) => readFileSync(file, "utf8")).join("\n");
+const allowedProductionSafetyMarker =
+  `VENDIFY_PRODUCTION_SUPABASE_REF = "${PRODUCTION_SUPABASE_PROJECT_REF}"`;
+let allowedProductionSafetyReferences = 0;
+const productionLeaks = [];
+const artifactParts = [];
+for (const file of textFiles) {
+  const content = readFileSync(file, "utf8");
+  artifactParts.push(content);
+  let sanitized = content;
+  while (sanitized.includes(allowedProductionSafetyMarker)) {
+    allowedProductionSafetyReferences += 1;
+    sanitized = sanitized.replace(
+      allowedProductionSafetyMarker,
+      'VENDIFY_PRODUCTION_SUPABASE_REF = "<production-ref-safety-guard>"'
+    );
+  }
+  if (sanitized.includes(PRODUCTION_SUPABASE_PROJECT_REF)) {
+    productionLeaks.push(relative(target, file));
+  }
+}
+if (productionLeaks.length) {
+  fail(
+    "production Supabase project ref appears outside the explicit offline safety guard: " +
+      productionLeaks.join(", ")
+  );
+}
+pass(
+  "staging artifact has 0 production backend configuration references; " +
+    `offline production-safety guard references allowed: ${allowedProductionSafetyReferences}`
+);
+
+const artifactText = artifactParts.join("\n");
 if (/vebqlbcfjxnpryjdgfvq/u.test(artifactText)) fail("obsolete Supabase project detected");
 if (/\bservice_role\b/iu.test(artifactText) || /SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/u.test(artifactText)) {
   fail("service role marker detected in staging artifact");
