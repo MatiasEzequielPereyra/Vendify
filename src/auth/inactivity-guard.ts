@@ -80,8 +80,9 @@ export function createInactivityGuard(
   async function check(): Promise<void> {
     if (logoutRunning || !dependencies.getSession()?.user) return;
 
+    const storedActivity = storage.getItem(SECURITY_ACTIVITY_KEY_V2301);
     const last = Number(
-      storage.getItem(SECURITY_ACTIVITY_KEY_V2301) || now()
+      storedActivity === null || storedActivity === "" ? now() : storedActivity
     );
 
     if (now() - last < SECURITY_IDLE_TIMEOUT_MS_V2301) return;
@@ -119,11 +120,9 @@ export function createInactivityGuard(
       }
     });
 
-    if (intervalHandle === null) {
-      intervalHandle = scheduleInterval(() => {
-        void check();
-      }, SECURITY_IDLE_CHECK_INTERVAL_MS_V2301);
-    }
+    intervalHandle ??= scheduleInterval(() => {
+      void check();
+    }, SECURITY_IDLE_CHECK_INTERVAL_MS_V2301);
   }
 
   return Object.freeze({
