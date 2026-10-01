@@ -51,11 +51,17 @@ function startServer() {
 }
 
 function startChrome() {
+  const ciArgs = process.env.CI === "true"
+    ? ["--no-sandbox", "--disable-dev-shm-usage"]
+    : [];
+
   return spawn(chrome, [
     "--headless=new",
     "--disable-gpu",
     "--no-first-run",
     "--no-default-browser-check",
+    "--remote-debugging-address=127.0.0.1",
+    ...ciArgs,
     `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${profile}`,
     "about:blank",
