@@ -9,8 +9,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 import {
+  ensureProductionBaselineGitObjects,
   materializeProductionRelease,
   verifyProductionBaselineSource,
   verifyProductionReleaseArtifact
@@ -273,6 +275,141 @@ test("artifact mutation and engineering-only contamination fail closed", () => {
       /artifact inventory differs/u
     );
   } finally {
+    fx.cleanup();
+  }
+});
+
+
+test("Vercel-style no-tags checkout hydrates only the contracted baseline tag", () => {
+  const fx = fixture();
+  const remote = mkdtempSync(path.join(tmpdir(), "vendify-release-remote-"));
+  const checkoutParent = mkdtempSync(
+    path.join(tmpdir(), "vendify-release-checkout-parent-")
+  );
+  const checkout = path.join(checkoutParent, "checkout");
+
+  try {
+    git(remote, ["init", "--bare"]);
+    const remoteUrl = pathToFileURL(remote).href;
+    git(fx.root, ["remote", "add", "origin", remoteUrl]);
+    git(fx.root, [
+      "push",
+      "origin",
+      "HEAD:refs/heads/main",
+      "refs/tags/fixture-production"
+    ]);
+
+    execFileSync(
+      "git",
+      [
+        "clone",
+        "--no-tags",
+        "--depth=1",
+        "--branch",
+        "main",
+        remoteUrl,
+        checkout
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
+    );
+
+    assert.throws(
+      () => verifyProductionBaselineSource(checkout, fx.contract),
+      /git rev-parse --verify refs\/tags\/fixture-production failed/u
+    );
+
+    const hydrated = ensureProductionBaselineGitObjects(
+      checkout,
+      fx.contract
+    );
+    assert.equal(hydrated.tagObjectSha, fx.contract.tagObjectSha);
+    assert.equal(hydrated.targetCommitSha, fx.contract.targetCommitSha);
+
+    const out = path.join(checkout, "dist");
+    const built = materializeProductionRelease({
+      root: checkout,
+      out,
+      contract: fx.contract
+    });
+    assert.equal(
+      readFileSync(path.join(out, "app.js"), "utf8"),
+      "console.log('baseline');\n"
+    );
+    assert.equal(built.tagObjectSha, fx.contract.tagObjectSha);
+  } finally {
+    rmSync(remote, { recursive: true, force: true });
+    rmSync(checkoutParent, { recursive: true, force: true });
+    fx.cleanup();
+  }
+});
+
+test("baseline hydration fails closed when the remote tag no longer matches the contract", () => {
+  const fx = fixture();
+  const remote = mkdtempSync(path.join(tmpdir(), "vendify-release-remote-"));
+  const checkoutParent = mkdtempSync(
+    path.join(tmpdir(), "vendify-release-checkout-parent-")
+  );
+  const checkout = path.join(checkoutParent, "checkout");
+
+  try {
+    const originalTagObjectSha = fx.contract.tagObjectSha;
+
+    writeFileSync(path.join(fx.root, "app.js"), "console.log('moved');\n");
+    git(fx.root, ["add", "app.js"]);
+    git(fx.root, [
+      "-c",
+      "user.name=Vendify Test",
+      "-c",
+      "user.email=vendify-test@example.invalid",
+      "commit",
+      "-m",
+      "move fixture baseline"
+    ]);
+    git(fx.root, ["tag", "-d", "fixture-production"]);
+    git(fx.root, [
+      "-c",
+      "user.name=Vendify Test",
+      "-c",
+      "user.email=vendify-test@example.invalid",
+      "tag",
+      "-a",
+      "fixture-production",
+      "-m",
+      "moved fixture production baseline"
+    ]);
+
+    git(remote, ["init", "--bare"]);
+    const remoteUrl = pathToFileURL(remote).href;
+    git(fx.root, ["remote", "add", "origin", remoteUrl]);
+    git(fx.root, [
+      "push",
+      "origin",
+      "HEAD:refs/heads/main",
+      "refs/tags/fixture-production"
+    ]);
+
+    execFileSync(
+      "git",
+      [
+        "clone",
+        "--no-tags",
+        "--depth=1",
+        "--branch",
+        "main",
+        remoteUrl,
+        checkout
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
+    );
+
+    assert.equal(fx.contract.tagObjectSha, originalTagObjectSha);
+    assert.throws(
+      () => ensureProductionBaselineGitObjects(checkout, fx.contract),
+      /tag object SHA mismatch/u
+    );
+  } finally {
+    rmSync(remote, { recursive: true, force: true });
+    rmSync(checkoutParent, { recursive: true, force: true });
     fx.cleanup();
   }
 });
