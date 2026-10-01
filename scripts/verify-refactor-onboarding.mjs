@@ -1,0 +1,85 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
+const projectRoot = resolve(import.meta.dirname, "..");
+const outputRoot = resolve(projectRoot, "dist-refactor-modular");
+const files = readdirSync(outputRoot);
+const coreFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+
+if (!coreFile || !appFile) {
+  throw new Error("Onboarding verification could not find modular bundles");
+}
+
+const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const generatedApp = readFileSync(resolve(outputRoot, appFile), "utf8");
+const typedOwner = readFileSync(
+  resolve(projectRoot, "src/core/onboarding.ts"),
+  "utf8"
+);
+const coreBridge = readFileSync(
+  resolve(projectRoot, "src/legacy/core-bridge.ts"),
+  "utf8"
+);
+
+for (const marker of [
+  "createOnboardingController",
+  "ONBOARDING_STORAGE_KEY",
+  "kiosco_onboarding_done",
+  "#onboarding",
+  "#btn-empezar",
+  "#btn-empezar-ejemplos"
+]) {
+  if (!core.includes(marker)) {
+    throw new Error(`Modular core missing onboarding owner marker: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "readonly createOnboardingController: typeof createOnboardingController",
+  "createOnboardingController"
+]) {
+  if (!coreBridge.includes(marker)) {
+    throw new Error(`Core bridge missing onboarding API marker: ${marker}`);
+  }
+}
+
+for (const app of [sourceApp, generatedApp]) {
+  for (const marker of [
+    "window.VendifyCoreV232.createOnboardingController({",
+    "onExamples: () => productsControllerV232.openCatalog()",
+    "onboardingControllerV232.setup();"
+  ]) {
+    if (!app.includes(marker)) {
+      throw new Error(`Compatibility app missing onboarding composition: ${marker}`);
+    }
+  }
+
+  for (const obsolete of [
+    "const ONBOARDING_KEY",
+    "function setupOnboarding",
+    "function cargarEjemplos",
+    '$("#onboarding")',
+    '$("#btn-empezar")',
+    '$("#btn-empezar-ejemplos")'
+  ]) {
+    if (app.includes(obsolete)) {
+      throw new Error(`Compatibility app retained onboarding implementation: ${obsolete}`);
+    }
+  }
+}
+
+for (const forbidden of [
+  "openCatalog",
+  "VendifyProductsV232",
+  "productsControllerV232"
+]) {
+  if (typedOwner.includes(forbidden)) {
+    throw new Error(`Generic onboarding owner crossed Products boundary: ${forbidden}`);
+  }
+}
+
+console.log(
+  "PASS: root and generated runtimes delegate onboarding UI ownership to TypeScript while Products remains the injected Examples action"
+);
