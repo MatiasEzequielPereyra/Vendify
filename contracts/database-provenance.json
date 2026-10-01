@@ -1,0 +1,613 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-10-01",
+  "repository": {
+    "fullName": "MatiasEzequielPereyra/Vendify",
+    "baseBranch": "refactor/modular-runtime",
+    "baseSha": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
+    "workingBranch": "fix/ven-003-database-provenance"
+  },
+  "production": {
+    "projectRef": "puhkmblnptntorwptvld",
+    "projectName": "Kiosco",
+    "region": "sa-east-1",
+    "status": "ACTIVE_HEALTHY"
+  },
+  "productionMutationsPerformed": "NONE",
+  "scope": {
+    "productionAccess": "READ_ONLY_METADATA_ONLY",
+    "businessRowsRead": false,
+    "liveCapture": "contracts/captures/production-schema-provenance-20261001.json"
+  },
+  "historyEvidence": {
+    "migrationLedger": {
+      "listMigrations": [],
+      "schemaMigrationsRelationPresent": false
+    },
+    "conclusion": "Historical provenance is partially unknowable. Object presence can prove current state, not the mechanism or timestamp by which production reached it."
+  },
+  "repoMigrationInventory": [
+    {
+      "file": "supabase/migrations/20260831000000_preflight_v231.sql",
+      "purpose": "Preflight: asserts required pre-v2.31 relations before incremental deployment.",
+      "creates": [],
+      "modifies": [],
+      "security": false
+    },
+    {
+      "file": "supabase/migrations/20260831000100_permisos_stock_empleados.sql",
+      "purpose": "Employee stock-permission model and guarded stock RPC v2 surface.",
+      "creates": [
+        "functions: stock/permission v2 RPCs"
+      ],
+      "modifies": [
+        "public.negocio_miembros"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260831000200_v231_commercial_foundation.sql",
+      "purpose": "Commercial/platform foundation.",
+      "creates": [
+        "public.vendify_planes",
+        "public.vendify_suscripciones",
+        "public.vendify_config_operativa",
+        "public.vendify_error_logs",
+        "public.vendify_platform_admins",
+        "commercial RPCs",
+        "commercial triggers",
+        "dashboard indexes"
+      ],
+      "modifies": [
+        "core commercial behavior through functions/triggers"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260831000300_verify_v231.sql",
+      "purpose": "Read-only-style postcondition verification for v2.31 foundation.",
+      "creates": [],
+      "modifies": [],
+      "security": false
+    },
+    {
+      "file": "supabase/migrations/20260904000100_tenant_plan_limit_hardening.sql",
+      "purpose": "Tenant-aware plan-limit hardening.",
+      "creates": [],
+      "modifies": [
+        "public.validar_limite_plan_v1"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260907000100_error_log_hardening.sql",
+      "purpose": "Error-log authorization and lookup hardening.",
+      "creates": [
+        "index: vendify_error_logs_negocio_usuario_fecha_idx"
+      ],
+      "modifies": [
+        "public.registrar_error_cliente_v1"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260907000200_product_barcode_uniqueness.sql",
+      "purpose": "Per-business barcode uniqueness.",
+      "creates": [
+        "index: productos_negocio_codigo_barras_unico_idx"
+      ],
+      "modifies": [
+        "public.productos uniqueness contract"
+      ],
+      "security": false
+    },
+    {
+      "file": "supabase/migrations/20260907000300_dashboard_historical_margin.sql",
+      "purpose": "Historical margin semantics in owner dashboard.",
+      "creates": [],
+      "modifies": [
+        "public.dashboard_propietario_v1"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260907000350_sales_stock_lock_order.sql",
+      "purpose": "Deterministic product lock order for sales.",
+      "creates": [
+        "public.registrar_venta_v4"
+      ],
+      "modifies": [
+        "sales execution path"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260907000400_sales_runtime_contract.sql",
+      "purpose": "Sales runtime postcondition contract.",
+      "creates": [],
+      "modifies": [],
+      "security": false
+    },
+    {
+      "file": "supabase/migrations/20260907000500_sales_rpc_execute_hardening.sql",
+      "purpose": "Restrict sale RPC execution to intended roles.",
+      "creates": [],
+      "modifies": [
+        "function EXECUTE grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260907000600_sales_v3_internal_only.sql",
+      "purpose": "Close registrar_venta_v3 to browser-facing roles.",
+      "creates": [],
+      "modifies": [
+        "public.registrar_venta_v3 grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260908000800_sales_idempotency_payload_integrity.sql",
+      "purpose": "Bind idempotency keys to payload hash and retain deterministic locks.",
+      "creates": [
+        "constraint: venta_idempotencia_v23011_payload_hash_sha256"
+      ],
+      "modifies": [
+        "public.venta_idempotencia_v23011.payload_hash",
+        "public.registrar_venta_v4"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260908000900_sales_rpc_access_reassertion.sql",
+      "purpose": "Reassert intended sales RPC access after v4 replacement.",
+      "creates": [],
+      "modifies": [
+        "sales function EXECUTE grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260908001000_security_definer_api_grants.sql",
+      "purpose": "Close SECURITY DEFINER functions by default and reopen explicit frontend RPC allowlist.",
+      "creates": [],
+      "modifies": [
+        "SECURITY DEFINER function EXECUTE grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260909001100_critical_table_grants_hardening.sql",
+      "purpose": "Close direct anon access to critical tables and preserve required authenticated reads.",
+      "creates": [],
+      "modifies": [
+        "critical table grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260909001200_sales_v2_internal_only.sql",
+      "purpose": "Close registrar_venta_v2 to browser-facing roles.",
+      "creates": [],
+      "modifies": [
+        "public.registrar_venta_v2 grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260911001300_role_guard_execute_grant.sql",
+      "purpose": "Grant authenticated execution of RLS role guards while keeping anon closed.",
+      "creates": [],
+      "modifies": [
+        "public.tiene_rol_negocio grants",
+        "public.es_miembro_negocio grants"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260917140801_offline_signed_lease.sql",
+      "purpose": "Signed offline sale authorization and quota accounting.",
+      "creates": [
+        "public.offline_sale_leases",
+        "public.offline_sale_lease_product_quotas",
+        "public.offline_sale_lease_usage",
+        "offline lease RPCs",
+        "offline lease indexes"
+      ],
+      "modifies": [
+        "offline sale path"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260921120000_offline_lease_reconciliation.sql",
+      "purpose": "Offline lease renewal and reconciliation RPCs.",
+      "creates": [
+        "public.obtener_estado_lease_venta_offline_v1",
+        "public.renovar_lease_venta_offline_v1"
+      ],
+      "modifies": [
+        "offline lease API surface"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260921130000_operational_backup_v2.sql",
+      "purpose": "Operational backup v2 metadata, pagination and export RPCs.",
+      "creates": [
+        "public.operational_backups",
+        "public.operational_backup_parts",
+        "backup v2 RPCs",
+        "backup keyset indexes"
+      ],
+      "modifies": [
+        "backup execution surface"
+      ],
+      "security": true
+    },
+    {
+      "file": "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql",
+      "purpose": "Persist artifact metadata for operational backup v2.",
+      "creates": [],
+      "modifies": [
+        "public.operational_backups"
+      ],
+      "security": false
+    }
+  ],
+  "reconciliation": {
+    "livePublicTableCount": 34,
+    "allLivePublicTablesRlsEnabled": true,
+    "matchingObjects": [
+      {
+        "object": "public.audit_log",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.caja_movimientos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.cajas",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.cajas_sesiones",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.categorias",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.compra_items",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.compras",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.descuento_autorizaciones",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.descuento_pin_intentos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.empleados",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.inventario_conteo_items",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.inventario_conteos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.movimientos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.negocio_miembros",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.negocios",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.producto_costos_historial",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.producto_stock_sucursal",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.productos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.proveedores",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.scanner_stock_rate_limit",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.sucursales",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.venta_devolucion_items",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.venta_devoluciones",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.venta_idempotencia_v23011",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.venta_items",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.venta_pagos",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.ventas",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.vendify_config_operativa",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.vendify_error_logs",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.vendify_planes",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.vendify_platform_admins",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      },
+      {
+        "object": "public.vendify_suscripciones",
+        "repoExpected": true,
+        "livePresent": true,
+        "classification": "MATCH",
+        "evidence": "Presence matches repository baseline/current migration chain; exact-definition equality is not implied where a separate DEFINITION_DRIFT entry exists."
+      }
+    ],
+    "liveOnlyObjects": [
+      {
+        "object": "public.configuracion",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in production. Baseline legacy SQL conditionally alters it when pre-existing but does not create it; current executable assembly/migration chain has no authoritative creator."
+      },
+      {
+        "object": "public.equipo_invitaciones",
+        "repoExpected": false,
+        "livePresent": true,
+        "classification": "LIVE_ONLY",
+        "provenance": "UNKNOWN_PROVENANCE",
+        "evidence": "Present in production; no creator was found in the audited executable baseline/migration chain."
+      }
+    ],
+    "repoOnlyUnexpectedObjects": [],
+    "intentionallyNotDeployed": [
+      {
+        "objects": [
+          "public.offline_sale_leases",
+          "public.offline_sale_lease_product_quotas",
+          "public.offline_sale_lease_usage"
+        ],
+        "classification": "INTENTIONAL_NOT_DEPLOYED",
+        "evidence": "Repository migrations 20260917140801 and 20260921120000 plus local readiness evidence exist; no corresponding live tables/functions/indexes were observed."
+      },
+      {
+        "objects": [
+          "public.operational_backups",
+          "public.operational_backup_parts"
+        ],
+        "classification": "INTENTIONAL_NOT_DEPLOYED",
+        "evidence": "Repository migrations 20260921130000 and 20260921143000 plus local scale evidence exist; no corresponding live tables/functions/indexes were observed."
+      }
+    ],
+    "definitionDrift": [
+      {
+        "object": "public.negocios.codigo_acceso + unique index",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "baseline/015 adds nullable codigo_acceso and negocios_codigo_acceso_uidx on codigo_acceso",
+        "livePresent": "codigo_acceso is NOT NULL; unique index is negocios_codigo_acceso_unique_idx on lower(codigo_acceso)",
+        "evidence": "Live information_schema.columns + pg_indexes metadata"
+      },
+      {
+        "object": "public.empleados.username / nombre + username unique index",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "baseline/015 permits nullable username/nombre and creates empleados_username_negocio_uidx with WHERE username IS NOT NULL",
+        "livePresent": "username and nombre are NOT NULL; live unique index empleados_username_negocio_unique_idx has no partial predicate",
+        "evidence": "Live information_schema/list_tables + pg_indexes metadata"
+      },
+      {
+        "object": "public.descuento_pin_intentos primary key shape",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "baseline/015 creates id uuid primary key plus UNIQUE (negocio_id,user_id)",
+        "livePresent": "no id column; primary key is (negocio_id,user_id)",
+        "evidence": "Live columns + pg_constraint metadata"
+      },
+      {
+        "object": "public.descuento_autorizaciones constraints/default/index",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "subtotal > 0, expira_en without default, partial descuento_autorizaciones_pendientes_idx WHERE usado_en IS NULL",
+        "livePresent": "subtotal >= 0, expira_en defaults to now()+3 minutes, non-partial descuento_autorizaciones_lookup_idx",
+        "evidence": "Live columns + constraints + indexes metadata"
+      },
+      {
+        "object": "public.es_miembro_negocio(uuid) EXECUTE grant",
+        "classification": "DEFINITION_DRIFT",
+        "repoExpected": "migration 20260911001300 grants EXECUTE to authenticated and service_role and revokes anon",
+        "livePresent": "service_role EXECUTE observed; authenticated EXECUTE absent; anon absent",
+        "evidence": "Live pg_proc/has_function_privilege metadata"
+      }
+    ],
+    "semanticMatches": [
+      {
+        "object": "public.registrar_venta_v4",
+        "classification": "MATCH",
+        "evidence": "Live SECURITY DEFINER function contains payload_hash and pg_advisory_xact_lock markers; authenticated and service_role can execute."
+      },
+      {
+        "object": "public.registrar_venta_v2 / public.registrar_venta_v3",
+        "classification": "MATCH",
+        "evidence": "Live browser-facing authenticated EXECUTE is absent; service_role EXECUTE remains."
+      },
+      {
+        "object": "commercial v2.31 foundation",
+        "classification": "MATCH",
+        "evidence": "All five vendify_* tables, commercial triggers and hardening indexes are present live."
+      }
+    ]
+  },
+  "baselineReproducibility": {
+    "status": "PASS_WITH_VERSIONED_LOCAL_EVIDENCE",
+    "evidence": [
+      "contracts/database-baseline.json records a successful disposable-local reset/lint on 2026-09-16 for the then-current 18-migration chain.",
+      "docs/qa/BACKUP-RESTORE-SCALE-REPORT.md records Supabase CLI local validation on 2026-09-21 and the reproducible test:integration:local command, whose runner resets the local database before testing offline lease and backup v2 migrations."
+    ],
+    "currentSessionRerun": "NOT_RUN",
+    "currentSessionRerunReason": "The generated supabase/baseline/vendify_pre_v231_baseline.sql is absent at BASE_SHA, reproducing the declared VEN-005 ENOENT blocker. VEN-003 does not repair VEN-005."
+  },
+  "forwardMigrationLedgerStrategy": {
+    "status": "DEFINED_NOT_APPLIED",
+    "adoptionPointRule": "Do not manufacture historical provenance. Adopt a forward-only ledger only after an explicitly authorized operation proves the accepted production schema against this capture and resolves/accepts all definition drift.",
+    "steps": [
+      "Freeze a reviewed schema-only production capture and its repository SHA.",
+      "Resolve or explicitly accept each DEFINITION_DRIFT and LIVE_ONLY object; do not infer that historical migration files ran merely because similar objects exist.",
+      "Choose a single adoption cutover in a dedicated follow-up: archive pre-adoption executable history out of the active forward chain or otherwise prevent it from being replayed, and create a reviewed adoption snapshot/anchor representing the accepted production state.",
+      "In a separately authorized production maintenance operation, initialize/repair the Supabase migration ledger for the approved adoption anchor without executing historical DDL.",
+      "Require every migration after the adoption point to be versioned, locally disposable-tested, reviewed, and applied through the migration workflow only.",
+      "Before any future ledger mutation, rerun the read-only provenance capture and fail closed on unexpected drift."
+    ],
+    "explicitlyForbidden": [
+      "Do not run the historical migration chain against production.",
+      "Do not mark all historical migrations as applied simply to make tooling green.",
+      "Do not mutate supabase_migrations.schema_migrations during VEN-003.",
+      "Do not treat object-name similarity as proof of historical application."
+    ]
+  },
+  "conclusion": {
+    "currentLiveState": "RECONCILED_WITH_KNOWN_DEFINITION_DRIFT",
+    "expectedGitState": "RECONCILED_AT_OBJECT_OWNERSHIP_LEVEL",
+    "historicalProvenance": "PARTIALLY_UNKNOWABLE",
+    "futureMigrationStrategy": "FORWARD_ADOPTION_POINT_DEFINED"
+  }
+}
