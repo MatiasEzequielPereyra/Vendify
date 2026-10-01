@@ -22,6 +22,10 @@ const coreBridge = readFileSync(
   resolve(projectRoot, "src/legacy/core-bridge.ts"),
   "utf8"
 );
+const browserAcceptance = readFileSync(
+  resolve(projectRoot, "scripts/run-pwa-browser-acceptance.mjs"),
+  "utf8"
+);
 
 for (const marker of [
   "createOnboardingController",
@@ -77,6 +81,27 @@ for (const forbidden of [
 ]) {
   if (typedOwner.includes(forbidden)) {
     throw new Error(`Generic onboarding owner crossed Products boundary: ${forbidden}`);
+  }
+}
+
+for (const forbidden of [
+  "cloneNode(true)",
+  "createOnboardingController({",
+  ".replaceWith("
+]) {
+  if (browserAcceptance.includes(forbidden)) {
+    throw new Error(`Browser acceptance substitutes real onboarding composition: ${forbidden}`);
+  }
+}
+
+for (const marker of [
+  "startButton.click();",
+  "examplesButton.click();",
+  "No tenés permiso para cargar catálogos",
+  'runtimeComposition: "real-app-init-and-listeners"'
+]) {
+  if (!browserAcceptance.includes(marker)) {
+    throw new Error(`Browser acceptance missing real onboarding wiring proof: ${marker}`);
   }
 }
 
