@@ -20,9 +20,11 @@ import {
   showAuthPanel
 } from "../auth/ui.js";
 import { createAuthController } from "../auth/auth-controller.js";
+import { createInactivityGuard } from "../auth/inactivity-guard.js";
 
 export interface VendifyAuthV232Api {
   readonly createController: typeof createAuthController;
+  readonly createInactivityGuard: typeof createInactivityGuard;
   readonly normalizeInternalLogin: typeof normalizeInternalLogin;
   readonly buildEmployeeInternalEmail: typeof buildEmployeeInternalEmail;
   readonly resolveAuthPanel: typeof resolveAuthPanel;
@@ -48,6 +50,7 @@ declare global {
 
 window.VendifyAuthV232 = Object.freeze({
   createController: createAuthController,
+  createInactivityGuard,
   normalizeInternalLogin,
   buildEmployeeInternalEmail,
   resolveAuthPanel,
