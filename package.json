@@ -22,7 +22,7 @@
     "qa:refactor:modular": "npm run build:refactor:modular && npm run verify:refactor:modular",
     "preview:refactor:modular": "node scripts/serve-refactor-modular.mjs",
     "analyze:legacy": "node scripts/analyze-legacy-runtime.mjs",
-    "test": "npm run build:ts && node --test tests/unit/*.test.mjs",
+    "test": "npm run build:database-baseline && node --test tests/unit/*.test.mjs",
     "test:integration:tenant": "node --env-file-if-exists=.env.tenant-tests tests/integration/tenant-isolation.mjs",
     "test:integration:sales-concurrency": "node --env-file-if-exists=.env.tenant-tests tests/integration/sales-concurrency.mjs",
     "test:integration:local": "node scripts/run-local-integration-gates.mjs",
