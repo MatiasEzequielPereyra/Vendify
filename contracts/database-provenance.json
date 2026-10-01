@@ -6,14 +6,22 @@
     "baseBranch": "refactor/modular-runtime",
     "baseSha": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
     "workingBranch": "fix/ven-003-database-provenance",
-    "finalBaseSha": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
+    "finalBaseSha": "0ab3ae49153aa5464844b77219d173b27818450c",
     "baseAdvancedDuringExecution": true,
-    "baseAdvance": {
-      "from": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
-      "to": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
-      "commit": "fix(ci): generate database baseline before dependent tests (#2)",
-      "handling": "Merged current base into the VEN-003 branch non-destructively; no force push and no base-branch mutation."
-    }
+    "baseAdvanceHistory": [
+      {
+        "from": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
+        "to": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
+        "commit": "fix(ci): generate database baseline before dependent tests (#2)",
+        "handling": "Merged current base into the VEN-003 branch non-destructively; no force push and no base-branch mutation."
+      },
+      {
+        "from": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
+        "to": "0ab3ae49153aa5464844b77219d173b27818450c",
+        "commit": "chore(supabase): version deployed team edge functions (#3)",
+        "handling": "Merged current base into the VEN-003 branch non-destructively; no force push and no base-branch mutation."
+      }
+    ]
   },
   "production": {
     "projectRef": "puhkmblnptntorwptvld",
