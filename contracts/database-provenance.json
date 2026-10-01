@@ -5,7 +5,15 @@
     "fullName": "MatiasEzequielPereyra/Vendify",
     "baseBranch": "refactor/modular-runtime",
     "baseSha": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
-    "workingBranch": "fix/ven-003-database-provenance"
+    "workingBranch": "fix/ven-003-database-provenance",
+    "finalBaseSha": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
+    "baseAdvancedDuringExecution": true,
+    "baseAdvance": {
+      "from": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
+      "to": "fe8f5f4892b0ffbf0a71ff461b9136a377618973",
+      "commit": "fix(ci): generate database baseline before dependent tests (#2)",
+      "handling": "Merged current base into the VEN-003 branch non-destructively; no force push and no base-branch mutation."
+    }
   },
   "production": {
     "projectRef": "puhkmblnptntorwptvld",
@@ -584,7 +592,9 @@
       "docs/qa/BACKUP-RESTORE-SCALE-REPORT.md records Supabase CLI local validation on 2026-09-21 and the reproducible test:integration:local command, whose runner resets the local database before testing offline lease and backup v2 migrations."
     ],
     "currentSessionRerun": "NOT_RUN",
-    "currentSessionRerunReason": "The generated supabase/baseline/vendify_pre_v231_baseline.sql is absent at BASE_SHA, reproducing the declared VEN-005 ENOENT blocker. VEN-003 does not repair VEN-005."
+    "currentSessionRerunReason": "This connector-only execution did not run Docker/Supabase local commands. Versioned disposable-local evidence from 2026-09-16 and 2026-09-21 supports the baseline + current migration chain. During VEN-003, the base branch advanced with VEN-005's CI baseline-generation fix, so VEN-005 is no longer an external blocker for this branch.",
+    "ven005Status": "RESOLVED_UPSTREAM_AND_INHERITED",
+    "ven005Commit": "fe8f5f4892b0ffbf0a71ff461b9136a377618973"
   },
   "forwardMigrationLedgerStrategy": {
     "status": "DEFINED_NOT_APPLIED",
