@@ -220,7 +220,9 @@ test("empty stored activity preserves legacy fallback-to-now behavior", async ()
 });
 
 test("start registers legacy activity, focus, visibility and periodic checks once", async () => {
-  const harness = createHarness({ initialNow: 100000 });
+  const harness = createHarness({
+    initialNow: SECURITY_IDLE_TIMEOUT_MS_V2301 + 100000
+  });
 
   harness.guard.start();
   harness.guard.start();
