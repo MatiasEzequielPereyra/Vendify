@@ -38,12 +38,13 @@
     "build:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs",
     "prepare:database-local": "npm run build:ts && node scripts/build-database-baseline.mjs --local-migration",
     "verify:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs --check",
-    "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run qa:legacy-dead-code && npm run typecheck && npm test",
+    "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run qa:edge-functions && npm run qa:legacy-dead-code && npm run typecheck && npm test",
     "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312 && node scripts/verify-modular-css.mjs dist-staging-v2312 && node scripts/verify-modular-html.mjs dist-staging-v2312",
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && node scripts/verify-modular-html.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix"
+    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && node scripts/verify-modular-html.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix",
+    "qa:edge-functions": "node scripts/verify-edge-functions-versioning.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
