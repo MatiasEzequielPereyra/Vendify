@@ -2,6 +2,12 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { build } from "vite";
+import {
+  renderStagingApplicationSource,
+  renderStagingSupabaseConfig,
+  renderStagingVercelConfig,
+  resolveStagingSupabaseConfig
+} from "./staging-supabase-config.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const out = resolve(root, "dist-staging-v2312");
@@ -11,6 +17,8 @@ const pendingUiBuildDir = resolve(root, ".vendify-build/v2312-pending-ui");
 const runtimeFile = resolve(runtimeBuildDir, "vendify-offline-v2312.js");
 const coreFile = resolve(coreBuildDir, "vendify-core-v232.js");
 const pendingUiFile = resolve(pendingUiBuildDir, "vendify-offline-v2312-pending-ui.js");
+const requireBackend = process.argv.includes("--require-backend");
+const stagingSupabaseConfig = resolveStagingSupabaseConfig(process.env, { requireBackend });
 
 function fingerprint(content) {
   return createHash("sha256").update(content).digest("hex").slice(0, 12);
@@ -42,12 +50,9 @@ for (const file of [runtimeFile, coreFile, pendingUiFile]) {
 const files = [
   "index.html",
   "html-loader.js",
-  "app.js",
   "styles.css",
   "sw.js",
-  "supabase-config.js",
-  "manifest.json",
-  "vercel.json"
+  "manifest.json"
 ];
 
 for (const file of files) {
@@ -57,7 +62,22 @@ cpSync(resolve(root, "icons"), resolve(out, "icons"), { recursive: true });
 cpSync(resolve(root, "styles"), resolve(out, "styles"), { recursive: true });
 cpSync(resolve(root, "html"), resolve(out, "html"), { recursive: true });
 
-const stagedApp = readFileSync(resolve(root, "app.js"), "utf8");
+writeFileSync(
+  resolve(out, "supabase-config.js"),
+  renderStagingSupabaseConfig(stagingSupabaseConfig),
+  "utf8"
+);
+writeFileSync(
+  resolve(out, "vercel.json"),
+  renderStagingVercelConfig(readFileSync(resolve(root, "vercel.json"), "utf8"), stagingSupabaseConfig),
+  "utf8"
+);
+
+const stagedApp = renderStagingApplicationSource(
+  readFileSync(resolve(root, "app.js"), "utf8"),
+  stagingSupabaseConfig
+);
+writeFileSync(resolve(out, "app.js"), stagedApp, "utf8");
 
 const runtimeContent = stripSourceMapReference(readFileSync(runtimeFile, "utf8"));
 const coreContent = stripSourceMapReference(readFileSync(coreFile, "utf8"));
@@ -92,6 +112,10 @@ const stagedIndex = index.replace(appEntry, stagedEntries);
 writeFileSync(indexPath, stagedIndex, "utf8");
 
 console.log("Vendify v2.31.2 staging release created in dist-staging-v2312/");
+console.log("Staging Supabase mode: " + stagingSupabaseConfig.mode + ".");
+if (stagingSupabaseConfig.mode === "static-validation-only") {
+  console.log("Static validation only: configure explicit staging Supabase values before browser staging.");
+}
 console.log("IndexedDB checkout, snapshot capture, sync routing and pending-sales UI are staging-only.");
 console.log("Staging JS uses content-fingerprinted filenames to bypass stale PWA caches.");
 console.log("Source-map references are stripped from staging bundles to avoid stale-map warnings.");

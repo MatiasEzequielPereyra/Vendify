@@ -1,6 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
+import {
+  PRODUCTION_SUPABASE_PROJECT_REF,
+  inspectRenderedStagingSupabaseConfig,
+  stagingExpectedProjectRef
+} from "./staging-supabase-config.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const target = resolve(root, "dist-staging-v2312");
@@ -120,14 +125,77 @@ if (!pendingUi.includes("Ventas pendientes") || !pendingUi.includes("Reintentar 
 pass("staging bundles contain current IndexedDB runtime, typed POS integration and pending-sales UI");
 
 const config = readFileSync(resolve(target, "supabase-config.js"), "utf8");
-if (!config.includes("puhkmblnptntorwptvld.supabase.co")) {
-  fail("staging release points to unexpected Supabase project");
+let stagingConfig;
+try {
+  stagingConfig = inspectRenderedStagingSupabaseConfig(config);
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
-if (/vebqlbcfjxnpryjdgfvq/.test(config)) fail("obsolete Supabase project detected");
-if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + core + stagedApp + pendingUi + config)) {
-  fail("service role assignment detected in staging browser files");
+
+const textFiles = [];
+function collectTextFiles(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) {
+      collectTextFiles(path);
+      continue;
+    }
+    if (/\.(?:html|js|css|json|txt|map)$/u.test(entry.name)) textFiles.push(path);
+  }
 }
-pass("staging browser security markers pass");
+collectTextFiles(target);
+
+const expectedStagingRef = stagingExpectedProjectRef(stagingConfig);
+for (const [label, source] of [
+  ["stable staging app", readFileSync(resolve(target, "app.js"), "utf8")],
+  ["fingerprinted staging app", stagedApp]
+]) {
+  const expectedMarker = `VENDIFY_EXPECTED_SUPABASE_REF = "${expectedStagingRef}"`;
+  if (!source.includes(expectedMarker)) {
+    fail(`${label} does not enforce the selected staging project ref`);
+  }
+  if (source.includes(`VENDIFY_EXPECTED_SUPABASE_REF = "${PRODUCTION_SUPABASE_PROJECT_REF}"`)) {
+    fail(`${label} still enforces the production project ref`);
+  }
+}
+
+const allowedProductionSafetyMarker =
+  `VENDIFY_PRODUCTION_SUPABASE_REF = "${PRODUCTION_SUPABASE_PROJECT_REF}"`;
+let allowedProductionSafetyReferences = 0;
+const productionLeaks = [];
+const artifactParts = [];
+for (const file of textFiles) {
+  const content = readFileSync(file, "utf8");
+  artifactParts.push(content);
+  let sanitized = content;
+  while (sanitized.includes(allowedProductionSafetyMarker)) {
+    allowedProductionSafetyReferences += 1;
+    sanitized = sanitized.replace(
+      allowedProductionSafetyMarker,
+      'VENDIFY_PRODUCTION_SUPABASE_REF = "<production-ref-safety-guard>"'
+    );
+  }
+  if (sanitized.includes(PRODUCTION_SUPABASE_PROJECT_REF)) {
+    productionLeaks.push(relative(target, file));
+  }
+}
+if (productionLeaks.length) {
+  fail(
+    "production Supabase project ref appears outside the explicit offline safety guard: " +
+      productionLeaks.join(", ")
+  );
+}
+pass(
+  "staging artifact has 0 production backend configuration references; " +
+    `offline production-safety guard references allowed: ${allowedProductionSafetyReferences}`
+);
+
+const artifactText = artifactParts.join("\n");
+if (/vebqlbcfjxnpryjdgfvq/u.test(artifactText)) fail("obsolete Supabase project detected");
+if (/\bservice_role\b/iu.test(artifactText) || /SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/u.test(artifactText)) {
+  fail("service role marker detected in staging artifact");
+}
+pass("staging browser security markers pass (" + stagingConfig.mode + ")");
 
 try {
   execFileSync(

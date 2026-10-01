@@ -16,6 +16,27 @@ dist-staging-v2312/
 
 El build agrega `vendify-offline-v2312.js` antes de `app.js` sin modificar los archivos raíz.
 
+## Supabase staging aislado
+
+El artefacto staging ya no copia `supabase-config.js` ni el CSP de Supabase productivo. Si no se definen credenciales staging, el build genera una configuración `static-validation-only` que usa un dominio `.invalid` y sirve únicamente para validaciones estáticas/CI. Esa salida no puede conectarse a producción y `npm run preview:staging:v2312` se niega a servirla como staging real.
+
+Para un staging real se deben definir juntas las variables públicas del proyecto no productivo:
+
+```powershell
+$env:VENDIFY_STAGING_SUPABASE_URL="https://<staging-project-ref>.supabase.co"
+$env:VENDIFY_STAGING_SUPABASE_ANON_KEY="<public-anon-jwt>"
+npm run qa:staging:v2312
+npm run preview:staging:v2312
+```
+
+La anon key debe ser un JWT con rol `anon` y su `ref` debe coincidir con el project ref de la URL. El project ref productivo `puhkmblnptntorwptvld` y cualquier clave `service_role` son rechazados. El build también reemplaza el guard de entorno del app para que valide el project ref staging. La única referencia productiva permitida dentro de bundles staging es la constante explícita de `offline/sync-safety`, cuyo propósito es detectar y bloquear sincronización offline contra producción; el verifier la clasifica como guard de seguridad, no como configuración de destino.
+
+Para exigir explícitamente un backend real desde el build:
+
+```bash
+node scripts/build-staging-v2312.mjs --require-backend
+```
+
 ## Feature flag
 
 Por defecto el runtime informa modo `legacy` y no reemplaza ningún flujo del POS.
