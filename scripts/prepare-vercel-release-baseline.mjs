@@ -8,7 +8,9 @@ const root = resolve(import.meta.dirname, "..");
 
 try {
   const contract = loadProductionReleaseContract(root);
-  const verified = ensureProductionBaselineGitObjects(root, contract);
+  const verified = ensureProductionBaselineGitObjects(root, contract, {
+    remote: "https://github.com/MatiasEzequielPereyra/Vendify.git"
+  });
 
   console.log(
     "Vercel release provenance prepared: " +
