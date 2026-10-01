@@ -20,6 +20,7 @@ import { showToast } from "../core/toast.js";
 import { loadTheme, toggleTheme } from "../core/theme.js";
 import { dismissConfirmation, showConfirmation } from "../core/confirm.js";
 import { closeTopOpenModal } from "../core/modal-return.js";
+import { createOnboardingController } from "../core/onboarding.js";
 
 export interface VendifyCoreV232Api {
   readonly queryOne: typeof queryOne;
@@ -33,6 +34,7 @@ export interface VendifyCoreV232Api {
   readonly showConfirmation: typeof showConfirmation;
   readonly dismissConfirmation: typeof dismissConfirmation;
   readonly closeTopOpenModal: typeof closeTopOpenModal;
+  readonly createOnboardingController: typeof createOnboardingController;
 }
 
 declare global {
@@ -52,5 +54,6 @@ window.VendifyCoreV232 = Object.freeze({
   toggleTheme,
   showConfirmation,
   dismissConfirmation,
-  closeTopOpenModal
+  closeTopOpenModal,
+  createOnboardingController
 });
