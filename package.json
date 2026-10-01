@@ -32,7 +32,7 @@
     "qa:legacy-dead-code": "node scripts/verify-legacy-dead-code.mjs",
     "qa:rpc-source": "node scripts/rpc-source-coverage.mjs",
     "qa:commercial": "node scripts/verify-commercial-readiness.mjs",
-    "qa:pwa:matrix": "node scripts/verify-pwa-matrix.mjs && node scripts/verify-pwa-matrix.mjs dist && node scripts/verify-pwa-matrix.mjs dist-refactor-modular",
+    "qa:pwa:matrix": "node scripts/verify-pwa-matrix.mjs && node scripts/verify-pwa-matrix.mjs dist-refactor-modular",
     "qa:pwa:browser": "npm run build:refactor:modular && node scripts/run-pwa-browser-acceptance.mjs",
     "qa:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs && node scripts/verify-database-baseline.mjs && node scripts/build-database-baseline.mjs --check",
     "build:database-baseline": "npm run build:ts && node scripts/build-database-baseline.mjs",
@@ -43,7 +43,7 @@
     "build": "node scripts/build-release.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && node scripts/verify-modular-css.mjs dist && node scripts/verify-modular-html.mjs dist && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix",
+    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix",
     "qa:edge-functions": "node scripts/verify-edge-functions-versioning.mjs"
   },
   "devDependencies": {

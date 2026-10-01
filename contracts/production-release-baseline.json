@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "artifactName": "production baseline release",
+  "tag": "v2.31.1-production-baseline",
+  "tagObjectSha": "c1b0e47ebd2aaa83a92d8ba0231f9a0bdd85789e",
+  "targetCommitSha": "82f40c5a42dfec804f9c1a5079e5b35a57862780",
+  "productionSupabaseProjectRef": "puhkmblnptntorwptvld",
+  "files": [
+    {
+      "path": "app.js",
+      "gitBlobSha": "8c9c3c4be6239ce16320f2280b2b187ef6339615"
+    },
+    {
+      "path": "icons/apple-touch-icon.png",
+      "gitBlobSha": "d80ed0824f14b829b8ad1dc50e9cd4897133871f"
+    },
+    {
+      "path": "icons/icon-192.png",
+      "gitBlobSha": "78b581323e1f668ab882e1af6dea81790c9d5f96"
+    },
+    {
+      "path": "icons/icon-512.png",
+      "gitBlobSha": "0084b3b8a6a1ea9346efa35567dc07030594c456"
+    },
+    {
+      "path": "index.html",
+      "gitBlobSha": "94fbed06ed45e5df0facfc6b0c9b70c4cf7efe39"
+    },
+    {
+      "path": "manifest.json",
+      "gitBlobSha": "fc2b7c750b3d4689e2822fcf5f054c57d27f2fd9"
+    },
+    {
+      "path": "styles.css",
+      "gitBlobSha": "b866d6513d5dff624abaa124e41e7f91852475ad"
+    },
+    {
+      "path": "supabase-config.js",
+      "gitBlobSha": "e95794cb86e8ca747c82f3afa6c05bbfa932ed11"
+    },
+    {
+      "path": "sw.js",
+      "gitBlobSha": "c1950192011ca30212f7c8d977cb50fa25b8bd99"
+    },
+    {
+      "path": "vercel.json",
+      "gitBlobSha": "415ab0637ecfd256ae5e53a55526e2f43fa4d739"
+    }
+  ]
+}
