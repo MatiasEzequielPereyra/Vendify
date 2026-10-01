@@ -1,4 +1,5 @@
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
+import { inspectRenderedStagingSupabaseConfig } from "./staging-supabase-config.mjs";
 import { createServer } from "node:http";
 import { extname, normalize, resolve, sep } from "node:path";
 
@@ -8,6 +9,22 @@ const port = Number(process.env.VENDIFY_PORT || 4173);
 
 if (!existsSync(resolve(root, "index.html"))) {
   console.error("Staging build not found. Run: npm run qa:staging:v2312");
+  process.exit(1);
+}
+
+try {
+  const stagingConfig = inspectRenderedStagingSupabaseConfig(
+    readFileSync(resolve(root, "supabase-config.js"), "utf8")
+  );
+  if (stagingConfig.mode !== "real") {
+    console.error(
+      "Real staging backend is not configured. Set VENDIFY_STAGING_SUPABASE_URL and " +
+        "VENDIFY_STAGING_SUPABASE_ANON_KEY, rebuild staging, then retry preview."
+    );
+    process.exit(1);
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
 

@@ -1,6 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
+import {
+  PRODUCTION_SUPABASE_PROJECT_REF,
+  inspectRenderedStagingSupabaseConfig
+} from "./staging-supabase-config.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const target = resolve(root, "dist-staging-v2312");
@@ -120,14 +124,39 @@ if (!pendingUi.includes("Ventas pendientes") || !pendingUi.includes("Reintentar 
 pass("staging bundles contain current IndexedDB runtime, typed POS integration and pending-sales UI");
 
 const config = readFileSync(resolve(target, "supabase-config.js"), "utf8");
-if (!config.includes("puhkmblnptntorwptvld.supabase.co")) {
-  fail("staging release points to unexpected Supabase project");
+let stagingConfig;
+try {
+  stagingConfig = inspectRenderedStagingSupabaseConfig(config);
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
-if (/vebqlbcfjxnpryjdgfvq/.test(config)) fail("obsolete Supabase project detected");
-if (/SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/.test(runtime + core + stagedApp + pendingUi + config)) {
-  fail("service role assignment detected in staging browser files");
+
+const textFiles = [];
+function collectTextFiles(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) {
+      collectTextFiles(path);
+      continue;
+    }
+    if (/\.(?:html|js|css|json|txt|map)$/u.test(entry.name)) textFiles.push(path);
+  }
 }
-pass("staging browser security markers pass");
+collectTextFiles(target);
+
+const productionLeaks = textFiles
+  .filter((file) => readFileSync(file, "utf8").includes(PRODUCTION_SUPABASE_PROJECT_REF))
+  .map((file) => relative(target, file));
+if (productionLeaks.length) {
+  fail("production Supabase project ref leaked into staging artifact: " + productionLeaks.join(", "));
+}
+
+const artifactText = textFiles.map((file) => readFileSync(file, "utf8")).join("\n");
+if (/vebqlbcfjxnpryjdgfvq/u.test(artifactText)) fail("obsolete Supabase project detected");
+if (/\bservice_role\b/iu.test(artifactText) || /SUPABASE_SERVICE_ROLE_KEY\s*=|serviceRoleKey\s*=/u.test(artifactText)) {
+  fail("service role marker detected in staging artifact");
+}
+pass("staging browser security markers pass (" + stagingConfig.mode + ")");
 
 try {
   execFileSync(
