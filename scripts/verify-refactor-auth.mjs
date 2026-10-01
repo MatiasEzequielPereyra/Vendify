@@ -20,6 +20,12 @@ const buildSource = readFileSync(
 for (const marker of [
   "VendifyAuthV232",
   "createAuthController",
+  "createInactivityGuard",
+  "SECURITY_IDLE_TIMEOUT_MS_V2301",
+  "SECURITY_ACTIVITY_KEY_V2301",
+  "SECURITY_ACTIVITY_WRITE_THROTTLE_MS_V2301",
+  "SECURITY_IDLE_CHECK_INTERVAL_MS_V2301",
+  "SECURITY_IDLE_LOGOUT_MESSAGE_V2301",
   "normalizeInternalLogin",
   "buildEmployeeInternalEmail",
   "resolveAuthPanel",
@@ -41,6 +47,8 @@ for (const marker of [
 
 for (const marker of [
   "window.VendifyAuthV232.createController({",
+  "window.VendifyAuthV232.createInactivityGuard({",
+  "inactivityGuardV232.start();",
   "authControllerV232.setup();",
   "authControllerV232.initialize()",
   "authControllerV232.getSession()",
@@ -52,6 +60,14 @@ for (const marker of [
 
 for (const obsoleteMarker of [
   "let sesionActual",
+  "SECURITY_IDLE_TIMEOUT_MS_V2301",
+  "SECURITY_ACTIVITY_KEY_V2301",
+  "securityLastPersistV2301",
+  "securityIdleTimerV2301",
+  "securityLogoutRunningV2301",
+  "function registrarActividadSeguraV2301",
+  "function verificarSesionInactivaV2301",
+  "function setupSecuritySessionGuardV2301",
   "let flujoRecuperacionActivo",
   "function mostrarPanelAuth",
   "function mostrarMensajeAuth",
@@ -96,4 +112,4 @@ for (const obsoleteBuildPatch of [
   }
 }
 
-console.log("PASS: root and generated runtimes delegate Auth without regex-patched duplicate logic");
+console.log("PASS: root and generated runtimes delegate Auth and inactivity guard ownership to TypeScript without legacy duplicate logic");

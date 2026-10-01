@@ -448,6 +448,12 @@ const authControllerV232 = window.VendifyAuthV232.createController({
   icon: iconV23011,
 });
 
+const inactivityGuardV232 = window.VendifyAuthV232.createInactivityGuard({
+  getSession: () => authControllerV232.getSession(),
+  signOut: () => authControllerV232.signOut(),
+  showToast: mostrarToast,
+});
+
 async function mostrarApp() {
   $("#auth-screen")?.classList.add("hidden");
   $(".app")?.classList.remove("hidden");
@@ -1223,79 +1229,6 @@ async function confirmarAjusteStock() {
 
 
 
-
-
-
-// ============================================================
-// Security v2.30.1 — sesión inactiva
-// ============================================================
-
-const SECURITY_IDLE_TIMEOUT_MS_V2301 = 8 * 60 * 60 * 1000;
-const SECURITY_ACTIVITY_KEY_V2301 = "vendify_last_activity_v2301";
-let securityLastPersistV2301 = 0;
-let securityIdleTimerV2301 = null;
-let securityLogoutRunningV2301 = false;
-
-function registrarActividadSeguraV2301() {
-  const now = Date.now();
-
-  // Evitar escribir localStorage por cada mousemove/touch.
-  if (now - securityLastPersistV2301 < 30000) return;
-
-  securityLastPersistV2301 = now;
-  localStorage.setItem(SECURITY_ACTIVITY_KEY_V2301, String(now));
-}
-
-async function verificarSesionInactivaV2301() {
-  if (securityLogoutRunningV2301 || !authControllerV232.getSession()?.user) return;
-
-  const last = Number(
-    localStorage.getItem(SECURITY_ACTIVITY_KEY_V2301) || Date.now()
-  );
-
-  if (Date.now() - last < SECURITY_IDLE_TIMEOUT_MS_V2301) return;
-
-  securityLogoutRunningV2301 = true;
-
-  try {
-    mostrarToast(
-      "La sesión se cerró por inactividad. Volvé a ingresar para continuar.",
-      "info"
-    );
-    await authControllerV232.signOut();
-  } finally {
-    securityLogoutRunningV2301 = false;
-  }
-}
-
-function setupSecuritySessionGuardV2301() {
-  registrarActividadSeguraV2301();
-
-  ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
-    window.addEventListener(
-      eventName,
-      registrarActividadSeguraV2301,
-      { passive: true, capture: true }
-    );
-  });
-
-  window.addEventListener("focus", () => {
-    verificarSesionInactivaV2301();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      verificarSesionInactivaV2301();
-    }
-  });
-
-  if (!securityIdleTimerV2301) {
-    securityIdleTimerV2301 = setInterval(
-      verificarSesionInactivaV2301,
-      60000
-    );
-  }
-}
 
 
 
@@ -4332,7 +4265,7 @@ function init() {
   inventoryControllerV232.setup();
   setupGestionMenuV230();
   purchasesControllerV232.setup();
-  setupSecuritySessionGuardV2301();
+  inactivityGuardV232.start();
   setupStabilityV23011();
   setupBackGuardV2311();
   setupCommercialFoundationV231();
