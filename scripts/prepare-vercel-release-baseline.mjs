@@ -1,27 +1,25 @@
 import { resolve } from "node:path";
 import {
-  loadProductionReleaseContract,
-  materializeProductionRelease
+  ensureProductionBaselineGitObjects,
+  loadProductionReleaseContract
 } from "./production-release-baseline.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 
 try {
   const contract = loadProductionReleaseContract(root);
-  const result = materializeProductionRelease({ root, contract });
+  const verified = ensureProductionBaselineGitObjects(root, contract, {
+    remote: "https://github.com/MatiasEzequielPereyra/Vendify.git"
+  });
 
-  console.log("Baseline production release created in dist/");
   console.log(
-    "Source: " +
+    "Vercel release provenance prepared: " +
       contract.tag +
       " -> " +
-      result.targetCommitSha +
+      verified.targetCommitSha +
       " (tag object " +
-      result.tagObjectSha +
+      verified.tagObjectSha +
       ")"
-  );
-  console.log(
-    "Production release digest SHA-256: " + result.digest
   );
 } catch (error) {
   console.error(
