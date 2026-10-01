@@ -51,19 +51,25 @@ function startServer() {
 }
 
 function startChrome() {
+  const ciArgs = process.env.CI === "true"
+    ? ["--no-sandbox", "--disable-dev-shm-usage"]
+    : [];
+
   return spawn(chrome, [
     "--headless=new",
     "--disable-gpu",
     "--no-first-run",
     "--no-default-browser-check",
+    "--remote-debugging-address=127.0.0.1",
+    ...ciArgs,
     `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${profile}`,
     "about:blank",
-  ], { stdio: "ignore", windowsHide: true });
+  ], { stdio: process.env.CI === "true" ? ["ignore", "ignore", "inherit"] : "ignore", windowsHide: true });
 }
 
 async function connectTarget(url) {
-  await waitForHttp(`http://${host}:${debugPort}/json/version`);
+  await waitForHttp(`http://${host}:${debugPort}/json/version`, 200);
   const created = await fetch(`http://${host}:${debugPort}/json/new?${encodeURIComponent(url)}`, { method: "PUT" });
   if (!created.ok) throw new Error(`Chrome no creó el target (${created.status})`);
   const target = await created.json();
@@ -115,6 +121,12 @@ async function navigate(cdp, url) {
   await loaded;
 }
 
+async function reload(cdp) {
+  const loaded = cdp.event("Page.loadEventFired", 30_000);
+  await cdp.send("Page.reload", { ignoreCache: true });
+  await loaded;
+}
+
 async function openBrowser(url) {
   const chromeProcess = startChrome();
   const cdp = await connectTarget(url);
@@ -139,6 +151,90 @@ let secondBrowser;
 try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
+
+  const onboardingFirstVisit = await evaluate(firstBrowser.cdp, `(() => {
+    const onboarding = document.querySelector('#onboarding');
+    const startButton = document.querySelector('#btn-empezar');
+    const examplesButton = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !startButton || !examplesButton) {
+      throw new Error('Onboarding UI unavailable');
+    }
+    return {
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      visible: !onboarding.classList.contains('hidden')
+    };
+  })()`);
+  if (onboardingFirstVisit.marker !== null || !onboardingFirstVisit.visible) {
+    throw new Error(`El onboarding real no aparece en primera visita: ${JSON.stringify(onboardingFirstVisit)}`);
+  }
+
+  const onboardingStart = await evaluate(firstBrowser.cdp, `(() => {
+    const onboarding = document.querySelector('#onboarding');
+    const startButton = document.querySelector('#btn-empezar');
+    if (!onboarding || !startButton) throw new Error('Onboarding Start UI unavailable');
+    startButton.click();
+    return {
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      hiddenAfterStart: onboarding.classList.contains('hidden')
+    };
+  })()`);
+  if (onboardingStart.marker !== "1" || !onboardingStart.hiddenAfterStart) {
+    throw new Error(`El Start real no conserva persistencia/cierre: ${JSON.stringify(onboardingStart)}`);
+  }
+
+  await reload(firstBrowser.cdp);
+  const onboardingPersistence = await evaluate(firstBrowser.cdp, `(() => {
+    const onboarding = document.querySelector('#onboarding');
+    if (!onboarding) throw new Error('Onboarding UI unavailable after reload');
+    return {
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      hiddenAfterReload: onboarding.classList.contains('hidden')
+    };
+  })()`);
+  if (onboardingPersistence.marker !== "1" || !onboardingPersistence.hiddenAfterReload) {
+    throw new Error(`El onboarding real no conserva persistencia tras reload: ${JSON.stringify(onboardingPersistence)}`);
+  }
+
+  await evaluate(firstBrowser.cdp, `localStorage.removeItem('kiosco_onboarding_done')`);
+  await reload(firstBrowser.cdp);
+  const onboardingExamples = await evaluate(firstBrowser.cdp, `(() => {
+    const key = 'kiosco_onboarding_done';
+    const onboarding = document.querySelector('#onboarding');
+    const examplesButton = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !examplesButton) {
+      throw new Error('Onboarding Examples UI unavailable');
+    }
+
+    const toastSelector = '#toast-container .toast';
+    const beforeToasts = Array.from(document.querySelectorAll(toastSelector)).map(
+      (toast) => toast.textContent
+    );
+    const visibleBeforeClick = !onboarding.classList.contains('hidden');
+
+    examplesButton.click();
+
+    const afterToasts = Array.from(document.querySelectorAll(toastSelector)).map(
+      (toast) => toast.textContent
+    );
+    const newToasts = afterToasts.slice(beforeToasts.length);
+
+    return {
+      visibleBeforeClick,
+      marker: localStorage.getItem(key),
+      hiddenAfterExamples: onboarding.classList.contains('hidden'),
+      productsPermissionToast: newToasts.includes('No tenés permiso para cargar catálogos'),
+      newToasts
+    };
+  })()`);
+  if (
+    !onboardingExamples.visibleBeforeClick
+    || onboardingExamples.marker !== "1"
+    || !onboardingExamples.hiddenAfterExamples
+    || !onboardingExamples.productsPermissionToast
+  ) {
+    throw new Error(`El Examples real no alcanza al owner Products: ${JSON.stringify(onboardingExamples)}`);
+  }
+
   const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
     if (!window.VendifyPwaV232) throw new Error('PWA controller unavailable');
     window.VendifyPwaV232.setupInstallPrompt();
@@ -274,6 +370,13 @@ try {
     serverStoppedBeforeReopen: true,
     installed,
     installPrompt,
+    onboarding: {
+      runtimeComposition: "real-app-init-and-listeners",
+      firstVisit: onboardingFirstVisit,
+      start: onboardingStart,
+      persistence: onboardingPersistence,
+      examples: onboardingExamples
+    },
     updated,
     coldBoot,
     status: "pass",

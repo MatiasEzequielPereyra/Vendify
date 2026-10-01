@@ -17,7 +17,6 @@ function iconV23011(name, className = "vendify-icon") {
  */
 
 const THEME_KEY = "kiosco_theme";
-const ONBOARDING_KEY = "kiosco_onboarding_done";
 
 
 // ============================================================
@@ -751,6 +750,11 @@ const productsControllerV232 =
     returnToScannerFromEditor: () =>
       Boolean(scannerControllerV232?.returnFromProductEditor()),
     onEditorClose: () => dashboardNavigationV236.complete("product"),
+  });
+
+const onboardingControllerV232 =
+  window.VendifyCoreV232.createOnboardingController({
+    onExamples: () => productsControllerV232.openCatalog(),
   });
 
 scannerControllerV232 =
@@ -3679,7 +3683,7 @@ function inicializarEventos() {
 }
 
 // =====================
-// Onboarding
+// PWA registration compatibility
 // =====================
 function registrarServiceWorker() {
   if (window.VendifyPwaV232) {
@@ -3693,22 +3697,6 @@ function registrarServiceWorker() {
     console.warn("[PWA] No se pudo registrar el service worker:", error);
   });
 }
-
-function setupOnboarding() {
-  const done = localStorage.getItem(ONBOARDING_KEY);
-  if (done) return;
-  const el = $("#onboarding");
-  if (!el) return;
-  el.classList.remove("hidden");
-
-  const cerrar = () => {
-    localStorage.setItem(ONBOARDING_KEY, "1");
-    el.classList.add("hidden");
-  };
-  $("#btn-empezar")?.addEventListener("click", cerrar);
-  $("#btn-empezar-ejemplos")?.addEventListener("click", () => { cerrar(); cargarEjemplos(); });
-}
-
 
 // ============================================================
 // VENDIFY v2.32 — Productos + scanner modulares
@@ -3767,10 +3755,6 @@ function cerrarModal({ preservarFlujoScanner = false } = {}) {
 }
 
 function abrirCatalogoV29() {
-  productsControllerV232.openCatalog();
-}
-
-async function cargarEjemplos() {
   productsControllerV232.openCatalog();
 }
 
@@ -4271,7 +4255,7 @@ function init() {
   setupCommercialFoundationV231();
   realtimeControllerV232.startWatchdog();
   window.VendifyPwaV232.setupInstallPrompt();
-  setupOnboarding();
+  onboardingControllerV232.setup();
   void authControllerV232.initialize();
 }
 
