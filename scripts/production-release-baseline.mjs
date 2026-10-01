@@ -49,6 +49,19 @@ function gitText(root, args) {
   return String(gitOutput(root, args)).trim();
 }
 
+function tryGitText(root, args) {
+  try {
+    return execFileSync("git", args, {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: MAX_GIT_BUFFER,
+      stdio: ["ignore", "pipe", "pipe"]
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
 function safePath(root, relativePath) {
   return resolve(root, ...relativePath.split("/"));
 }
@@ -136,6 +149,46 @@ function sourceInventory(root, commitSha) {
   const output = gitText(root, ["ls-tree", "-r", "--name-only", commitSha]);
   if (!output) return [];
   return output.split(/\r?\n/u).filter(Boolean).sort();
+}
+
+export function ensureProductionBaselineGitObjects(
+  root,
+  contract = loadProductionReleaseContract(root),
+  { remote = "origin" } = {}
+) {
+  validateProductionReleaseContract(contract);
+
+  // A real Git repository is mandatory. There is intentionally no filesystem
+  // or working-tree fallback when provenance cannot be established.
+  gitText(root, ["rev-parse", "--git-dir"]);
+
+  const tagRef = "refs/tags/" + contract.tag;
+  const localTagObjectSha = tryGitText(root, [
+    "rev-parse",
+    "--verify",
+    tagRef
+  ]);
+
+  if (localTagObjectSha !== null) {
+    // An unexpected local tag must fail closed; never replace it silently.
+    return verifyProductionBaselineSource(root, contract);
+  }
+
+  if (typeof remote !== "string" || !remote.trim()) {
+    fail("Git remote for baseline hydration is missing");
+  }
+
+  gitOutput(root, [
+    "fetch",
+    "--no-tags",
+    "--depth=1",
+    remote,
+    tagRef + ":" + tagRef
+  ]);
+
+  // The fetched tag, target commit, tree inventory and every blob are still
+  // checked against the immutable contract before any artifact is created.
+  return verifyProductionBaselineSource(root, contract);
 }
 
 export function verifyProductionBaselineSource(
