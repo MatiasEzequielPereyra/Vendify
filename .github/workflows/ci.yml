@@ -10,7 +10,10 @@ on:
       - "security/**"
       - "refactor/**"
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
+      - refactor/modular-runtime
 
 permissions:
   contents: read
