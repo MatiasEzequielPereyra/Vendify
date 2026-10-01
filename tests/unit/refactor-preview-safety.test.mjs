@@ -74,7 +74,13 @@ function startPreview() {
     }, 5000);
 
     const finish = () => {
-      if (\n        settled ||\n        !stdout.includes("Vendify modular refactor preview:") ||\n        !stdout.includes("?offlineEngine=v2312")\n      ) return;
+      if (
+        settled ||
+        !stdout.includes("Vendify modular refactor preview:") ||
+        !stdout.includes("?offlineEngine=v2312")
+      ) {
+        return;
+      }
       settled = true;
       clearTimeout(timeout);
       resolve({ child, stdout, stderr });
