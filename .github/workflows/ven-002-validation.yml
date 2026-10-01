@@ -1,0 +1,121 @@
+name: VEN-002 Isolated Validation
+
+on:
+  push:
+    branches:
+      - fix/ven-002-staging-isolation
+
+permissions:
+  contents: read
+
+jobs:
+  ven002:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Focused VEN-002 unit tests
+        run: |
+          npm run build:ts
+          node --test tests/unit/staging-supabase-config.test.mjs
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Static staging artifact
+        shell: bash
+        run: |
+          unset VENDIFY_STAGING_SUPABASE_URL VENDIFY_STAGING_SUPABASE_ANON_KEY
+          npm run qa:staging:v2312
+          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-staging-v2312; then
+            echo "production project ref leaked into static staging"
+            exit 1
+          fi
+          grep -n "vendify-staging-unconfigured.invalid" dist-staging-v2312/supabase-config.js
+          echo "PASS: static staging contains zero production project references"
+
+      - name: Real staging requires explicit config
+        shell: bash
+        run: |
+          unset VENDIFY_STAGING_SUPABASE_URL VENDIFY_STAGING_SUPABASE_ANON_KEY
+          if node scripts/build-staging-v2312.mjs --require-backend > /tmp/missing-staging.log 2>&1; then
+            echo "expected missing staging config to fail"
+            exit 1
+          fi
+          cat /tmp/missing-staging.log
+          grep -q "STAGING CONFIG MISSING" /tmp/missing-staging.log
+          echo "PASS: real staging fails closed without explicit config"
+
+      - name: Non-production staging artifact
+        shell: bash
+        run: |
+          export VENDIFY_STAGING_SUPABASE_URL="https://vendifystagingci12345.supabase.co"
+          export VENDIFY_STAGING_SUPABASE_ANON_KEY="$(node -e 'const e=(v)=>Buffer.from(JSON.stringify(v)).toString("base64url"); process.stdout.write(e({alg:"HS256",typ:"JWT"})+"."+e({iss:"supabase",ref:"vendifystagingci12345",role:"anon"})+".test-signature")')"
+          npm run qa:staging:v2312
+          grep -n "vendifystagingci12345.supabase.co" dist-staging-v2312/supabase-config.js
+          grep -n "vendifystagingci12345.supabase.co" dist-staging-v2312/vercel.json
+          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-staging-v2312; then
+            echo "production project ref leaked into real staging"
+            exit 1
+          fi
+          echo "PASS: non-production staging artifact contains zero production project references"
+
+      - name: Production backend is rejected by staging build
+        shell: bash
+        run: |
+          export VENDIFY_STAGING_SUPABASE_URL="https://puhkmblnptntorwptvld.supabase.co"
+          export VENDIFY_STAGING_SUPABASE_ANON_KEY="$(node -e 'const e=(v)=>Buffer.from(JSON.stringify(v)).toString("base64url"); process.stdout.write(e({alg:"HS256",typ:"JWT"})+"."+e({iss:"supabase",ref:"puhkmblnptntorwptvld",role:"anon"})+".test-signature")')"
+          if node scripts/build-staging-v2312.mjs > /tmp/prod-staging.log 2>&1; then
+            echo "expected production-backed staging to fail"
+            exit 1
+          fi
+          cat /tmp/prod-staging.log
+          grep -q "production Supabase project ref is forbidden" /tmp/prod-staging.log
+          echo "PASS: production backend is rejected"
+
+      - name: service_role is rejected
+        shell: bash
+        run: |
+          export VENDIFY_STAGING_SUPABASE_URL="https://vendifystagingci12345.supabase.co"
+          export VENDIFY_STAGING_SUPABASE_ANON_KEY="$(node -e 'const e=(v)=>Buffer.from(JSON.stringify(v)).toString("base64url"); process.stdout.write(e({alg:"HS256",typ:"JWT"})+"."+e({iss:"supabase",ref:"vendifystagingci12345",role:"service_role"})+".test-signature")')"
+          if node scripts/build-staging-v2312.mjs > /tmp/service-role.log 2>&1; then
+            echo "expected service_role staging config to fail"
+            exit 1
+          fi
+          cat /tmp/service-role.log
+          grep -q "service_role keys are forbidden" /tmp/service-role.log
+          echo "PASS: service_role is rejected"
+
+      - name: Modular preview inherits staging isolation
+        shell: bash
+        run: |
+          export VENDIFY_STAGING_SUPABASE_URL="https://vendifystagingci12345.supabase.co"
+          export VENDIFY_STAGING_SUPABASE_ANON_KEY="$(node -e 'const e=(v)=>Buffer.from(JSON.stringify(v)).toString("base64url"); process.stdout.write(e({alg:"HS256",typ:"JWT"})+"."+e({iss:"supabase",ref:"vendifystagingci12345",role:"anon"})+".test-signature")')"
+          npm run qa:refactor:modular
+          if grep -R -n --binary-files=without-match "puhkmblnptntorwptvld" dist-refactor-modular; then
+            echo "production project ref leaked into modular preview"
+            exit 1
+          fi
+          echo "PASS: modular preview contains zero production project references"
+
+      - name: Production release regression
+        run: |
+          npm run build
+          npm run verify:release
+          grep -n "puhkmblnptntorwptvld.supabase.co" dist/supabase-config.js
+          echo "PASS: production release still targets production"
