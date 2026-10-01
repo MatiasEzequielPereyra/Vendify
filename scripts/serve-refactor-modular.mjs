@@ -1,6 +1,7 @@
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, normalize, resolve, sep } from "node:path";
+import { inspectRenderedStagingSupabaseConfig } from "./staging-supabase-config.mjs";
 
 const root = resolve(import.meta.dirname, "..", "dist-refactor-modular");
 const host = "127.0.0.1";
@@ -8,6 +9,22 @@ const port = Number(process.env.VENDIFY_PORT || 4174);
 
 if (!existsSync(resolve(root, "index.html"))) {
   console.error("Modular refactor build not found. Run: npm run qa:refactor:modular");
+  process.exit(1);
+}
+
+try {
+  const stagingConfig = inspectRenderedStagingSupabaseConfig(
+    readFileSync(resolve(root, "supabase-config.js"), "utf8")
+  );
+  if (stagingConfig.mode !== "real") {
+    console.error(
+      "Real staging backend is not configured. Set VENDIFY_STAGING_SUPABASE_URL and " +
+        "VENDIFY_STAGING_SUPABASE_ANON_KEY, rebuild the modular refactor preview, then retry."
+    );
+    process.exit(1);
+  }
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
 
@@ -52,6 +69,6 @@ const server = createServer((request, response) => {
 
 server.listen(port, host, () => {
   console.log(`Vendify modular refactor preview: http://${host}:${port}/`);
-  console.log(`Full offline test: http://${host}:${port}/?offlineEngine=v2312&allowProdOfflineSync=1`);
+  console.log(`Full offline test: http://${host}:${port}/?offlineEngine=v2312`);
   console.log("Press Ctrl+C to stop.");
 });
