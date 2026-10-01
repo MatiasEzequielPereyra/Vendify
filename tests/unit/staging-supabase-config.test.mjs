@@ -130,7 +130,25 @@ test("service_role and cross-project anon keys are rejected", () => {
 test("production release remains explicitly bound to the production config", () => {
   const productionConfig = fs.readFileSync(path.join(root, "supabase-config.js"), "utf8");
   const productionBuild = fs.readFileSync(path.join(root, "scripts/build-release.mjs"), "utf8");
+  const productionContract = JSON.parse(
+    fs.readFileSync(
+      path.join(root, "contracts/production-release-baseline.json"),
+      "utf8"
+    )
+  );
 
-  assert.match(productionConfig, new RegExp(PRODUCTION_SUPABASE_PROJECT_REF + "\\.supabase\\.co"));
-  assert.match(productionBuild, /"supabase-config\.js"/);
+  assert.match(
+    productionConfig,
+    new RegExp(PRODUCTION_SUPABASE_PROJECT_REF + "\\.supabase\\.co")
+  );
+  assert.equal(
+    productionContract.productionSupabaseProjectRef,
+    PRODUCTION_SUPABASE_PROJECT_REF
+  );
+  assert.ok(
+    productionContract.files.some(
+      (entry) => entry.path === "supabase-config.js"
+    )
+  );
+  assert.match(productionBuild, /materializeProductionRelease/);
 });
