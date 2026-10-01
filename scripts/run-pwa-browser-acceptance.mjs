@@ -115,6 +115,12 @@ async function navigate(cdp, url) {
   await loaded;
 }
 
+async function reload(cdp) {
+  const loaded = cdp.event("Page.loadEventFired", 30_000);
+  await cdp.send("Page.reload", { ignoreCache: true });
+  await loaded;
+}
+
 async function openBrowser(url) {
   const chromeProcess = startChrome();
   const cdp = await connectTarget(url);
@@ -139,6 +145,117 @@ let secondBrowser;
 try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
+
+  const onboardingFirstVisit = await evaluate(firstBrowser.cdp, `(async () => {
+    if (!window.VendifyCoreV232?.createOnboardingController) {
+      throw new Error('Onboarding controller unavailable');
+    }
+    const key = 'kiosco_onboarding_done';
+    localStorage.removeItem(key);
+    const onboarding = document.querySelector('#onboarding');
+    const startOriginal = document.querySelector('#btn-empezar');
+    const examplesOriginal = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !startOriginal || !examplesOriginal) {
+      throw new Error('Onboarding UI unavailable');
+    }
+
+    const start = startOriginal.cloneNode(true);
+    const examples = examplesOriginal.cloneNode(true);
+    startOriginal.replaceWith(start);
+    examplesOriginal.replaceWith(examples);
+    onboarding.classList.add('hidden');
+
+    let examplesCalls = 0;
+    const controller = window.VendifyCoreV232.createOnboardingController({
+      onExamples: () => { examplesCalls += 1; }
+    });
+    controller.setup();
+    const visible = !onboarding.classList.contains('hidden');
+    start.click();
+
+    return {
+      visible,
+      marker: localStorage.getItem(key),
+      hiddenAfterStart: onboarding.classList.contains('hidden'),
+      examplesCalls
+    };
+  })()`);
+  if (
+    !onboardingFirstVisit.visible
+    || onboardingFirstVisit.marker !== "1"
+    || !onboardingFirstVisit.hiddenAfterStart
+    || onboardingFirstVisit.examplesCalls !== 0
+  ) {
+    throw new Error(`El onboarding no conserva primera visita/Start: ${JSON.stringify(onboardingFirstVisit)}`);
+  }
+
+  await reload(firstBrowser.cdp);
+  const onboardingPersistence = await evaluate(firstBrowser.cdp, `(() => {
+    const onboarding = document.querySelector('#onboarding');
+    if (!onboarding) throw new Error('Onboarding UI unavailable after reload');
+    return {
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      hiddenAfterReload: onboarding.classList.contains('hidden')
+    };
+  })()`);
+  if (onboardingPersistence.marker !== "1" || !onboardingPersistence.hiddenAfterReload) {
+    throw new Error(`El onboarding no conserva persistencia tras reload: ${JSON.stringify(onboardingPersistence)}`);
+  }
+
+  await evaluate(firstBrowser.cdp, `localStorage.removeItem('kiosco_onboarding_done')`);
+  await reload(firstBrowser.cdp);
+  const onboardingExamples = await evaluate(firstBrowser.cdp, `(() => {
+    if (!window.VendifyCoreV232?.createOnboardingController) {
+      throw new Error('Onboarding controller unavailable');
+    }
+    const key = 'kiosco_onboarding_done';
+    const onboarding = document.querySelector('#onboarding');
+    const startOriginal = document.querySelector('#btn-empezar');
+    const examplesOriginal = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !startOriginal || !examplesOriginal) {
+      throw new Error('Onboarding UI unavailable');
+    }
+
+    const start = startOriginal.cloneNode(true);
+    const examples = examplesOriginal.cloneNode(true);
+    startOriginal.replaceWith(start);
+    examplesOriginal.replaceWith(examples);
+    onboarding.classList.add('hidden');
+
+    let examplesCalls = 0;
+    let callbackSawPersisted = false;
+    let callbackSawHidden = false;
+    const controller = window.VendifyCoreV232.createOnboardingController({
+      onExamples: () => {
+        examplesCalls += 1;
+        callbackSawPersisted = localStorage.getItem(key) === '1';
+        callbackSawHidden = onboarding.classList.contains('hidden');
+      }
+    });
+    controller.setup();
+    const visibleBeforeClick = !onboarding.classList.contains('hidden');
+    examples.click();
+
+    return {
+      visibleBeforeClick,
+      marker: localStorage.getItem(key),
+      hiddenAfterExamples: onboarding.classList.contains('hidden'),
+      examplesCalls,
+      callbackSawPersisted,
+      callbackSawHidden
+    };
+  })()`);
+  if (
+    !onboardingExamples.visibleBeforeClick
+    || onboardingExamples.marker !== "1"
+    || !onboardingExamples.hiddenAfterExamples
+    || onboardingExamples.examplesCalls !== 1
+    || !onboardingExamples.callbackSawPersisted
+    || !onboardingExamples.callbackSawHidden
+  ) {
+    throw new Error(`El onboarding no conserva delegación Examples: ${JSON.stringify(onboardingExamples)}`);
+  }
+
   const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
     if (!window.VendifyPwaV232) throw new Error('PWA controller unavailable');
     window.VendifyPwaV232.setupInstallPrompt();
@@ -274,6 +391,11 @@ try {
     serverStoppedBeforeReopen: true,
     installed,
     installPrompt,
+    onboarding: {
+      firstVisit: onboardingFirstVisit,
+      persistence: onboardingPersistence,
+      examples: onboardingExamples
+    },
     updated,
     coldBoot,
     status: "pass",
