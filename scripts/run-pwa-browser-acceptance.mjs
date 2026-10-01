@@ -65,7 +65,7 @@ function startChrome() {
     `--remote-debugging-port=${debugPort}`,
     `--user-data-dir=${profile}`,
     "about:blank",
-  ], { stdio: "ignore", windowsHide: true });
+  ], { stdio: process.env.CI === "true" ? ["ignore", "ignore", "inherit"] : "ignore", windowsHide: true });
 }
 
 async function connectTarget(url) {
