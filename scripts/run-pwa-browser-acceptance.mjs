@@ -146,47 +146,34 @@ try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
 
-  const onboardingFirstVisit = await evaluate(firstBrowser.cdp, `(async () => {
-    if (!window.VendifyCoreV232?.createOnboardingController) {
-      throw new Error('Onboarding controller unavailable');
-    }
-    const key = 'kiosco_onboarding_done';
-    localStorage.removeItem(key);
+  const onboardingFirstVisit = await evaluate(firstBrowser.cdp, `(() => {
     const onboarding = document.querySelector('#onboarding');
-    const startOriginal = document.querySelector('#btn-empezar');
-    const examplesOriginal = document.querySelector('#btn-empezar-ejemplos');
-    if (!onboarding || !startOriginal || !examplesOriginal) {
+    const startButton = document.querySelector('#btn-empezar');
+    const examplesButton = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !startButton || !examplesButton) {
       throw new Error('Onboarding UI unavailable');
     }
-
-    const start = startOriginal.cloneNode(true);
-    const examples = examplesOriginal.cloneNode(true);
-    startOriginal.replaceWith(start);
-    examplesOriginal.replaceWith(examples);
-    onboarding.classList.add('hidden');
-
-    let examplesCalls = 0;
-    const controller = window.VendifyCoreV232.createOnboardingController({
-      onExamples: () => { examplesCalls += 1; }
-    });
-    controller.setup();
-    const visible = !onboarding.classList.contains('hidden');
-    start.click();
-
     return {
-      visible,
-      marker: localStorage.getItem(key),
-      hiddenAfterStart: onboarding.classList.contains('hidden'),
-      examplesCalls
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      visible: !onboarding.classList.contains('hidden')
     };
   })()`);
-  if (
-    !onboardingFirstVisit.visible
-    || onboardingFirstVisit.marker !== "1"
-    || !onboardingFirstVisit.hiddenAfterStart
-    || onboardingFirstVisit.examplesCalls !== 0
-  ) {
-    throw new Error(`El onboarding no conserva primera visita/Start: ${JSON.stringify(onboardingFirstVisit)}`);
+  if (onboardingFirstVisit.marker !== null || !onboardingFirstVisit.visible) {
+    throw new Error(`El onboarding real no aparece en primera visita: ${JSON.stringify(onboardingFirstVisit)}`);
+  }
+
+  const onboardingStart = await evaluate(firstBrowser.cdp, `(() => {
+    const onboarding = document.querySelector('#onboarding');
+    const startButton = document.querySelector('#btn-empezar');
+    if (!onboarding || !startButton) throw new Error('Onboarding Start UI unavailable');
+    startButton.click();
+    return {
+      marker: localStorage.getItem('kiosco_onboarding_done'),
+      hiddenAfterStart: onboarding.classList.contains('hidden')
+    };
+  })()`);
+  if (onboardingStart.marker !== "1" || !onboardingStart.hiddenAfterStart) {
+    throw new Error(`El Start real no conserva persistencia/cierre: ${JSON.stringify(onboardingStart)}`);
   }
 
   await reload(firstBrowser.cdp);
@@ -199,61 +186,47 @@ try {
     };
   })()`);
   if (onboardingPersistence.marker !== "1" || !onboardingPersistence.hiddenAfterReload) {
-    throw new Error(`El onboarding no conserva persistencia tras reload: ${JSON.stringify(onboardingPersistence)}`);
+    throw new Error(`El onboarding real no conserva persistencia tras reload: ${JSON.stringify(onboardingPersistence)}`);
   }
 
   await evaluate(firstBrowser.cdp, `localStorage.removeItem('kiosco_onboarding_done')`);
   await reload(firstBrowser.cdp);
   const onboardingExamples = await evaluate(firstBrowser.cdp, `(() => {
-    if (!window.VendifyCoreV232?.createOnboardingController) {
-      throw new Error('Onboarding controller unavailable');
-    }
     const key = 'kiosco_onboarding_done';
     const onboarding = document.querySelector('#onboarding');
-    const startOriginal = document.querySelector('#btn-empezar');
-    const examplesOriginal = document.querySelector('#btn-empezar-ejemplos');
-    if (!onboarding || !startOriginal || !examplesOriginal) {
-      throw new Error('Onboarding UI unavailable');
+    const examplesButton = document.querySelector('#btn-empezar-ejemplos');
+    if (!onboarding || !examplesButton) {
+      throw new Error('Onboarding Examples UI unavailable');
     }
 
-    const start = startOriginal.cloneNode(true);
-    const examples = examplesOriginal.cloneNode(true);
-    startOriginal.replaceWith(start);
-    examplesOriginal.replaceWith(examples);
-    onboarding.classList.add('hidden');
-
-    let examplesCalls = 0;
-    let callbackSawPersisted = false;
-    let callbackSawHidden = false;
-    const controller = window.VendifyCoreV232.createOnboardingController({
-      onExamples: () => {
-        examplesCalls += 1;
-        callbackSawPersisted = localStorage.getItem(key) === '1';
-        callbackSawHidden = onboarding.classList.contains('hidden');
-      }
-    });
-    controller.setup();
+    const toastSelector = '#toast-container .toast';
+    const beforeToasts = Array.from(document.querySelectorAll(toastSelector)).map(
+      (toast) => toast.textContent
+    );
     const visibleBeforeClick = !onboarding.classList.contains('hidden');
-    examples.click();
+
+    examplesButton.click();
+
+    const afterToasts = Array.from(document.querySelectorAll(toastSelector)).map(
+      (toast) => toast.textContent
+    );
+    const newToasts = afterToasts.slice(beforeToasts.length);
 
     return {
       visibleBeforeClick,
       marker: localStorage.getItem(key),
       hiddenAfterExamples: onboarding.classList.contains('hidden'),
-      examplesCalls,
-      callbackSawPersisted,
-      callbackSawHidden
+      productsPermissionToast: newToasts.includes('No tenés permiso para cargar catálogos'),
+      newToasts
     };
   })()`);
   if (
     !onboardingExamples.visibleBeforeClick
     || onboardingExamples.marker !== "1"
     || !onboardingExamples.hiddenAfterExamples
-    || onboardingExamples.examplesCalls !== 1
-    || !onboardingExamples.callbackSawPersisted
-    || !onboardingExamples.callbackSawHidden
+    || !onboardingExamples.productsPermissionToast
   ) {
-    throw new Error(`El onboarding no conserva delegación Examples: ${JSON.stringify(onboardingExamples)}`);
+    throw new Error(`El Examples real no alcanza al owner Products: ${JSON.stringify(onboardingExamples)}`);
   }
 
   const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
@@ -392,7 +365,9 @@ try {
     installed,
     installPrompt,
     onboarding: {
+      runtimeComposition: "real-app-init-and-listeners",
       firstVisit: onboardingFirstVisit,
+      start: onboardingStart,
       persistence: onboardingPersistence,
       examples: onboardingExamples
     },
