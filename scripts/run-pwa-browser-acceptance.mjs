@@ -69,7 +69,7 @@ function startChrome() {
 }
 
 async function connectTarget(url) {
-  await waitForHttp(`http://${host}:${debugPort}/json/version`);
+  await waitForHttp(`http://${host}:${debugPort}/json/version`, 200);
   const created = await fetch(`http://${host}:${debugPort}/json/new?${encodeURIComponent(url)}`, { method: "PUT" });
   if (!created.ok) throw new Error(`Chrome no creó el target (${created.status})`);
   const target = await created.json();
