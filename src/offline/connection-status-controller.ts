@@ -34,6 +34,14 @@ const DEFAULT_LABELS: Readonly<Record<string, string>> =
     error: "Error de sync"
   });
 
+function connectionLabel(
+  state: string,
+  label: string | null
+): string {
+  if (label) return label;
+  return DEFAULT_LABELS[state] ?? state;
+}
+
 export function createConnectionStatusController(
   dependencies: ConnectionStatusControllerDependencies
 ): ConnectionStatusController {
@@ -72,9 +80,7 @@ export function createConnectionStatusController(
     );
     status.classList.add(state);
 
-    text.textContent = label
-      ? label
-      : (DEFAULT_LABELS[state] ?? state);
+    text.textContent = connectionLabel(state, label);
 
     const icon = status.querySelector("use");
 
@@ -121,13 +127,13 @@ export function createConnectionStatusController(
     addWindowListener("offline", refresh);
 
     getElement("#connection-status-v23011")
-      ?.addEventListener("click", async () => {
-        await runManualSync();
+      ?.addEventListener("click", () => {
+        void runManualSync();
       });
 
     getElement("#btn-sync-now-v23011")
-      ?.addEventListener("click", async () => {
-        await dependencies.syncAll(true);
+      ?.addEventListener("click", () => {
+        void dependencies.syncAll(true);
       });
   }
 
