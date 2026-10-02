@@ -180,7 +180,8 @@ for (const forbidden of [
 }
 for (const marker of [
   "function setupOverlayStabilityV23011()",
-  'window.addEventListener("keydown"',
+  'document.addEventListener("keydown"',
+  'if (e.key !== "Escape") return;',
   "setupOverlayStabilityV23011();"
 ]) {
   if (!sourceApp.includes(marker)) {
