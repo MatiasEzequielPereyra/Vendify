@@ -757,6 +757,17 @@ const onboardingControllerV232 =
     onExamples: () => productsControllerV232.openCatalog(),
   });
 
+
+const diagnosticsControllerV232 =
+  window.VendifyObservabilityV232.createDiagnosticsController({
+    getRole: () => appContext.membership?.role || null,
+    isOnline: () => navigator.onLine,
+    getBranchName: () => appContext.branch?.nombre || null,
+    getCashRegisterName: () => appContext.cashRegister?.nombre || null,
+    runDiagnostic: () =>
+      window.VendifyContextV232.runDiagnostic(supabaseClient),
+    showToast: mostrarToast,
+  });
 scannerControllerV232 =
   window.VendifyProductsV232.createScannerController({
     client: supabaseClient,
@@ -1403,93 +1414,6 @@ function setupOverlayStabilityV23011() {
   sincronizarEstadoOverlaysV23011();
 }
 
-async function abrirDiagnosticoV23011() {
-  const role = appContext.membership?.role;
-  if (!["owner", "admin"].includes(role)) {
-    mostrarToast("Solo Propietario o Administrador pueden ejecutar diagnósticos", "error");
-    return;
-  }
-
-  $("#diag-connection-v23011").textContent = navigator.onLine ? "Online" : "Sin conexión";
-  $("#diag-branch-v23011").textContent = appContext.branch?.nombre || "Sin sucursal";
-  $("#diag-cash-v23011").textContent = appContext.cashRegister?.nombre || "Sin caja";
-  $("#diagnostic-summary-v23011").textContent =
-    "Ejecutá el diagnóstico para revisar la integridad.";
-  $("#diagnostic-issues-v23011").innerHTML = "";
-
-  $("#modal-diagnostico-v23011").classList.remove("hidden");
-}
-
-function cerrarDiagnosticoV23011() {
-  $("#modal-diagnostico-v23011")?.classList.add("hidden");
-}
-
-function renderDiagnosticoV23011(data) {
-  const summary = $("#diagnostic-summary-v23011");
-  const issues = $("#diagnostic-issues-v23011");
-  if (!summary || !issues) return;
-
-  const rows = Array.isArray(data?.issues) ? data.issues : [];
-  const critical = rows.filter((x) => x.severity === "critical").length;
-  const warning = rows.filter((x) => x.severity === "warning").length;
-
-  summary.className =
-    `diagnostic-summary-v23011 ${critical ? "critical" : warning ? "warning" : "ok"}`;
-
-  summary.innerHTML = critical
-    ? `<strong>${critical} problema(s) crítico(s)</strong><span>Revisalos antes de continuar operando.</span>`
-    : warning
-      ? `<strong>${warning} advertencia(s)</strong><span>No bloquean la operación, pero conviene revisarlas.</span>`
-      : `<strong>Integridad OK</strong><span>No se detectaron inconsistencias en los controles automáticos.</span>`;
-
-  if (!rows.length) {
-    issues.innerHTML = `
-      <div class="diagnostic-empty-v23011">
-        <svg class="vendify-icon"><use href="#vi-check"></use></svg>
-        <span>Sin problemas detectados.</span>
-      </div>`;
-    return;
-  }
-
-  issues.innerHTML = rows.map((issue) => `
-    <article class="diagnostic-issue-v23011 ${escapeHtml(issue.severity || "warning")}">
-      <div class="diagnostic-issue-icon-v23011">
-        <svg class="vendify-icon"><use href="#vi-${issue.severity === "critical" ? "alert" : "diagnostic"}"></use></svg>
-      </div>
-      <div>
-        <strong>${escapeHtml(issue.title || "Control")}</strong>
-        <p>${escapeHtml(issue.detail || "")}</p>
-      </div>
-      <span>${Number(issue.count || 0)}</span>
-    </article>
-  `).join("");
-}
-
-async function ejecutarDiagnosticoV23011() {
-  const btn = $("#btn-run-diagnostic-v23011");
-  const original = btn?.innerHTML;
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = "Ejecutando...";
-  }
-
-  try {
-    const data = await window.VendifyContextV232.runDiagnostic(supabaseClient);
-    renderDiagnosticoV23011(data);
-  } catch (error) {
-    $("#diagnostic-summary-v23011").className =
-      "diagnostic-summary-v23011 critical";
-    $("#diagnostic-summary-v23011").innerHTML =
-      `<strong>No se pudo ejecutar el diagnóstico</strong><span>${escapeHtml(error.message || "Error desconocido")}</span>`;
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = original;
-    }
-  }
-}
-
 function setupStabilityV23011() {
   actualizarEstadoConexionV23011();
 
@@ -1520,30 +1444,14 @@ function setupStabilityV23011() {
     }
   );
 
-  $("#btn-diagnostico-v23011")?.addEventListener(
-    "click",
-    abrirDiagnosticoV23011
-  );
 
-  $("#btn-close-diagnostic-v23011")?.addEventListener(
-    "click",
-    cerrarDiagnosticoV23011
-  );
 
-  $("#modal-diagnostico-v23011 .modal-backdrop")?.addEventListener(
-    "click",
-    cerrarDiagnosticoV23011
-  );
 
   $("#btn-sync-now-v23011")?.addEventListener(
     "click",
     () => sincronizarTodoV23011({ toast: true })
   );
 
-  $("#btn-run-diagnostic-v23011")?.addEventListener(
-    "click",
-    ejecutarDiagnosticoV23011
-  );
 
   setupOverlayStabilityV23011();
 }
@@ -4251,6 +4159,7 @@ function init() {
   purchasesControllerV232.setup();
   inactivityGuardV232.start();
   setupStabilityV23011();
+  diagnosticsControllerV232.setup();
   setupBackGuardV2311();
   setupCommercialFoundationV231();
   realtimeControllerV232.startWatchdog();
