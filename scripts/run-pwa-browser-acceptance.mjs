@@ -152,6 +152,76 @@ try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
 
+  const connectionStatusInitialOnline = await evaluate(
+    firstBrowser.cdp,
+    `(() => {
+      const status = document.querySelector('#connection-status-v23011');
+      const label = document.querySelector('#connection-label-v23011');
+      const icon = status?.querySelector('use');
+      if (!status || !label || !icon) throw new Error('Connection Status UI unavailable');
+      return {
+        navigatorOnline: navigator.onLine,
+        onlineClass: status.classList.contains('online'),
+        label: label.textContent,
+        icon: icon.getAttribute('href')
+      };
+    })()`
+  );
+  if (
+    !connectionStatusInitialOnline.navigatorOnline
+    || !connectionStatusInitialOnline.onlineClass
+    || connectionStatusInitialOnline.label !== "Online"
+    || connectionStatusInitialOnline.icon !== "#vi-wifi"
+  ) {
+    throw new Error(
+      `El Connection Status inicial real no conserva estado Online: ${JSON.stringify(connectionStatusInitialOnline)}`
+    );
+  }
+
+  const connectionStatusOffline = await evaluate(
+    firstBrowser.cdp,
+    `(async () => {
+      const status = document.querySelector('#connection-status-v23011');
+      const label = document.querySelector('#connection-label-v23011');
+      const icon = status?.querySelector('use');
+      if (!status || !label || !icon) throw new Error('Connection Status UI unavailable');
+      const hadOwnOnLine = Object.prototype.hasOwnProperty.call(navigator, "onLine");
+      const ownOnLineDescriptor = Object.getOwnPropertyDescriptor(navigator, "onLine");
+      Object.defineProperty(navigator, "onLine", {
+        configurable: true,
+        get: () => false
+      });
+      try {
+        window.dispatchEvent(new Event("offline"));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        return {
+          navigatorOnline: navigator.onLine,
+          offlineClass: status.classList.contains('offline'),
+          label: label.textContent,
+          icon: icon.getAttribute('href')
+        };
+      } finally {
+        if (hadOwnOnLine && ownOnLineDescriptor) {
+          Object.defineProperty(navigator, "onLine", ownOnLineDescriptor);
+        } else {
+          delete navigator.onLine;
+        }
+      }
+    })()`
+  );
+  if (
+    connectionStatusOffline.navigatorOnline !== false
+    || !connectionStatusOffline.offlineClass
+    || connectionStatusOffline.label !== "Sin conexión"
+    || connectionStatusOffline.icon !== "#vi-wifi-off"
+  ) {
+    throw new Error(
+      `El evento offline real no conserva Connection Status: ${JSON.stringify(connectionStatusOffline)}`
+    );
+  }
+
+  await reload(firstBrowser.cdp);
+
   const onboardingFirstVisit = await evaluate(firstBrowser.cdp, `(() => {
     const onboarding = document.querySelector('#onboarding');
     const startButton = document.querySelector('#btn-empezar');
@@ -521,7 +591,13 @@ try {
       runtimeComposition: "real-app-init-and-listeners",
       denied: diagnosticsDenied,
       ownerOpenClose: diagnosticsOwnerOpenClose
-    },    updated,
+    },
+    connectionStatus: {
+      runtimeComposition: "real-app-init-and-listeners",
+      initialOnline: connectionStatusInitialOnline,
+      offline: connectionStatusOffline
+    },
+    updated,
     coldBoot,
     status: "pass",
   };
