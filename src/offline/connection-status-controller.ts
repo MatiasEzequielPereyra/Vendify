@@ -1,23 +1,13 @@
-export interface ConnectionStatusElementPort {
-  readonly classList: {
-    add(...tokens: string[]): void;
-    remove(...tokens: string[]): void;
-  };
-  textContent: string | null;
-  querySelector(selector: string): {
-    setAttribute(name: string, value: string): void;
-  } | null;
-  addEventListener(
-    type: string,
-    listener: () => void | Promise<void>
-  ): void;
-}
+export type ConnectionStatusElementPort = Pick<
+  Element,
+  "classList" | "textContent" | "querySelector" | "addEventListener"
+>;
 
 export interface ConnectionStatusControllerDependencies {
   readonly isOnline: () => boolean;
   readonly getPendingOfflineSalesCount: () => number;
-  readonly syncPendingOfflineSales: () => Promise<unknown> | unknown;
-  readonly syncAll: (showToast: boolean) => Promise<unknown> | unknown;
+  readonly syncPendingOfflineSales: () => unknown;
+  readonly syncAll: (showToast: boolean) => unknown;
   readonly getElement?: (
     selector: string
   ) => ConnectionStatusElementPort | null;
@@ -50,8 +40,7 @@ export function createConnectionStatusController(
   const getElement =
     dependencies.getElement
     ?? ((selector: string) =>
-      document.querySelector(selector) as unknown as
-        ConnectionStatusElementPort | null);
+      document.querySelector(selector));
 
   const addWindowListener =
     dependencies.addWindowListener
@@ -83,8 +72,9 @@ export function createConnectionStatusController(
     );
     status.classList.add(state);
 
-    text.textContent =
-      label || DEFAULT_LABELS[state] || state;
+    text.textContent = label
+      ? label
+      : (DEFAULT_LABELS[state] ?? state);
 
     const icon = status.querySelector("use");
 
