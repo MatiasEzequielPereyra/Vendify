@@ -1,4 +1,5 @@
 import { createOfflineCompatController } from "../offline/compat-controller.js";
+import { createConnectionStatusController } from "../offline/connection-status-controller.js";
 import {
   buildLegacyOfflineTicket,
   createLegacyOfflineSale,
@@ -10,6 +11,7 @@ import {
 
 export interface VendifyOfflineCompatV232Api {
   readonly createController: typeof createOfflineCompatController;
+  readonly createConnectionStatusController: typeof createConnectionStatusController;
   readonly parseLegacyQueue: typeof parseLegacyOfflineQueue;
   readonly summarizeLegacyQueue: typeof summarizeLegacyOfflineQueue;
   readonly validatePayments: typeof validateLegacyOfflinePayments;
@@ -26,6 +28,7 @@ declare global {
 
 window.VendifyOfflineCompatV232 = Object.freeze({
   createController: createOfflineCompatController,
+  createConnectionStatusController,
   parseLegacyQueue: parseLegacyOfflineQueue,
   summarizeLegacyQueue: summarizeLegacyOfflineQueue,
   validatePayments: validateLegacyOfflinePayments,

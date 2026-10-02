@@ -138,7 +138,7 @@ async function cargarContextoApp() {
         window.appContext = cachedContext;
         actualizarContextoUI();
         aplicarPermisosV2();
-        setConnectionStateV23011?.(
+        connectionStatusControllerV232.setState(
           "offline",
           "Modo consulta"
         );
@@ -1258,47 +1258,17 @@ function asegurarVentaRequestIdV23011() {
   return posControllerV232.ensureRequestId();
 }
 
-function setConnectionStateV23011(state = "online", label = null) {
-  const el = $("#connection-status-v23011");
-  const text = $("#connection-label-v23011");
-  if (!el || !text) return;
-
-  el.classList.remove("online", "offline", "syncing", "error");
-  el.classList.add(state);
-
-  const labels = {
-    online: "Online",
-    offline: "Sin conexión",
-    syncing: "Sincronizando",
-    error: "Error de sync",
-  };
-
-  text.textContent = label || labels[state] || state;
-
-  const icon = el.querySelector("use");
-  if (icon) {
-    icon.setAttribute(
-      "href",
-      state === "offline" || state === "error" ? "#vi-wifi-off" : "#vi-wifi"
-    );
-  }
-}
-
-function actualizarEstadoConexionV23011() {
-  setConnectionStateV23011(navigator.onLine ? "online" : "offline");
-}
-
 async function sincronizarTodoV23011({ toast = false } = {}) {
   if (syncInFlightV23011) return syncInFlightV23011;
 
   syncInFlightV23011 = (async () => {
     if (!navigator.onLine) {
-      setConnectionStateV23011("offline");
+      connectionStatusControllerV232.setState("offline");
       if (toast) mostrarToast("No hay conexión a internet", "info");
       return false;
     }
 
-    setConnectionStateV23011("syncing");
+    connectionStatusControllerV232.setState("syncing");
 
     try {
       await cargarProductos();
@@ -1316,12 +1286,12 @@ async function sincronizarTodoV23011({ toast = false } = {}) {
 
       await purchasesControllerV232.refreshOpenViews();
 
-      setConnectionStateV23011("online");
+      connectionStatusControllerV232.setState("online");
       if (toast) mostrarToast("Datos sincronizados", "success");
       return true;
     } catch (error) {
       console.error("[Vendify Stability] sync:", error);
-      setConnectionStateV23011("error");
+      connectionStatusControllerV232.setState("error");
       if (toast) mostrarToast(error.message || "No se pudo sincronizar", "error");
       return false;
     }
@@ -1415,44 +1385,7 @@ function setupOverlayStabilityV23011() {
 }
 
 function setupStabilityV23011() {
-  actualizarEstadoConexionV23011();
-
-  window.addEventListener("online", () => {
-    setConnectionStateV23011("syncing");
-    sincronizarTodoV23011();
-  });
-
-  window.addEventListener("offline", actualizarEstadoConexionV23011);
-
-  $("#connection-status-v23011")?.addEventListener(
-    "click",
-    async () => {
-      if (
-        navigator.onLine &&
-        typeof leerVentasOfflineV2311 === "function" &&
-        leerVentasOfflineV2311().length > 0
-      ) {
-        await sincronizarVentasOfflineV2311({
-          mostrarResumen: true,
-          incluirRevision: true,
-        });
-      }
-
-      await sincronizarTodoV23011({
-        toast: true,
-      });
-    }
-  );
-
-
-
-
-  $("#btn-sync-now-v23011")?.addEventListener(
-    "click",
-    () => sincronizarTodoV23011({ toast: true })
-  );
-
-
+  connectionStatusControllerV232.setup();
   setupOverlayStabilityV23011();
 }
 
@@ -3715,6 +3648,21 @@ const cashControllerV232 = window.VendifyCashV232.createController({
   onPanelClose: () => dashboardNavigationV236.complete("cash"),
 });
 
+const connectionStatusControllerV232 =
+  window.VendifyOfflineCompatV232.createConnectionStatusController({
+    isOnline: () => navigator.onLine,
+    getPendingOfflineSalesCount: () => leerVentasOfflineV2311().length,
+    syncPendingOfflineSales: () =>
+      sincronizarVentasOfflineV2311({
+        mostrarResumen: true,
+        incluirRevision: true,
+      }),
+    syncAll: (showToast) =>
+      sincronizarTodoV23011({
+        toast: showToast,
+      }),
+  });
+
 const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
   client: supabaseClient,
   storage: localStorage,
@@ -3748,7 +3696,7 @@ const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
   reloadProducts: cargarProductos,
   reloadCash: cargarEstadoCajaV227,
   reloadCommercialFoundation: cargarCommercialFoundationV231,
-  setConnectionState: (state, label) => setConnectionStateV23011?.(state, label),
+  setConnectionState: (state, label) => connectionStatusControllerV232.setState(state, label),
   showToast: mostrarToast,
 });
 
