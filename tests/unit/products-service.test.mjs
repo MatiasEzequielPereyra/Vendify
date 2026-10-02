@@ -76,6 +76,7 @@ test("save product preserves every backend parameter", async () => {
       p_stock: 5
     }
   });
+  assert.equal("p_foto" in client.calls[0].args, false);
 });
 
 test("category mutations and initialization preserve contracts", async () => {

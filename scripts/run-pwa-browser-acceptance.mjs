@@ -445,6 +445,192 @@ try {
       `El open/close real de Diagnostics no conserva la paridad: ${JSON.stringify(diagnosticsOwnerOpenClose)}`
     );
   }
+  const productMedia = await evaluate(firstBrowser.cdp, `(() => {
+    if (!window.appContext) {
+      throw new Error('Product runtime appContext unavailable');
+    }
+
+    const originalProductContext = {
+      membership: window.appContext.membership,
+      permissions: window.appContext.permissions,
+      ready: window.appContext.ready
+    };
+
+    window.appContext.membership = { role: "owner" };
+    window.appContext.permissions = {
+      ...(window.appContext.permissions ?? {}),
+      manageProducts: true
+    };
+    window.appContext.ready = true;
+
+    aplicarPermisosV2();
+
+    const modal = document.querySelector('#modal');
+    const openButton = document.querySelector('#btn-nuevo');
+    const closeButton = document.querySelector('#btn-cerrar-modal');
+
+    const normalFields = [
+      '#nombre',
+      '#marca',
+      '#precio-venta'
+    ];
+
+    if (!modal || !openButton || !closeButton) {
+      throw new Error('Product Editor UI unavailable');
+    }
+
+    if (normalFields.some((selector) => !document.querySelector(selector))) {
+      throw new Error('Product Editor normal fields unavailable');
+    }
+
+    modal.classList.add('hidden');
+
+    const permissionState = {
+      role: window.appContext.membership?.role ?? null,
+      manageProducts:
+        window.appContext.permissions?.manageProducts === true,
+      ready: window.appContext.ready === true,
+      buttonHiddenAfterPermissionRefresh:
+        openButton.hidden || openButton.classList.contains('permiso-hidden')
+    };
+
+    openButton.click();
+
+    const editor = {
+      opened: !modal.classList.contains('hidden'),
+      normalFieldsPresent: normalFields.every(
+        (selector) => Boolean(document.querySelector(selector))
+      ),
+      fotoInputAbsent: !document.querySelector('#foto-input'),
+      fotoCameraAbsent: !document.querySelector('#foto-camara'),
+      cropModalAbsent: !document.querySelector('#modal-crop-foto')
+    };
+
+    closeButton.click();
+    editor.closed = modal.classList.contains('hidden');
+
+    if (
+      typeof productsStoreV232 === 'undefined'
+      || typeof productsControllerV232 === 'undefined'
+    ) {
+      throw new Error('Typed Products runtime unavailable');
+    }
+
+    const photoId = 'ven-007e-existing-photo-fixture';
+    const fallbackId = 'ven-007e-no-photo-fixture';
+
+    const photoValue =
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+    productsStoreV232.upsert({
+      id: photoId,
+      nombre: 'Producto con foto',
+      marca: '',
+      presentacion: '',
+      codigoBarras: '',
+      categoria: 'Otros',
+      precioCompra: 10,
+      precioVenta: 20,
+      stock: 5,
+      stockMinimo: 2,
+      foto: photoValue,
+      creado: null
+    });
+
+    productsStoreV232.upsert({
+      id: fallbackId,
+      nombre: 'Producto sin foto',
+      marca: '',
+      presentacion: '',
+      codigoBarras: '',
+      categoria: 'Otros',
+      precioCompra: 10,
+      precioVenta: 20,
+      stock: 5,
+      stockMinimo: 2,
+      foto: null,
+      creado: null
+    });
+
+    const search = document.querySelector('#buscador');
+    if (search) search.value = '';
+
+    const category = document.querySelector('#filtro-categoria');
+    if (category) category.value = '';
+
+    productsControllerV232.render();
+
+    const photoCard = document.querySelector(
+      '.producto-card[data-id="ven-007e-existing-photo-fixture"]'
+    );
+
+    const fallbackCard = document.querySelector(
+      '.producto-card[data-id="ven-007e-no-photo-fixture"]'
+    );
+
+    const image = photoCard?.querySelector('img.producto-v223-img');
+    const fallback = fallbackCard?.querySelector('.producto-v223-icon');
+
+    const existingPhotoRender = {
+      photoCardPresent: Boolean(photoCard),
+      imagePresent: Boolean(image),
+      imageSrc: image?.getAttribute('src') ?? null,
+      fallbackCardPresent: Boolean(fallbackCard),
+      fallbackPresent: Boolean(fallback)
+    };
+
+    productsStoreV232.remove(photoId);
+    productsStoreV232.remove(fallbackId);
+    productsControllerV232.render();
+
+    window.appContext.membership = originalProductContext.membership;
+    window.appContext.permissions = originalProductContext.permissions;
+    window.appContext.ready = originalProductContext.ready;
+
+    return {
+      permissionState,
+      editor,
+      existingPhotoRender,
+      photoValue
+    };
+  })()`);
+
+  if (
+    productMedia.permissionState.role !== "owner"
+    || !productMedia.permissionState.manageProducts
+    || !productMedia.permissionState.ready
+    || productMedia.permissionState.buttonHiddenAfterPermissionRefresh
+  ) {
+    throw new Error(
+      `El contexto real de permisos Products no qued? habilitado: ${JSON.stringify(productMedia.permissionState)}`
+    );
+  }
+
+  if (
+    !productMedia.editor.opened
+    || !productMedia.editor.closed
+    || !productMedia.editor.normalFieldsPresent
+    || !productMedia.editor.fotoInputAbsent
+    || !productMedia.editor.fotoCameraAbsent
+    || !productMedia.editor.cropModalAbsent
+  ) {
+    throw new Error(
+      `El Product Editor real no conserva VEN-007E: ${JSON.stringify(productMedia.editor)}`
+    );
+  }
+
+  if (
+    !productMedia.existingPhotoRender.photoCardPresent
+    || !productMedia.existingPhotoRender.imagePresent
+    || productMedia.existingPhotoRender.imageSrc !== productMedia.photoValue
+    || !productMedia.existingPhotoRender.fallbackCardPresent
+    || !productMedia.existingPhotoRender.fallbackPresent
+  ) {
+    throw new Error(
+      `El render real de foto existente/fallback fall?: ${JSON.stringify(productMedia.existingPhotoRender)}`
+    );
+  }
+
   const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
     if (!window.VendifyPwaV232) throw new Error('PWA controller unavailable');
     window.VendifyPwaV232.setupInstallPrompt();
@@ -596,6 +782,10 @@ try {
       runtimeComposition: "real-app-init-and-listeners",
       initialOnline: connectionStatusInitialOnline,
       offline: connectionStatusOffline
+    },
+    productMedia: {
+      runtimeComposition: "real-app-init-and-listeners",
+      ...productMedia
     },
     updated,
     coldBoot,

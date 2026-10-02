@@ -91,17 +91,7 @@ async function mostrarAppSeguroVQA(session) {
 
 const productsStoreV232 = window.VendifyProductsV232.createStore();
 let productoEditandoId = null;
-let fotoActualBase64 = null;
 
-// Editor de recorte
-let cropImage = null;
-let cropScale = 1;
-let cropBaseScale = 1;
-let cropOffsetX = 0;
-let cropOffsetY = 0;
-let cropDragging = false;
-let cropLastX = 0;
-let cropLastY = 0;
 let stockAjusteId = null;
 let stockAjusteValor = 0;
 
@@ -738,7 +728,6 @@ const productsControllerV232 =
     openManualStockModal: abrirModalStock,
     setEditingProductId: (id) => { productoEditandoId = id; },
     getEditingProductId: () => productoEditandoId,
-    setCurrentPhoto: (photo) => { fotoActualBase64 = photo; },
     restoreSaleBehindProduct: (focus = true) => {
       restaurarVentaDetrasProducto({ enfocar: focus });
     },
@@ -819,221 +808,6 @@ function escapeHtml(texto) {
 
 function mostrarToast(mensaje, tipo = "success") {
   window.VendifyCoreV232.showToast(mensaje, tipo);
-}
-
-async function leerArchivoImagen(file) {
-  if (!file) throw new Error("No se recibió ninguna imagen");
-
-  // createImageBitmap suele manejar mejor fotos grandes de cámara móvil
-  // y respeta orientación EXIF en navegadores modernos.
-  if ("createImageBitmap" in window) {
-    try {
-      const bitmap = await createImageBitmap(file, {
-        imageOrientation: "from-image",
-      });
-
-      // Normalizamos a canvas para evitar diferencias entre navegadores.
-      const maxSide = 2200;
-      let width = bitmap.width;
-      let height = bitmap.height;
-
-      if (Math.max(width, height) > maxSide) {
-        const ratio = maxSide / Math.max(width, height);
-        width = Math.round(width * ratio);
-        height = Math.round(height * ratio);
-      }
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(bitmap, 0, 0, width, height);
-      bitmap.close?.();
-
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error("No se pudo preparar la foto"));
-        img.src = canvas.toDataURL("image/jpeg", 0.9);
-      });
-
-      return img;
-    } catch (error) {
-      console.warn("[Foto] createImageBitmap falló, usando fallback:", error);
-    }
-  }
-
-  // Fallback compatible.
-  return await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const img = new Image();
-
-      img.onload = () => resolve(img);
-      img.onerror = () =>
-        reject(new Error("Formato de imagen no compatible con este navegador"));
-
-      img.src = reader.result;
-    };
-
-    reader.onerror = () =>
-      reject(new Error("No se pudo leer la imagen"));
-
-    reader.readAsDataURL(file);
-  });
-}
-
-function abrirEditorRecorte(img) {
-  if (!img || !img.width || !img.height) {
-    throw new Error("La imagen no pudo cargarse correctamente");
-  }
-
-  const canvas = $("#crop-canvas");
-  const modal = $("#modal-crop-foto");
-  const zoom = $("#crop-zoom");
-
-  if (!canvas || !modal || !zoom) {
-    throw new Error("El editor de recorte no está disponible");
-  }
-
-  cropImage = img;
-
-  const size = canvas.width;
-
-  cropBaseScale = Math.max(
-    size / img.width,
-    size / img.height
-  );
-
-  cropScale = 1;
-  cropOffsetX = 0;
-  cropOffsetY = 0;
-
-  zoom.value = "1";
-  modal.classList.remove("hidden");
-
-  requestAnimationFrame(() => {
-    renderCropCanvas();
-  });
-}
-
-
-function resetearCrop() {
-  if (!cropImage) return;
-  cropScale = 1;
-  cropOffsetX = 0;
-  cropOffsetY = 0;
-  const zoom = $("#crop-zoom");
-  if (zoom) zoom.value = "1";
-  renderCropCanvas();
-}
-
-function cerrarEditorRecorte() {
-  $("#modal-crop-foto")?.classList.add("hidden");
-  cropImage = null;
-  cropDragging = false;
-}
-
-function renderCropCanvas() {
-  if (!cropImage) return;
-
-  const canvas = $("#crop-canvas");
-  const ctx = canvas.getContext("2d");
-  const size = canvas.width;
-  const scale = cropBaseScale * cropScale;
-
-  const drawW = cropImage.width * scale;
-  const drawH = cropImage.height * scale;
-
-  const centerX = size / 2 + cropOffsetX;
-  const centerY = size / 2 + cropOffsetY;
-  const x = centerX - drawW / 2;
-  const y = centerY - drawH / 2;
-
-  // Limitar desplazamiento para que nunca quede espacio vacío.
-  const maxX = Math.max(0, (drawW - size) / 2);
-  const maxY = Math.max(0, (drawH - size) / 2);
-  cropOffsetX = Math.max(-maxX, Math.min(maxX, cropOffsetX));
-  cropOffsetY = Math.max(-maxY, Math.min(maxY, cropOffsetY));
-
-  const finalX = size / 2 + cropOffsetX - drawW / 2;
-  const finalY = size / 2 + cropOffsetY - drawH / 2;
-
-  ctx.clearRect(0, 0, size, size);
-  ctx.drawImage(cropImage, finalX, finalY, drawW, drawH);
-}
-
-function aplicarRecorteFoto() {
-  if (!cropImage) return;
-
-  const source = $("#crop-canvas");
-  const output = document.createElement("canvas");
-
-  // Suficiente calidad para el producto sin guardar fotos gigantes.
-  output.width = 800;
-  output.height = 800;
-
-  const ctx = output.getContext("2d");
-  ctx.drawImage(source, 0, 0, 800, 800);
-
-  fotoActualBase64 = output.toDataURL("image/jpeg", 0.82);
-  mostrarPreviewFoto(fotoActualBase64);
-  cerrarEditorRecorte();
-  mostrarToast("Foto recortada", "success");
-}
-
-function puntoCropDesdeEvento(e) {
-  const canvas = $("#crop-canvas");
-  const rect = canvas.getBoundingClientRect();
-  const source = e.touches?.[0] || e;
-
-  return {
-    x: (source.clientX - rect.left) * (canvas.width / rect.width),
-    y: (source.clientY - rect.top) * (canvas.height / rect.height),
-  };
-}
-
-function iniciarDragCrop(e) {
-  if (!cropImage) return;
-  e.preventDefault();
-  cropDragging = true;
-  const p = puntoCropDesdeEvento(e);
-  cropLastX = p.x;
-  cropLastY = p.y;
-}
-
-function moverDragCrop(e) {
-  if (!cropDragging || !cropImage) return;
-  e.preventDefault();
-
-  const p = puntoCropDesdeEvento(e);
-  cropOffsetX += p.x - cropLastX;
-  cropOffsetY += p.y - cropLastY;
-  cropLastX = p.x;
-  cropLastY = p.y;
-
-  renderCropCanvas();
-}
-
-function terminarDragCrop() {
-  cropDragging = false;
-}
-
-
-function mostrarPreviewFoto(base64) {
-  const img = $("#foto-img");
-  const placeholder = $("#foto-placeholder");
-  if (base64) {
-    img.src = base64;
-    img.classList.remove("hidden");
-    placeholder.classList.add("hidden");
-  } else {
-    img.src = "";
-    img.classList.add("hidden");
-    placeholder.classList.remove("hidden");
-  }
 }
 
 // =====================
@@ -3398,51 +3172,6 @@ function inicializarEventos() {
   $("#btn-cerrar-config-ok").addEventListener("click", cerrarConfig);
   $("#modal-config .modal-backdrop").addEventListener("click", cerrarConfig);
 
-  async function manejarFoto(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const img = await leerArchivoImagen(file);
-      abrirEditorRecorte(img);
-      e.target.value = "";
-    } catch (error) {
-      console.error("[Foto] Error procesando imagen:", error);
-      mostrarToast(
-        error?.message || "No se pudo procesar la imagen",
-        "error"
-      );
-    }
-  }
-  $("#foto-input").addEventListener("change", manejarFoto);
-  $("#foto-camara").addEventListener("change", manejarFoto);
-
-  $("#crop-zoom")?.addEventListener("input", (e) => {
-    cropScale = Number(e.target.value);
-    renderCropCanvas();
-  });
-
-  const cropCanvas = $("#crop-canvas");
-  cropCanvas?.addEventListener("mousedown", iniciarDragCrop);
-  cropCanvas?.addEventListener("mousemove", moverDragCrop);
-  window.addEventListener("mouseup", terminarDragCrop);
-
-  cropCanvas?.addEventListener("touchstart", iniciarDragCrop, { passive: false });
-  cropCanvas?.addEventListener("touchmove", moverDragCrop, { passive: false });
-  window.addEventListener("touchend", terminarDragCrop);
-
-  $("#btn-crop-reset")?.addEventListener("click", resetearCrop);
-  $("#btn-aplicar-crop")?.addEventListener("click", aplicarRecorteFoto);
-  $("#btn-cancelar-crop")?.addEventListener("click", cerrarEditorRecorte);
-  $("#btn-cerrar-crop")?.addEventListener("click", cerrarEditorRecorte);
-  $("#modal-crop-foto .modal-backdrop")?.addEventListener("click", cerrarEditorRecorte);
-  $("#btn-quitar-foto").addEventListener("click", () => {
-    fotoActualBase64 = null;
-    $("#foto-input").value = "";
-    $("#foto-camara").value = "";
-    mostrarPreviewFoto(null);
-  });
-
   $("#modal-confirm .modal-backdrop").addEventListener("click", () => {
     window.VendifyCoreV232.dismissConfirmation();
   });
@@ -3469,7 +3198,6 @@ function inicializarEventos() {
     if (e.key === "Escape") {
       const escapeTargets = [
         ["modal-confirm", () => window.VendifyCoreV232.dismissConfirmation()],
-        ["modal-crop-foto", cerrarEditorRecorte],
         ["modal-stock", cerrarModalStock],
         ["modal-ticket-v228", () => $("#btn-close-ticket-v228")?.click()],
         ["modal-return-v228", () => $("#btn-close-return-v228")?.click()],
@@ -3505,7 +3233,6 @@ function inicializarEventos() {
       else if (!$("#modal-venta").classList.contains("hidden")) cerrarVenta();
       else if (!$("#modal-historial").classList.contains("hidden")) cerrarHistorial();
       else if (!$("#modal-equipo").classList.contains("hidden")) teamControllerV232.close();
-      else if (!$("#modal-crop-foto").classList.contains("hidden")) cerrarEditorRecorte();
       else if (!$("#modal-editar-empleado").classList.contains("hidden")) teamControllerV232.closeEditor();
       else if (!$("#modal-reset-empleado").classList.contains("hidden")) teamControllerV232.closePasswordReset();
       else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
