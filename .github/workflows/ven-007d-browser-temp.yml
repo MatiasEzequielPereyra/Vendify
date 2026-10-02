@@ -1,0 +1,75 @@
+name: VEN-007D Browser Acceptance Temporary
+
+on:
+  push:
+    branches:
+      - refactor/ven-007d-connection-status
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Locate Chrome
+        shell: bash
+        run: |
+          CHROME_PATH="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME_PATH" ]; then
+            echo "Chrome/Chromium not found" >&2
+            exit 1
+          fi
+          echo "VENDIFY_CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+          echo "Using Chrome: $CHROME_PATH"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: QA
+        run: npm run qa
+
+      - name: Staging QA
+        run: npm run qa:staging:v2312
+
+      - name: Modular QA
+        run: npm run qa:refactor:modular
+
+      - name: PWA matrix
+        run: npm run qa:pwa:matrix
+
+      - name: PWA browser acceptance
+        run: npm run qa:pwa:browser
+
+      - name: Full CI
+        run: npm run ci
+
+      - name: Legacy metrics
+        run: npm run analyze:legacy
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ven-007d-browser-evidence
+          path: |
+            qa-output/pwa-matrix/browser-acceptance.json
+            qa-output/pwa-matrix/cold-boot-offline-390x844.png
+          if-no-files-found: warn
