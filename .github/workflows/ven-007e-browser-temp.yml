@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   browser-evidence:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 15
 
     steps:
@@ -29,24 +29,33 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Locate Chrome
-        shell: bash
+        shell: pwsh
         run: |
-          CHROME_PATH="$(
-            command -v google-chrome-stable ||
-            command -v google-chrome ||
-            command -v chromium-browser ||
-            command -v chromium ||
-            true
-          )"
+          $Candidates = @(
+            "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe"
+          )
 
-          if [ -z "$CHROME_PATH" ]; then
-            echo "Chrome/Chromium executable not found" >&2
-            exit 1
-          fi
+          $ChromePath = $Candidates |
+            Where-Object { $_ -and (Test-Path $_) } |
+            Select-Object -First 1
 
-          echo "VENDIFY_CHROME_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
-          echo "Chrome executable: $CHROME_PATH"
-          "$CHROME_PATH" --version
+          if (-not $ChromePath) {
+            $ChromeCommand = Get-Command chrome.exe -ErrorAction SilentlyContinue
+            if ($ChromeCommand) {
+              $ChromePath = $ChromeCommand.Source
+            }
+          }
+
+          if (-not $ChromePath) {
+            throw "Google Chrome executable not found"
+          }
+
+          "VENDIFY_CHROME_PATH=$ChromePath" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          Write-Host "Chrome executable: $ChromePath"
+          & $ChromePath --version
 
       - name: Run VEN-007E real browser acceptance
         run: npm run qa:pwa:browser
