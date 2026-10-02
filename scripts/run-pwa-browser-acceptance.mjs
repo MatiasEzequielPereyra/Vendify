@@ -235,6 +235,146 @@ try {
     throw new Error(`El Examples real no alcanza al owner Products: ${JSON.stringify(onboardingExamples)}`);
   }
 
+  const diagnosticsDenied = await evaluate(firstBrowser.cdp, `(async () => {
+    const diagnosticsButton =
+      document.querySelector('#btn-diagnostico-v23011');
+    const modal =
+      document.querySelector('#modal-diagnostico-v23011');
+
+    if (
+      !diagnosticsButton
+      || !modal
+      || !window.appContext
+    ) {
+      throw new Error('Diagnostics permission UI unavailable');
+    }
+
+    modal.classList.add('hidden');
+    window.appContext.membership = { role: "cashier" };
+
+    const toastSelector = '#toast-container .toast';
+
+    const beforeToasts = Array.from(
+      document.querySelectorAll(toastSelector)
+    ).map((toast) => toast.textContent);
+
+    diagnosticsButton.click();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const afterToasts = Array.from(
+      document.querySelectorAll(toastSelector)
+    ).map((toast) => toast.textContent);
+
+    const newToasts = afterToasts.slice(beforeToasts.length);
+
+    const permissionMessage =
+      'Solo Propietario o Administrador pueden ejecutar diagnósticos';
+
+    return {
+      modalHidden: modal.classList.contains('hidden'),
+      permissionToast: newToasts.includes(permissionMessage),
+      newToasts
+    };
+  })()`);
+
+  if (
+    !diagnosticsDenied.modalHidden
+    || !diagnosticsDenied.permissionToast
+  ) {
+    throw new Error(
+      `El permiso real de Diagnostics no conserva la paridad: ${JSON.stringify(diagnosticsDenied)}`
+    );
+  }
+
+  const diagnosticsOwnerOpenClose = await evaluate(
+    firstBrowser.cdp,
+    `(async () => {
+      const diagnosticsButton =
+        document.querySelector('#btn-diagnostico-v23011');
+
+      const diagnosticsCloseButton =
+        document.querySelector('#btn-close-diagnostic-v23011');
+
+      const modal =
+        document.querySelector('#modal-diagnostico-v23011');
+
+      const connection =
+        document.querySelector('#diag-connection-v23011');
+
+      const branch =
+        document.querySelector('#diag-branch-v23011');
+
+      const cash =
+        document.querySelector('#diag-cash-v23011');
+
+      const summary =
+        document.querySelector('#diagnostic-summary-v23011');
+
+      const issues =
+        document.querySelector('#diagnostic-issues-v23011');
+
+      if (
+        !diagnosticsButton
+        || !diagnosticsCloseButton
+        || !modal
+        || !connection
+        || !branch
+        || !cash
+        || !summary
+        || !issues
+        || !window.appContext
+      ) {
+        throw new Error('Diagnostics owner UI unavailable');
+      }
+
+      window.appContext.membership = { role: "owner" };
+      window.appContext.branch = { nombre: "Sucursal Browser" };
+      window.appContext.cashRegister = { nombre: "Caja Browser" };
+
+      summary.textContent = 'stale summary';
+      issues.innerHTML = '<p>stale issue</p>';
+      modal.classList.add('hidden');
+
+      diagnosticsButton.click();
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const result = {
+        opened: !modal.classList.contains('hidden'),
+        connection: connection.textContent,
+        expectedConnection:
+          navigator.onLine ? 'Online' : 'Sin conexión',
+        branch: branch.textContent,
+        cash: cash.textContent,
+        summary: summary.textContent,
+        issuesHtml: issues.innerHTML
+      };
+
+      diagnosticsCloseButton.click();
+
+      return {
+        ...result,
+        hiddenAfterClose: modal.classList.contains('hidden')
+      };
+    })()`
+  );
+
+  if (
+    !diagnosticsOwnerOpenClose.opened
+    || diagnosticsOwnerOpenClose.connection
+      !== diagnosticsOwnerOpenClose.expectedConnection
+    || diagnosticsOwnerOpenClose.branch !== "Sucursal Browser"
+    || diagnosticsOwnerOpenClose.cash !== "Caja Browser"
+    || diagnosticsOwnerOpenClose.summary
+      !== "Ejecutá el diagnóstico para revisar la integridad."
+    || diagnosticsOwnerOpenClose.issuesHtml !== ""
+    || !diagnosticsOwnerOpenClose.hiddenAfterClose
+  ) {
+    throw new Error(
+      `El open/close real de Diagnostics no conserva la paridad: ${JSON.stringify(diagnosticsOwnerOpenClose)}`
+    );
+  }
   const installPrompt = await evaluate(firstBrowser.cdp, `(async () => {
     if (!window.VendifyPwaV232) throw new Error('PWA controller unavailable');
     window.VendifyPwaV232.setupInstallPrompt();
@@ -377,7 +517,11 @@ try {
       persistence: onboardingPersistence,
       examples: onboardingExamples
     },
-    updated,
+    diagnostics: {
+      runtimeComposition: "real-app-init-and-listeners",
+      denied: diagnosticsDenied,
+      ownerOpenClose: diagnosticsOwnerOpenClose
+    },    updated,
     coldBoot,
     status: "pass",
   };
