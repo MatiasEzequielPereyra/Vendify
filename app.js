@@ -2525,6 +2525,18 @@ const inventoryControllerV232 =
     },
   });
 
+const branchAdministrationControllerV232 =
+  window.VendifyBranchesV232.createBranchAdministrationController({
+    client: supabaseClient,
+    getRole: () => appContext.membership?.role || null,
+    getCurrentBranchId: () => appContext.branch?.id || null,
+    refreshBranches: refrescarSucursalesV226,
+    reloadCashRegisters: async ({ keep }) => {
+      await cargarCajasSucursalV227({ mantener: keep });
+    },
+    showToast: mostrarToast,
+  });
+
 const branchTransferControllerV232 =
   window.VendifyInventoryV232.createBranchTransferController({
     client: supabaseClient,
@@ -2540,7 +2552,7 @@ const branchTransferControllerV232 =
     emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
-    refreshBranchSettings: renderSucursalesConfigV226,
+    refreshBranchSettings: () => branchAdministrationControllerV232.render(),
   });
 // ============================================================
 // Vendify v2.30 — Compras y proveedores
@@ -3189,237 +3201,6 @@ async function cambiarSucursalDesdeSelectorV226(e) {
   }
 }
 
-async function listarSucursalesAdminV226() {
-  return window.VendifyBranchesV232.listAdmin(supabaseClient);
-}
-
-async function renderSucursalesConfigV226() {
-  const cont = $("#sucursales-list-v226");
-  if (!cont) return;
-
-  cont.innerHTML = `<p class="hint" style="padding:1rem;text-align:center;">Cargando sucursales...</p>`;
-
-  let lista;
-
-  try {
-    lista = await listarSucursalesAdminV226();
-  } catch (error) {
-    cont.innerHTML = "";
-    mostrarToast(error.message, "error");
-    return;
-  }
-
-  const role = appContext.membership?.role;
-  const admin = ["owner", "admin"].includes(role);
-
-  cont.innerHTML = lista
-    .map((s) => {
-      const cajas = Array.isArray(s.cajas) ? s.cajas : [];
-      const cajaHtml = cajas.length
-        ? cajas
-            .map(
-              (c) => `
-                <div class="caja-chip-v226 ${c.activa ? "" : "inactive"}">
-                  <span>${escapeHtml(c.nombre)}</span>
-                  ${
-                    admin
-                      ? `<button
-                           type="button"
-                           data-branch-action="toggle-box"
-                           data-caja-id="${c.id}"
-                           data-activa="${c.activa ? "0" : "1"}"
-                           title="${c.activa ? "Desactivar" : "Activar"}">
-                           ${c.activa ? "●" : "○"}
-                         </button>`
-                      : ""
-                  }
-                </div>`
-            )
-            .join("")
-        : `<span class="hint">Sin cajas</span>`;
-
-      return `
-        <article class="branch-card-v226 ${s.activa ? "" : "inactive"}">
-          <div class="branch-card-main-v226">
-            <div class="branch-card-icon-v226">⌂</div>
-            <div class="branch-card-copy-v226">
-              <div class="branch-card-title-v226">
-                <strong>${escapeHtml(s.nombre)}</strong>
-                <span class="branch-status-v226 ${s.activa ? "active" : "inactive"}">
-                  ${s.activa ? "Activa" : "Inactiva"}
-                </span>
-                ${
-                  s.id === appContext.branch?.id
-                    ? `<span class="branch-status-v226 current">Actual</span>`
-                    : ""
-                }
-              </div>
-              <small>${escapeHtml(s.direccion || "Sin dirección")}</small>
-            </div>
-
-            <div class="branch-stat-v226">
-              <span>Stock</span>
-              <strong>${Number(s.stock_total || 0)}</strong>
-            </div>
-          </div>
-
-          <div class="branch-cajas-v226">
-            <span class="branch-cajas-label-v226">Cajas</span>
-            <div class="branch-cajas-list-v226">${cajaHtml}</div>
-          </div>
-
-          ${
-            admin
-              ? `<div class="branch-card-actions-v226">
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm"
-                    data-branch-action="edit"
-                    data-id="${s.id}">
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    data-branch-action="add-box"
-                    data-id="${s.id}"
-                    data-name="${escapeHtml(s.nombre)}">
-                    ＋ Caja
-                  </button>
-                </div>`
-              : ""
-          }
-        </article>
-      `;
-    })
-    .join("");
-
-  cont.querySelectorAll('[data-branch-action="edit"]').forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const s = lista.find((x) => x.id === btn.dataset.id);
-      abrirModalSucursalV226(s);
-    });
-  });
-
-  cont.querySelectorAll('[data-branch-action="add-box"]').forEach((btn) => {
-    btn.addEventListener("click", () => {
-      abrirModalCajaV226(btn.dataset.id, btn.dataset.name);
-    });
-  });
-
-  cont.querySelectorAll('[data-branch-action="toggle-box"]').forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      try {
-        await window.VendifyCashV232.setRegisterActive(
-          supabaseClient,
-          btn.dataset.cajaId,
-          btn.dataset.activa === "1"
-        );
-      } catch (error) {
-        mostrarToast(error.message, "error");
-        return;
-      }
-
-      await renderSucursalesConfigV226();
-      await refrescarSucursalesV226();
-      await cargarCajasSucursalV227({ mantener: true });
-    });
-  });
-}
-
-function abrirModalSucursalV226(sucursal = null) {
-  const editando = Boolean(sucursal);
-
-  $("#sucursal-modal-title-v226").textContent =
-    editando ? "Editar sucursal" : "Nueva sucursal";
-
-  $("#sucursal-id-v226").value = sucursal?.id || "";
-  $("#sucursal-nombre-v226").value = sucursal?.nombre || "";
-  $("#sucursal-direccion-v226").value = sucursal?.direccion || "";
-  $("#sucursal-telefono-v226").value = sucursal?.telefono || "";
-  $("#sucursal-activa-v226").checked = sucursal?.activa ?? true;
-  $("#sucursal-activa-row-v226").classList.toggle("hidden", !editando);
-  $("#sucursal-error-v226").textContent = "";
-
-  $("#modal-sucursal-v226").classList.remove("hidden");
-  setTimeout(() => $("#sucursal-nombre-v226")?.focus(), 50);
-}
-
-function cerrarModalSucursalV226() {
-  $("#modal-sucursal-v226")?.classList.add("hidden");
-}
-
-async function guardarSucursalV226(e) {
-  e.preventDefault();
-
-  const id = $("#sucursal-id-v226").value;
-  const errorEl = $("#sucursal-error-v226");
-  const btn = $("#btn-guardar-sucursal-v226");
-
-  errorEl.textContent = "";
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
-
-  const input = {
-    name: $("#sucursal-nombre-v226").value.trim(),
-    address: $("#sucursal-direccion-v226").value.trim() || null,
-    phone: $("#sucursal-telefono-v226").value.trim() || null,
-    active: $("#sucursal-activa-v226").checked,
-  };
-
-  try {
-    if (id) {
-      await window.VendifyBranchesV232.update(supabaseClient, id, input);
-    } else {
-      await window.VendifyBranchesV232.create(supabaseClient, input);
-    }
-  } catch (error) {
-    errorEl.textContent = error.message;
-    return;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Guardar";
-  }
-
-  cerrarModalSucursalV226();
-  await refrescarSucursalesV226();
-  await renderSucursalesConfigV226();
-  mostrarToast(id ? "Sucursal actualizada" : "Sucursal creada con Caja 1", "success");
-}
-
-function abrirModalCajaV226(sucursalId, nombreSucursal) {
-  $("#caja-sucursal-id-v226").value = sucursalId;
-  $("#caja-sucursal-label-v226").textContent = nombreSucursal || "";
-  $("#caja-nombre-v226").value = "";
-  $("#caja-error-v226").textContent = "";
-  $("#modal-caja-v226").classList.remove("hidden");
-  setTimeout(() => $("#caja-nombre-v226")?.focus(), 50);
-}
-
-function cerrarModalCajaV226() {
-  $("#modal-caja-v226")?.classList.add("hidden");
-}
-
-async function crearCajaV226(e) {
-  e.preventDefault();
-  try {
-    await window.VendifyCashV232.createRegister(
-      supabaseClient,
-      $("#caja-sucursal-id-v226").value,
-      $("#caja-nombre-v226").value.trim()
-    );
-  } catch (error) {
-    $("#caja-error-v226").textContent = error.message;
-    return;
-  }
-
-  cerrarModalCajaV226();
-  await renderSucursalesConfigV226();
-  await refrescarSucursalesV226();
-  await cargarCajasSucursalV227({ mantener: true });
-  mostrarToast("Caja creada", "success");
-}
-
 async function refrescarSucursalesV226() {
   try {
     sucursalesV226 = await listarSucursalesV2();
@@ -3444,38 +3225,9 @@ function setupSucursalesV226() {
     cambiarSucursalDesdeSelectorV226
   );
 
-  $("#btn-nueva-sucursal-v226")?.addEventListener(
-    "click",
-    () => abrirModalSucursalV226()
-  );
-
-  $("#form-sucursal-v226")?.addEventListener("submit", guardarSucursalV226);
-  $("#btn-cerrar-sucursal-v226")?.addEventListener("click", cerrarModalSucursalV226);
-  $("#btn-cancelar-sucursal-v226")?.addEventListener("click", cerrarModalSucursalV226);
-  $("#modal-sucursal-v226 .modal-backdrop")?.addEventListener(
-    "click",
-    cerrarModalSucursalV226
-  );
-
-  $("#form-caja-v226")?.addEventListener("submit", crearCajaV226);
-  $("#btn-cerrar-caja-v226")?.addEventListener("click", cerrarModalCajaV226);
-  $("#btn-cancelar-caja-v226")?.addEventListener("click", cerrarModalCajaV226);
-  $("#modal-caja-v226 .modal-backdrop")?.addEventListener(
-    "click",
-    cerrarModalCajaV226
-  );
-
   branchTransferControllerV232.setup();
-
-  document
-    .querySelector('[data-config-tab="sucursales"]')
-    ?.addEventListener("click", renderSucursalesConfigV226);
-
-  document
-    .querySelector('[data-config-go="sucursales"]')
-    ?.addEventListener("click", renderSucursalesConfigV226);
+  branchAdministrationControllerV232.setup();
 }
-
 function init() {
   if (!validarEntornoSupabaseVQA()) return;
 
