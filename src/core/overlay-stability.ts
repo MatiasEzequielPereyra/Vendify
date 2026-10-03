@@ -67,7 +67,7 @@ export function createOverlayStabilityController(
     );
     const visibleModals = modals.filter(isModalVisible);
 
-    documentRef.body.classList.toggle(
+    documentRef.body?.classList.toggle(
       "vendify-modal-open-v23011",
       visibleModals.length > 0
     );
