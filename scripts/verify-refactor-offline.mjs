@@ -159,7 +159,7 @@ for (const compatibilityApp of [sourceApp, app]) {
 }
 const stabilityStartV007d = sourceApp.indexOf("function setupStabilityV23011()");
 const stabilityEndV007d = sourceApp.indexOf(
-  "setupOverlayStabilityV23011();",
+  "overlayStabilityControllerV232.setup();",
   stabilityStartV007d
 );
 if (stabilityStartV007d < 0 || stabilityEndV007d < 0) {
