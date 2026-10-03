@@ -58,6 +58,8 @@ jobs:
           & $ChromePath --version
 
       - name: Run VEN-007E real browser acceptance
+        env:
+          CI: "false"
         run: npm run qa:pwa:browser
 
       - name: Upload VEN-007E browser evidence
