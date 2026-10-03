@@ -21,6 +21,7 @@ import { loadTheme, toggleTheme } from "../core/theme.js";
 import { dismissConfirmation, showConfirmation } from "../core/confirm.js";
 import { closeTopOpenModal } from "../core/modal-return.js";
 import { createOnboardingController } from "../core/onboarding.js";
+import { createOverlayStabilityController } from "../core/overlay-stability.js";
 
 export interface VendifyCoreV232Api {
   readonly queryOne: typeof queryOne;
@@ -35,6 +36,7 @@ export interface VendifyCoreV232Api {
   readonly dismissConfirmation: typeof dismissConfirmation;
   readonly closeTopOpenModal: typeof closeTopOpenModal;
   readonly createOnboardingController: typeof createOnboardingController;
+  readonly createOverlayStabilityController: typeof createOverlayStabilityController;
 }
 
 declare global {
@@ -55,5 +57,6 @@ window.VendifyCoreV232 = Object.freeze({
   showConfirmation,
   dismissConfirmation,
   closeTopOpenModal,
-  createOnboardingController
+  createOnboardingController,
+  createOverlayStabilityController
 });
