@@ -59,8 +59,7 @@ export interface ProductsControllerDependencies {
   readonly renderCart: () => void;
   readonly isSaleOpen: () => boolean;
   readonly addToCart: (productId: string) => void;
-  readonly openInventoryAdjustment: (productId: string, delta: number) => void;
-  readonly openManualStockModal: (productId: string) => void;
+  readonly openInventoryAdjustment: (productId: string, delta?: number | null) => void;
   readonly setEditingProductId: (productId: string | null) => void;
   readonly getEditingProductId: () => string | null;
   readonly restoreSaleBehindProduct: (focus?: boolean) => void;
@@ -846,7 +845,7 @@ export function createProductsController(
     if (action === "sumar" || action === "restar") {
       void changeStock(productId, action === "sumar" ? 1 : -1);
     } else if (action === "ajustar") {
-      dependencies.openManualStockModal(productId);
+      dependencies.openInventoryAdjustment(productId);
     } else if (action === "editar") {
       const product = products().find((candidate) => candidate.id === productId);
       if (product) openEditor(product);

@@ -486,55 +486,5 @@
     </div>
   </div>
 
-  <!-- Modal Ajuste de stock -->
-  <div id="modal-stock" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content modal-sm">
-      <div class="modal-header">
-        <h2>Ajustar stock</h2>
-        <button class="btn-icon" id="btn-cerrar-stock" aria-label="Cerrar">✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="stock-producto-nombre" id="stock-nombre"></p>
-        <div class="stock-adjust">
-          <button type="button" class="btn-stock-big" data-delta="-10">−10</button>
-          <button type="button" class="btn-stock-big" data-delta="-5">−5</button>
-          <button type="button" class="btn-stock-big" data-delta="-1">−1</button>
-          <span class="stock-actual" id="stock-actual">0</span>
-          <button type="button" class="btn-stock-big" data-delta="1">+1</button>
-          <button type="button" class="btn-stock-big" data-delta="5">+5</button>
-          <button type="button" class="btn-stock-big" data-delta="10">+10</button>
-        </div>
-        <div class="form-group" style="margin-top: 1rem;">
-          <label for="stock-manual">O ingresá un valor exacto</label>
-          <input type="number" id="stock-manual" min="0" step="1" />
-        </div>
-
-        <div class="inventory-adjust-meta">
-          <div class="form-group">
-            <label for="stock-motivo">Motivo *</label>
-            <select id="stock-motivo" class="select select-full">
-              <option value="correccion">Corrección de stock</option>
-              <option value="reposicion">Reposición / ingreso</option>
-              <option value="rotura">Rotura</option>
-              <option value="vencimiento">Vencimiento</option>
-              <option value="perdida">Pérdida / merma</option>
-              <option value="inventario">Conteo físico</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="stock-nota">Observación</label>
-            <input id="stock-nota" maxlength="180"
-                   placeholder="Ej: 2 botellas rotas en depósito" />
-          </div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-secondary" id="btn-stock-cancel">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="btn-stock-ok">Aplicar</button>
-      </div>
-    </div>
-  </div>
-
 
 

@@ -38,7 +38,6 @@ for (const marker of [
 for (const marker of [
   "window.VendifyInventoryV232.createController({",
   "window.VendifyInventoryV232.createBranchTransferController({",
-  "window.VendifyInventoryV232.adjustStock(",
   "inventoryControllerV232.refreshOpenView(false)",
   "inventoryControllerV232.refreshOpenView()",
   "inventoryControllerV232.openAdjustmentFromProduct(id, delta)",
@@ -54,6 +53,7 @@ for (const marker of [
 }
 
 for (const obsoleteMarker of [
+  "window.VendifyInventoryV232.adjustStock(",
   '"listar_movimientos_inventario_v1",',
   '"ajustar_stock_inventario_v2",',
   '"aplicar_conteo_fisico_v2",',
