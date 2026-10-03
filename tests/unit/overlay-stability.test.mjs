@@ -223,6 +223,20 @@ test("sync updates body state, aria-hidden, and floating-menu callbacks", () => 
   });
 });
 
+test("sync tolerates a document without body and still updates modal aria", () => {
+  const visible = new FakeElement({ id: "visible-modal" });
+  const harness = createHarness({ modals: [visible] });
+  harness.document.body = null;
+
+  assert.doesNotThrow(() => harness.controller.sync());
+  assert.equal(visible.getAttribute("aria-hidden"), "false");
+  assert.deepEqual(harness.calls, {
+    user: 1,
+    management: 1,
+    context: 1
+  });
+});
+
 test("setup observes class/hidden attributes and reacts only to attribute mutations", () => {
   const modal = new FakeElement({
     id: "modal-inventario",
@@ -283,6 +297,37 @@ test("Escape keeps legacy menu precedence before modal close routing", () => {
 
   assert.equal(harness.document.dispatchKey("Escape"), true);
   assert.equal(confirmClose.clickCount, 1);
+  assert.equal(inventoryClose.clickCount, 0);
+});
+
+test("non-Escape key does nothing", () => {
+  const confirmModal = new FakeElement({ id: "modal-confirm" });
+  const confirmClose = new FakeElement({ id: "btn-confirm-cancel" });
+  const harness = createHarness({
+    modals: [confirmModal],
+    extraElements: [confirmClose]
+  });
+
+  harness.controller.setup();
+  const callsBefore = { ...harness.calls };
+
+  assert.equal(harness.document.dispatchKey("Enter"), false);
+  assert.equal(confirmClose.clickCount, 0);
+  assert.deepEqual(harness.calls, callsBefore);
+});
+
+test("Escape stops at a visible modal even when its close button is missing", () => {
+  const confirmModal = new FakeElement({ id: "modal-confirm" });
+  const inventoryModal = new FakeElement({ id: "modal-inventario" });
+  const inventoryClose = new FakeElement({ id: "btn-close-inventory" });
+  const harness = createHarness({
+    modals: [confirmModal, inventoryModal],
+    extraElements: [inventoryClose]
+  });
+
+  harness.controller.setup();
+
+  assert.equal(harness.document.dispatchKey("Escape"), true);
   assert.equal(inventoryClose.clickCount, 0);
 });
 
