@@ -170,6 +170,68 @@ for (const [label, source] of [
   }
 }
 
+
+const retiredLegacyStockAppMarkers = [
+  "stockAjusteId",
+  "stockAjusteValor",
+  "abrirModalStock",
+  "cerrarModalStock",
+  "aplicarDeltaStock",
+  "confirmarAjusteStock",
+  "window.VendifyInventoryV232.adjustStock("
+];
+
+for (const [label, source] of [
+  ["source app", sourceApp],
+  ["generated compatibility app", app]
+]) {
+  for (const marker of retiredLegacyStockAppMarkers) {
+    if (source.includes(marker)) {
+      throw new Error(`Retired legacy stock modal marker restored in ${label}: ${marker}`);
+    }
+  }
+}
+
+if (sourceController.includes("openManualStockModal")) {
+  throw new Error("Products controller restored retired openManualStockModal dependency");
+}
+
+for (const marker of [
+  "readonly openInventoryAdjustment: (productId: string, delta?: number | null) => void;",
+  "dependencies.openInventoryAdjustment(productId);",
+  "dependencies.openInventoryAdjustment(productId, delta);"
+]) {
+  if (!sourceController.includes(marker)) {
+    throw new Error(`Products controller lost typed Inventory adjustment delegation: ${marker}`);
+  }
+}
+
+const retiredLegacyStockIds = [
+  "modal-stock",
+  "btn-cerrar-stock",
+  "btn-stock-cancel",
+  "btn-stock-ok",
+  "stock-nombre",
+  "stock-actual",
+  "stock-manual",
+  "stock-motivo",
+  "stock-nota"
+];
+
+for (const [label, source] of [
+  ["source Product HTML", sourceProductHtml],
+  ["generated Product HTML", generatedProductHtml]
+]) {
+  for (const id of retiredLegacyStockIds) {
+    if (source.includes(`id="${id}"`)) {
+      throw new Error(`Retired legacy stock modal control restored in ${label}: ${id}`);
+    }
+  }
+  if (source.includes("btn-stock-big")) {
+    throw new Error(`Retired legacy stock modal quick-control class restored in ${label}`);
+  }
+}
+
 for (const marker of [
   "foto: string | null",
   "foto: text(row.foto) || null"

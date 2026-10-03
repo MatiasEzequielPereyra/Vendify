@@ -92,9 +92,6 @@ async function mostrarAppSeguroVQA(session) {
 const productsStoreV232 = window.VendifyProductsV232.createStore();
 let productoEditandoId = null;
 
-let stockAjusteId = null;
-let stockAjusteValor = 0;
-
 // Compatibility aliases while the remaining legacy runtime is compacted.
 // The implementation now lives in src/core and is loaded before app.js.
 const $ = (sel) => window.VendifyCoreV232.queryOne(sel);
@@ -725,7 +722,6 @@ const productsControllerV232 =
     openInventoryAdjustment: (id, delta) => {
       inventoryControllerV232.openAdjustmentFromProduct(id, delta);
     },
-    openManualStockModal: abrirModalStock,
     setEditingProductId: (id) => { productoEditandoId = id; },
     getEditingProductId: () => productoEditandoId,
     restoreSaleBehindProduct: (focus = true) => {
@@ -927,89 +923,6 @@ function abrirConfig(tab = "general") {
 function cerrarConfig() {
   $("#modal-config").classList.add("hidden");
   actualizarFiltroCategorias();
-}
-
-// =====================
-// Modal Stock (ajuste manual — usa la función atómica ajustar_stock)
-// =====================
-function abrirModalStock(id) {
-  const p = productsStoreV232.getById(id);
-  if (!p) return;
-  stockAjusteId = id;
-  stockAjusteValor = p.stock;
-  $("#stock-nombre").textContent = p.nombre;
-  $("#stock-actual").textContent = stockAjusteValor;
-  $("#stock-manual").value = stockAjusteValor;
-  $("#stock-motivo").value = "correccion";
-  $("#stock-nota").value = "";
-  $("#modal-stock").classList.remove("hidden");
-}
-
-function cerrarModalStock() {
-  $("#modal-stock").classList.add("hidden");
-  stockAjusteId = null;
-}
-
-function aplicarDeltaStock(delta) {
-  stockAjusteValor = Math.max(0, stockAjusteValor + delta);
-  $("#stock-actual").textContent = stockAjusteValor;
-  $("#stock-manual").value = stockAjusteValor;
-}
-
-async function confirmarAjusteStock() {
-  if (!exigirPermisoV2("adjustStock", "No tenés permiso para ajustar stock")) return;
-  if (!stockAjusteId) return;
-
-  const p = productsStoreV232.getById(stockAjusteId);
-  if (!p) return;
-
-  const manual = parseInt($("#stock-manual").value, 10);
-  const valorFinal = Number.isFinite(manual)
-    ? Math.max(0, manual)
-    : stockAjusteValor;
-
-  const delta = valorFinal - Number(p.stock || 0);
-
-  if (delta === 0) {
-    cerrarModalStock();
-    return;
-  }
-
-  const motivo = $("#stock-motivo")?.value || "correccion";
-  const nota = $("#stock-nota")?.value.trim() || null;
-
-  let data;
-  try {
-    data = await window.VendifyInventoryV232.adjustStock(
-      supabaseClient,
-      {
-        productId: p.id,
-        branchId: appContext.branch.id,
-        mode: "establecer",
-        quantity: valorFinal,
-        reason: motivo,
-        note: nota,
-      }
-    );
-  } catch (error) {
-    mostrarToast(
-      error.message || "No se pudo ajustar el stock",
-      "error"
-    );
-    return;
-  }
-
-  productsStoreV232.patchStock(p.id, Number(data.stock || valorFinal));
-  realtimeControllerV232.emitStockChange("ajuste_inventario");
-  await cargarStockInteligente();
-  renderGrid();
-
-  mostrarToast(
-    `Stock de "${p.nombre}" → ${Number(data.stock || valorFinal)}`,
-    "success"
-  );
-
-  cerrarModalStock();
 }
 
 // CRUD, borrado masivo y cola de stock migrados a products-controller.ts
@@ -3176,21 +3089,6 @@ function inicializarEventos() {
     window.VendifyCoreV232.dismissConfirmation();
   });
 
-  $("#btn-cerrar-stock").addEventListener("click", cerrarModalStock);
-  $("#btn-stock-cancel").addEventListener("click", cerrarModalStock);
-  $("#modal-stock .modal-backdrop").addEventListener("click", cerrarModalStock);
-  $("#btn-stock-ok").addEventListener("click", confirmarAjusteStock);
-  $$(".btn-stock-big").forEach((btn) => {
-    btn.addEventListener("click", () => aplicarDeltaStock(parseInt(btn.dataset.delta, 10)));
-  });
-  $("#stock-manual").addEventListener("input", (e) => {
-    const v = parseInt(e.target.value, 10);
-    if (Number.isFinite(v)) {
-      stockAjusteValor = Math.max(0, v);
-      $("#stock-actual").textContent = stockAjusteValor;
-    }
-  });
-
   document.addEventListener("keydown", (e) => {
     const tag = document.activeElement?.tagName;
     const escribiendo = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
@@ -3198,7 +3096,6 @@ function inicializarEventos() {
     if (e.key === "Escape") {
       const escapeTargets = [
         ["modal-confirm", () => window.VendifyCoreV232.dismissConfirmation()],
-        ["modal-stock", cerrarModalStock],
         ["modal-ticket-v228", () => $("#btn-close-ticket-v228")?.click()],
         ["modal-return-v228", () => $("#btn-close-return-v228")?.click()],
         ["modal-caja-movimiento-v227", () => $("#btn-close-cash-movement-v227")?.click()],
@@ -3238,7 +3135,7 @@ function inicializarEventos() {
       else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
       else if (!$("#modal-confirm").classList.contains("hidden")) {
         window.VendifyCoreV232.dismissConfirmation();
-      } else if (!$("#modal-stock").classList.contains("hidden")) cerrarModalStock();
+      }
       return;
     }
     if (escribiendo) return;
