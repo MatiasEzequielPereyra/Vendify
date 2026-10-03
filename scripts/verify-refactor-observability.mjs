@@ -28,6 +28,11 @@ const sourceApp = readFileSync(
   "utf8"
 );
 
+const typedOverlayOwner = readFileSync(
+  resolve(projectRoot, "src/core/overlay-stability.ts"),
+  "utf8"
+);
+
 const generatedApp = readFileSync(
   resolve(outputRoot, appFile),
   "utf8"
@@ -115,7 +120,7 @@ const stabilityStart = sourceApp.indexOf(
 );
 
 const stabilityEnd = sourceApp.indexOf(
-  "setupOverlayStabilityV23011();",
+  "overlayStabilityControllerV232.setup();",
   stabilityStart
 );
 
@@ -162,12 +167,12 @@ if (!contextOwner.includes("diagnostico_integridad_v1")) {
 }
 
 if (
-  !sourceApp.includes(
+  !typedOverlayOwner.includes(
     '["modal-diagnostico-v23011", "btn-close-diagnostic-v23011"]'
   )
 ) {
   throw new Error(
-    "Global Escape no longer preserves Diagnostics close routing"
+    "Typed Overlay Escape no longer preserves Diagnostics close routing"
   );
 }
 
