@@ -53,18 +53,19 @@ export interface ContextPickerController {
   readonly setup: () => void;
 }
 
-const PICKERS = [
-  {
-    kind: "branch",
-    menuId: "branch-menu-v23013",
-    triggerId: "branch-trigger-v23013"
-  },
-  {
-    kind: "cash",
-    menuId: "cash-menu-v23013",
-    triggerId: "cash-trigger-v23013"
-  }
-] as const;
+const BRANCH_PICKER = {
+  kind: "branch",
+  menuId: "branch-menu-v23013",
+  triggerId: "branch-trigger-v23013"
+} as const;
+
+const CASH_PICKER = {
+  kind: "cash",
+  menuId: "cash-menu-v23013",
+  triggerId: "cash-trigger-v23013"
+} as const;
+
+const PICKERS = [BRANCH_PICKER, CASH_PICKER] as const;
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
@@ -115,7 +116,7 @@ export function createContextPickerController(
   let installed = false;
 
   function picker(kind: ContextPickerKind) {
-    return PICKERS.find((candidate) => candidate.kind === kind)!;
+    return kind === "branch" ? BRANCH_PICKER : CASH_PICKER;
   }
 
   function close(except: string | null = null): void {
@@ -330,7 +331,9 @@ export function createContextPickerController(
       if (event.key === "Escape") close();
     });
 
-    const closeOnScroll = (): void => close();
+    const closeOnScroll = (): void => {
+      close();
+    };
 
     windowRef.addEventListener("scroll", closeOnScroll, {
       passive: true
