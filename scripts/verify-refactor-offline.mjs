@@ -15,6 +15,10 @@ const runtime = readFileSync(resolve(outputRoot, runtimeFile), "utf8");
 const offlineRuntime = readFileSync(resolve(outputRoot, offlineRuntimeFile), "utf8");
 const app = readFileSync(resolve(outputRoot, appFile), "utf8");
 const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const typedOverlayOwner = readFileSync(
+  resolve(projectRoot, "src/core/overlay-stability.ts"),
+  "utf8"
+);
 
 for (const marker of [
   "VendifyOfflineCompatV232",
@@ -159,7 +163,7 @@ for (const compatibilityApp of [sourceApp, app]) {
 }
 const stabilityStartV007d = sourceApp.indexOf("function setupStabilityV23011()");
 const stabilityEndV007d = sourceApp.indexOf(
-  "setupOverlayStabilityV23011();",
+  "overlayStabilityControllerV232.setup();",
   stabilityStartV007d
 );
 if (stabilityStartV007d < 0 || stabilityEndV007d < 0) {
@@ -179,13 +183,35 @@ for (const forbidden of [
   }
 }
 for (const marker of [
-  "function setupOverlayStabilityV23011()",
-  'document.addEventListener("keydown"',
-  'if (e.key !== "Escape") return;',
-  "setupOverlayStabilityV23011();"
+  "window.VendifyCoreV232.createOverlayStabilityController({",
+  "overlayStabilityControllerV232.setup();",
+  "const escapeTargets = ["
 ]) {
   if (!sourceApp.includes(marker)) {
-    throw new Error(`Overlay/global Escape stability marker disappeared: ${marker}`);
+    throw new Error(`Overlay/global Escape stability composition disappeared: ${marker}`);
+  }
+}
+for (const retiredMarker of [
+  "function modalVisibleV23011",
+  "function cerrarMenusFlotantesV23011",
+  "function sincronizarEstadoOverlaysV23011",
+  "function setupOverlayStabilityV23011"
+]) {
+  if (sourceApp.includes(retiredMarker)) {
+    throw new Error(`Legacy Overlay Stability owner returned to app.js: ${retiredMarker}`);
+  }
+}
+for (const marker of [
+  'documentRef.addEventListener("keydown", handleEscape);',
+  'if (event.key !== "Escape") return;',
+  'attributeFilter: ["class", "hidden"]',
+  '"vendify-modal-open-v23011"',
+  "dependencies.closeUserMenu();",
+  "dependencies.closeManagementMenu();",
+  "dependencies.closeContextPickers();"
+]) {
+  if (!typedOverlayOwner.includes(marker)) {
+    throw new Error(`Typed Overlay Stability owner missing behavior: ${marker}`);
   }
 }
 for (const forbidden of [

@@ -989,93 +989,17 @@ async function sincronizarTodoV23011({ toast = false } = {}) {
   return syncInFlightV23011;
 }
 
-function modalVisibleV23011(modal) {
-  return Boolean(modal && !modal.classList.contains("hidden") && !modal.hidden);
-}
-
-function cerrarMenusFlotantesV23011() {
-  abrirCerrarMenuUsuarioV224?.(false);
-  abrirCerrarGestionV230?.(false);
-  cerrarContextPickersV23013?.();
-}
-
-function sincronizarEstadoOverlaysV23011() {
-  const visibles = Array.from(document.querySelectorAll(".modal"))
-    .filter(modalVisibleV23011);
-
-  document.body.classList.toggle("vendify-modal-open-v23011", visibles.length > 0);
-
-  document.querySelectorAll(".modal").forEach((modal) => {
-    modal.setAttribute(
-      "aria-hidden",
-      modalVisibleV23011(modal) ? "false" : "true"
-    );
+const overlayStabilityControllerV232 =
+  window.VendifyCoreV232.createOverlayStabilityController({
+    closeUserMenu: () => abrirCerrarMenuUsuarioV224?.(false),
+    closeManagementMenu: () => abrirCerrarGestionV230?.(false),
+    closeContextPickers: () => cerrarContextPickersV23013?.(),
   });
-
-  if (visibles.length) cerrarMenusFlotantesV23011();
-}
-
-function setupOverlayStabilityV23011() {
-  const observer = new MutationObserver((mutations) => {
-    if (mutations.some((m) => m.type === "attributes")) {
-      sincronizarEstadoOverlaysV23011();
-    }
-  });
-
-  document.querySelectorAll(".modal").forEach((modal) => {
-    observer.observe(modal, {
-      attributes: true,
-      attributeFilter: ["class", "hidden"],
-    });
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape") return;
-
-    if (!$("#gestion-menu-v230")?.classList.contains("hidden")) {
-      abrirCerrarGestionV230(false);
-      return;
-    }
-
-    if (!$("#user-menu")?.classList.contains("hidden")) {
-      abrirCerrarMenuUsuarioV224(false);
-      return;
-    }
-
-    const closable = [
-      ["modal-confirm", "btn-confirm-cancel"],
-      ["modal-discount-auth", "btn-cancel-discount-auth"],
-      ["modal-scanner-v29", "btn-close-scanner-v29"],
-      ["modal-ticket-v228", "btn-close-ticket-v228"],
-      ["modal-dashboard-v231", "btn-close-dashboard-v231"],
-      ["modal-platform-admin-v231", "btn-close-platform-v231"],
-      ["modal-diagnostico-v23011", "btn-close-diagnostic-v23011"],
-      ["modal-inventario", "btn-close-inventory"],
-      ["modal-compras", "btn-close-compras"],
-      ["modal-historial", "btn-cerrar-historial"],
-      ["modal-caja-operativa-v227", "btn-cerrar-caja-panel-v227"],
-      ["modal-config", "btn-cerrar-config"],
-      ["modal-equipo", "btn-cerrar-equipo"],
-    ];
-
-    for (const [modalId, closeId] of closable) {
-      const modal = document.getElementById(modalId);
-      if (modalVisibleV23011(modal)) {
-        e.preventDefault();
-        document.getElementById(closeId)?.click();
-        break;
-      }
-    }
-  });
-
-  sincronizarEstadoOverlaysV23011();
-}
 
 function setupStabilityV23011() {
   connectionStatusControllerV232.setup();
-  setupOverlayStabilityV23011();
+  overlayStabilityControllerV232.setup();
 }
-
 
 // ============================================================
 // Vendify v2.30.1.3 — Context pickers (Sucursal / Caja)
@@ -1363,7 +1287,7 @@ function cerrarPopoverAbiertoV2311() {
 function modalSuperiorVisibleV2311() {
   const visibles = Array.from(
     document.querySelectorAll(".modal")
-  ).filter((modal) => modalVisibleV23011(modal));
+  ).filter((modal) => overlayStabilityControllerV232.isModalVisible(modal));
 
   if (!visibles.length) return null;
 
