@@ -1,0 +1,229 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
+const projectRoot = resolve(import.meta.dirname, "..");
+const outputRoot = resolve(projectRoot, "dist-refactor-modular");
+const files = readdirSync(outputRoot);
+
+const coreFile = files.find(
+  (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
+);
+const appFile = files.find(
+  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+);
+
+if (!coreFile || !appFile) {
+  throw new Error(
+    "Context Picker verification could not find modular bundles"
+  );
+}
+
+const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const generatedApp = readFileSync(resolve(outputRoot, appFile), "utf8");
+const typedOwner = readFileSync(
+  resolve(
+    projectRoot,
+    "src/context/context-picker-controller.ts"
+  ),
+  "utf8"
+);
+const contextBridge = readFileSync(
+  resolve(projectRoot, "src/legacy/context-bridge.ts"),
+  "utf8"
+);
+const cashOwner = readFileSync(
+  resolve(projectRoot, "src/cash/cash-controller.ts"),
+  "utf8"
+);
+
+for (const marker of [
+  "createContextPickerController",
+  "branch-menu-v23013",
+  "cash-menu-v23013",
+  "branch-current-label-v23013",
+  "cash-current-label-v23013",
+  "No hay sucursales disponibles."
+]) {
+  if (!core.includes(marker)) {
+    throw new Error(
+      `Modular core missing Context Picker owner marker: ${marker}`
+    );
+  }
+}
+
+for (const marker of [
+  'import { createContextPickerController } from "../context/context-picker-controller.js"',
+  "readonly createContextPickerController: typeof createContextPickerController",
+  "createContextPickerController"
+]) {
+  if (!contextBridge.includes(marker)) {
+    throw new Error(
+      `Context bridge missing Context Picker API marker: ${marker}`
+    );
+  }
+}
+
+if (contextBridge.includes("VendifyContextPickerV232")) {
+  throw new Error(
+    "Context Picker created a forbidden extra window global"
+  );
+}
+
+const retiredOwners = [
+  "cerrarContextPickersV23013",
+  "abrirCerrarContextPickerV23013",
+  "actualizarContextSelectorLabelsV23013",
+  "renderBranchOptionsV23013",
+  "renderCashOptionsV23013",
+  "seleccionarSucursalV23013",
+  "seleccionarCajaV23013",
+  "setupContextPickersV23013"
+];
+
+for (const app of [sourceApp, generatedApp]) {
+  for (const marker of [
+    "window.VendifyContextV232.createContextPickerController({",
+    "contextPickerControllerV232.setup();",
+    "closeContextPickers: () => contextPickerControllerV232.close()",
+    "updateContextLabels: () => contextPickerControllerV232.updateLabels()"
+  ]) {
+    if (!app.includes(marker)) {
+      throw new Error(
+        `Compatibility app missing Context Picker composition: ${marker}`
+      );
+    }
+  }
+
+  for (const retired of retiredOwners) {
+    if (app.includes(retired)) {
+      throw new Error(
+        `Compatibility app retained legacy Context Picker owner: ${retired}`
+      );
+    }
+  }
+}
+
+for (const directListenerPattern of [
+  /branch-trigger-v23013[^\n]{0,200}addEventListener/su,
+  /cash-trigger-v23013[^\n]{0,200}addEventListener/su,
+  /branch-options-v23013[^\n]{0,200}addEventListener/su,
+  /cash-options-v23013[^\n]{0,200}addEventListener/su
+]) {
+  if (directListenerPattern.test(sourceApp)) {
+    throw new Error(
+      `app.js retained direct Context Picker DOM listener: ${directListenerPattern}`
+    );
+  }
+}
+
+for (const forbidden of [
+  "supabase",
+  "rpc",
+  "cambiarSucursalV2",
+  "cambiarSucursalDesdeSelectorV226",
+  "cambiarCajaDesdeSelectorV227",
+  "cashControllerV232",
+  "posControllerV232",
+  "listarSucursalesAdminV226",
+  "renderSucursalesConfigV226",
+  "abrirModalSucursalV226",
+  "guardarSucursalV226",
+  "crearCajaV226",
+  "cargarCajasSucursalV227",
+  "cargarEstadoCajaV227"
+]) {
+  if (typedOwner.toLowerCase().includes(forbidden.toLowerCase())) {
+    throw new Error(
+      `Context Picker owner crossed business/backend boundary: ${forbidden}`
+    );
+  }
+}
+
+for (const marker of [
+  "#cash-options-v23013",
+  "renderOptions",
+  "Esta sucursal no tiene cajas disponibles."
+]) {
+  if (!cashOwner.includes(marker)) {
+    throw new Error(
+      `CashController no longer owns Cash option rendering: ${marker}`
+    );
+  }
+}
+
+for (const forbiddenCashMarkup of [
+  "Esta sucursal no tiene cajas disponibles.",
+  'data-context-cash="${'
+]) {
+  if (typedOwner.includes(forbiddenCashMarkup)) {
+    throw new Error(
+      `Context Picker duplicated Cash renderer markup: ${forbiddenCashMarkup}`
+    );
+  }
+}
+
+const overlayStart = sourceApp.indexOf(
+  "window.VendifyCoreV232.createOverlayStabilityController({"
+);
+const overlayEnd = sourceApp.indexOf("});", overlayStart);
+if (overlayStart < 0 || overlayEnd < 0) {
+  throw new Error("Could not inspect Overlay composition");
+}
+const overlayComposition = sourceApp.slice(
+  overlayStart,
+  overlayEnd + 3
+);
+if (
+  !overlayComposition.includes(
+    "closeContextPickers: () => contextPickerControllerV232.close()"
+  )
+) {
+  throw new Error(
+    "Overlay does not delegate Context Picker close to typed owner"
+  );
+}
+
+const backStart = sourceApp.indexOf(
+  "function cerrarPopoverAbiertoV2311()"
+);
+const backEnd = sourceApp.indexOf(
+  "function modalSuperiorVisibleV2311()",
+  backStart
+);
+if (backStart < 0 || backEnd < 0) {
+  throw new Error("Could not inspect Back Guard composition");
+}
+const backGuardClose = sourceApp.slice(backStart, backEnd);
+if (
+  !backGuardClose.includes(
+    "contextPickerControllerV232.close();"
+  )
+) {
+  throw new Error(
+    "Back Guard no longer delegates Context Picker close to typed owner"
+  );
+}
+
+const showAppStart = sourceApp.indexOf("async function mostrarApp()");
+const showAppEnd = sourceApp.indexOf(
+  "// ============================================================",
+  showAppStart
+);
+if (showAppStart < 0 || showAppEnd < 0) {
+  throw new Error("Could not inspect offline startup");
+}
+const showApp = sourceApp.slice(showAppStart, showAppEnd);
+if (
+  !showApp.includes(
+    "contextPickerControllerV232.updateLabels();"
+  )
+) {
+  throw new Error(
+    "Offline startup no longer delegates Context Picker labels to typed owner"
+  );
+}
+
+console.log(
+  "PASS: Context Picker UI ownership lives in typed Context, Cash keeps Cash rendering, legacy app delegates Overlay/Back Guard/offline composition, and business/backend ownership remains outside"
+);
