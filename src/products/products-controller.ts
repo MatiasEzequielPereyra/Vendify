@@ -63,7 +63,6 @@ export interface ProductsControllerDependencies {
   readonly openManualStockModal: (productId: string) => void;
   readonly setEditingProductId: (productId: string | null) => void;
   readonly getEditingProductId: () => string | null;
-  readonly setCurrentPhoto: (photo: string | null) => void;
   readonly restoreSaleBehindProduct: (focus?: boolean) => void;
   readonly shouldReturnCreatedProductToSale: () => boolean;
   readonly clearPendingScannerProduct: () => void;
@@ -450,7 +449,6 @@ export function createProductsController(
     const mapped = product ? product as Product : null;
     const editingId = mapped?.id ?? null;
     dependencies.setEditingProductId(editingId);
-    dependencies.setCurrentPhoto(mapped?.foto ?? null);
     setText("#modal-titulo", mapped ? "Editar producto" : "Nuevo producto");
     setText("#producto-branch-hint-v226", `Stock de sucursal: ${dependencies.getBranch().name || "—"}`);
     setValue("#producto-id", editingId ?? "");
@@ -487,7 +485,6 @@ export function createProductsController(
     const form = queryOne("#form-producto");
     if (form instanceof HTMLFormElement) form.reset();
     dependencies.setEditingProductId(null);
-    dependencies.setCurrentPhoto(null);
     dependencies.restoreSaleBehindProduct(!preserveScannerFlow);
     if ((!completed || !preserveScannerFlow) && dependencies.returnToScannerFromEditor()) return;
     if (!preserveScannerFlow) dependencies.clearPendingScannerProduct();

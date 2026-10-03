@@ -14,6 +14,11 @@ if (!runtimeFile || !appFile) {
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
 const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceController = readFileSync(resolve(projectRoot, "src/products/products-controller.ts"), "utf8");
+const sourceModel = readFileSync(resolve(projectRoot, "src/products/product-model.ts"), "utf8");
+const sourceService = readFileSync(resolve(projectRoot, "src/products/products-service.ts"), "utf8");
+const sourceProductHtml = readFileSync(resolve(projectRoot, "html/03-product-stock-modals.html"), "utf8");
+const generatedProductHtml = readFileSync(resolve(root, "html/03-product-stock-modals.html"), "utf8");
 
 for (const marker of [
   "VendifyProductsV232",
@@ -96,6 +101,96 @@ for (const obsoleteMarker of [
   if (app.includes(obsoleteMarker) || sourceApp.includes(obsoleteMarker)) {
     throw new Error(`Legacy app still contains migrated Products logic: ${obsoleteMarker}`);
   }
+}
+
+
+const retiredProductMediaAppMarkers = [
+  "fotoActualBase64",
+  "cropImage",
+  "cropScale",
+  "cropBaseScale",
+  "cropOffsetX",
+  "cropOffsetY",
+  "cropDragging",
+  "cropLastX",
+  "cropLastY",
+  "leerArchivoImagen",
+  "abrirEditorRecorte",
+  "resetearCrop",
+  "cerrarEditorRecorte",
+  "renderCropCanvas",
+  "aplicarRecorteFoto",
+  "puntoCropDesdeEvento",
+  "iniciarDragCrop",
+  "moverDragCrop",
+  "terminarDragCrop",
+  "mostrarPreviewFoto",
+  "manejarFoto"
+];
+
+for (const [label, source] of [
+  ["source app", sourceApp],
+  ["generated compatibility app", app]
+]) {
+  for (const marker of retiredProductMediaAppMarkers) {
+    if (source.includes(marker)) {
+      throw new Error(`Retired Product media marker restored in ${label}: ${marker}`);
+    }
+  }
+}
+
+if (sourceController.includes("setCurrentPhoto")) {
+  throw new Error("Products controller restored dead setCurrentPhoto dependency");
+}
+
+const retiredProductMediaIds = [
+  "foto-input",
+  "foto-camara",
+  "foto-preview",
+  "foto-placeholder",
+  "foto-img",
+  "btn-quitar-foto",
+  "crop-zoom",
+  "crop-canvas",
+  "btn-crop-reset",
+  "btn-aplicar-crop",
+  "btn-cancelar-crop",
+  "btn-cerrar-crop",
+  "modal-crop-foto"
+];
+
+for (const [label, source] of [
+  ["source Product HTML", sourceProductHtml],
+  ["generated Product HTML", generatedProductHtml]
+]) {
+  for (const id of retiredProductMediaIds) {
+    if (source.includes(`id="${id}"`)) {
+      throw new Error(`Retired Product media control restored in ${label}: ${id}`);
+    }
+  }
+}
+
+for (const marker of [
+  "foto: string | null",
+  "foto: text(row.foto) || null"
+]) {
+  if (!sourceModel.includes(marker)) {
+    throw new Error(`Product model lost existing-photo compatibility: ${marker}`);
+  }
+}
+
+for (const marker of [
+  "product.foto",
+  "producto-v223-img",
+  "producto-v223-icon"
+]) {
+  if (!sourceController.includes(marker)) {
+    throw new Error(`Products renderer lost photo/fallback compatibility: ${marker}`);
+  }
+}
+
+if (sourceService.includes("p_foto")) {
+  throw new Error("Product save contract unexpectedly gained p_foto");
 }
 
 if (runtime.includes("row-product-v29")) {
