@@ -40,7 +40,7 @@ test("team renderer prevents actions against the current member", () => {
   ], "same-user", "owner");
 
   assert.match(html, /· Vos/);
-  assert.match(html, /data-membership-id="member-1" disabled/);
+  assert.match(html, /equipo-role-owner">Administrador/);\n  assert.doesNotMatch(html, /equipo-role-select/);
   assert.doesNotMatch(html, /data-equipo-action=/);
 });
 
