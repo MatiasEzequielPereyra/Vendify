@@ -58,7 +58,7 @@ test("gestionar-empleado preserves caller permission and same-business target is
   assert.match(gestionar, /userClient\.auth\.getUser\(\)/);
   assert.match(gestionar, /\.in\("rol", \["owner", "admin", "manager"\]\)/);
   assert.match(gestionar, /\.eq\("negocio_id", callerMembership\.negocio_id\)/);
-  assert.match(gestionar, /El propietario no puede modificarse desde Equipo/);
+  assert.match(gestionar, /if \(targetRole === "owner"\) return false/);
   assert.match(gestionar, /No podés modificar tu propia cuenta desde Equipo/);
 });
 
