@@ -911,6 +911,7 @@ function abrirConfig(tab = "general") {
 
   activarTabConfigV224(tab || "general");
   $("#modal-config").classList.remove("hidden");
+  void teamControllerV232.refreshBusinessAccessCode();
   actualizarEstadoPinDescuento();
   cargarPlanV231?.();
   cargarConfigOperativaV231?.();

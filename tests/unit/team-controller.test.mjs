@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  businessAccessCodeFrom,
   generateTemporaryPassword,
   renderTeamMembers
 } from "../../dist-ts/team/team-controller.js";
@@ -45,4 +46,11 @@ test("temporary employee passwords keep the validated 12-character alphabet", ()
   const password = generateTemporaryPassword();
   assert.equal(password.length, 12);
   assert.match(password, /^[ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$]+$/);
+});
+
+
+test("business access code stays reusable across Settings and Team surfaces", () => {
+  assert.equal(businessAccessCodeFrom({ codigo_acceso: "  CENTRAL01  " }), "CENTRAL01");
+  assert.equal(businessAccessCodeFrom({ codigo_acceso: null }), "");
+  assert.equal(businessAccessCodeFrom(null), "");
 });

@@ -23,6 +23,8 @@ for (const marker of [
   "VendifyTeamV232",
   "createTeamController",
   "renderTeamMembers",
+  "businessAccessCodeFrom",
+  "refreshBusinessAccessCode",
   "getAdminBusiness",
   "listTeam",
   "updateStockPermission",
@@ -42,6 +44,7 @@ for (const marker of [
   "window.VendifyTeamV232.createController({",
   "teamControllerV232.setup();",
   "teamControllerV232.open()",
+  "teamControllerV232.refreshBusinessAccessCode()",
   "teamControllerV232.closeEditor()",
   "teamControllerV232.closePasswordReset()"
 ]) {

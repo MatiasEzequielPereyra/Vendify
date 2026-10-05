@@ -37,6 +37,7 @@ export interface TeamController {
   readonly open: () => Promise<void>;
   readonly close: () => void;
   readonly render: () => Promise<void>;
+  readonly refreshBusinessAccessCode: () => Promise<string | null>;
   readonly closeEditor: () => void;
   readonly closePasswordReset: () => void;
 }
@@ -58,6 +59,24 @@ function text(value: unknown, fallback = ""): string {
 
 function memberValue(member: TeamMemberRecord, key: string): unknown {
   return member[key];
+}
+
+export function businessAccessCodeFrom(value: unknown): string {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return "";
+  const code = (value as Record<string, unknown>).codigo_acceso;
+  return typeof code === "string" ? code.trim() : "";
+}
+
+function applyBusinessAccessCode(code: string): void {
+  const visibleCode = code || "—";
+  for (const selector of [
+    "#equipo-business-code",
+    "#config-business-code-v232",
+    "#config-team-business-code-v232"
+  ]) {
+    const element = queryOne(selector);
+    if (element) element.textContent = visibleCode;
+  }
 }
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -164,6 +183,22 @@ export function createTeamController(
     return context().membership?.role === "owner";
   }
 
+  async function refreshBusinessAccessCode(): Promise<string | null> {
+    try {
+      const business = await getAdminBusiness(dependencies.client);
+      const code = businessAccessCodeFrom(business);
+      applyBusinessAccessCode(code);
+      return code || null;
+    } catch (error) {
+      applyBusinessAccessCode("");
+      dependencies.showToast(
+        errorMessage(error, "No se pudo cargar el código de acceso del negocio"),
+        "error"
+      );
+      return null;
+    }
+  }
+
   async function members(): Promise<TeamMemberRecord[]> {
     const result = await listTeam(dependencies.client);
     if (result.stockPermissionWarning) {
@@ -192,16 +227,7 @@ export function createTeamController(
     queryOne("#equipo-permiso-stock-hint")?.classList.toggle("hidden", allowStock);
     queryOne("#modal-equipo")?.classList.remove("hidden");
 
-    try {
-      const business = await getAdminBusiness(dependencies.client);
-      const code = typeof business === "object" && business !== null
-        ? text((business as Record<string, unknown>).codigo_acceso, "—")
-        : "—";
-      const codeElement = queryOne("#equipo-business-code");
-      if (codeElement) codeElement.textContent = code || "—";
-    } catch (error) {
-      dependencies.showToast(errorMessage(error, "No se pudo cargar el negocio"), "error");
-    }
+    await refreshBusinessAccessCode();
     await render();
   }
 
@@ -291,7 +317,14 @@ export function createTeamController(
     usernameField.value = "";
     passwordField.value = "";
     if (permission instanceof HTMLInputElement) permission.checked = false;
-    dependencies.showToast(`Empleado @${username} creado`, "success");
+    const createdCode = businessAccessCodeFrom(result.data);
+    if (createdCode) applyBusinessAccessCode(createdCode);
+    dependencies.showToast(
+      createdCode
+        ? `Empleado @${username} creado · Código: ${createdCode}`
+        : `Empleado @${username} creado`,
+      "success"
+    );
     await render();
   }
 
@@ -480,6 +513,15 @@ export function createTeamController(
       }
     });
 
+    queryOne("#btn-copy-config-business-code-v232")?.addEventListener("click", () => {
+      const code = queryOne("#config-business-code-v232")?.textContent?.trim();
+      if (code && code !== "—") {
+        void navigator.clipboard.writeText(code).then(() => {
+          dependencies.showToast("Código de acceso copiado", "success");
+        });
+      }
+    });
+
     queryOne("#form-editar-empleado")?.addEventListener("submit", (event) => {
       void saveEditor(event);
     });
@@ -522,6 +564,7 @@ export function createTeamController(
     open,
     close,
     render,
+    refreshBusinessAccessCode,
     closeEditor,
     closePasswordReset
   });
