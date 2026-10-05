@@ -58,7 +58,15 @@ export interface ActiveBranchController {
 }
 
 function text(value: unknown): string {
-  return typeof value === "string" ? value : value == null ? "" : String(value);
+  if (typeof value === "string") return value;
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return String(value);
+  }
+  return "";
 }
 
 function recordOrNull(value: unknown): ContextRecord | null {
@@ -263,9 +271,9 @@ export function createActiveBranchController(
     const element = selector();
     if (!element) return;
 
-    element.addEventListener("change", async (event) => {
+    element.addEventListener("change", (event) => {
       const target = event.target as HTMLSelectElement | null;
-      await select(target?.value ?? "");
+      void select(target?.value ?? "");
     });
     setupComplete = true;
   }
