@@ -490,6 +490,7 @@ test("setup owns one selector change listener and delegates typed selection", as
   assert.equal(h.document.selector.listenerCount("change"), 1);
 
   await h.document.selector.emit("change", "b");
+  await new Promise((resolve) => setImmediate(resolve));
   assert.equal(h.state.context.branch.id, "b");
   assert.equal(branchRpcCalls(h).length, 1);
 });
