@@ -314,6 +314,21 @@
         "public.operational_backups"
       ],
       "security": false
+    },
+    {
+      "file": "supabase/migrations/20261005192108_team_manager_delegation_audit.sql",
+      "purpose": "Delegate audited Team administration to managers with role hierarchy and fail-closed privileged mutation tracing.",
+      "creates": [],
+      "modifies": [
+        "public.obtener_contexto_app",
+        "public.obtener_negocio_admin_actual",
+        "public.listar_equipo_v3",
+        "public.actualizar_rol_miembro_v2",
+        "public.cambiar_estado_miembro_v3",
+        "public.listar_permisos_stock_equipo_v1",
+        "public.actualizar_permiso_stock_miembro_v1"
+      ],
+      "security": true
     }
   ],
   "reconciliation": {
