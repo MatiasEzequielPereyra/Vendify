@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .select("negocio_id, rol, activo")
       .eq("user_id", user.id)
       .eq("activo", true)
-      .in("rol", ["owner", "admin"])
+      .in("rol", ["owner", "admin", "manager"])
       .limit(1)
       .maybeSingle();
 
@@ -67,6 +67,9 @@ Deno.serve(async (req) => {
     }
     if (!["admin", "manager", "cashier"].includes(rol)) {
       throw new Error("Rol inválido");
+    }
+    if (membership.rol === "manager" && !["manager", "cashier"].includes(rol)) {
+      throw new Error("Un encargado solo puede crear encargados o cajeros");
     }
 
     const { data: negocio, error: negocioError } = await admin
@@ -133,14 +136,22 @@ Deno.serve(async (req) => {
 
       if (employeeError) throw employeeError;
 
-      await admin.from("audit_log").insert({
+      const { error: auditError } = await admin.from("audit_log").insert({
         negocio_id: negocio.id,
         user_id: user.id,
         accion: "empleado_creado",
         entidad: "empleados",
         entidad_id: created.user.id,
-        detalle: { username, nombre, rol },
+        detalle: {
+          actor_role: membership.rol,
+          target_user_id: created.user.id,
+          username,
+          nombre,
+          rol,
+        },
       });
+
+      if (auditError) throw auditError;
     } catch (dbError) {
       await admin.auth.admin.deleteUser(created.user.id);
       throw dbError;
