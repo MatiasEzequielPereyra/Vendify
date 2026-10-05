@@ -27,7 +27,7 @@ test("Edge Function config keeps JWT verification enabled for both deployed func
 test("crear-empleado preserves authentication, authorization and validation contract", () => {
   assert.match(crear, /req\.headers\.get\("Authorization"\)/);
   assert.match(crear, /userClient\.auth\.getUser\(\)/);
-  assert.match(crear, /\.in\("rol", \["owner", "admin"\]\)/);
+  assert.match(crear, /\.in\("rol", \["owner", "admin", "manager"\]\)/);
   assert.match(crear, /No tenés permiso para crear empleados/);
   assert.match(crear, /password\.length < 8/);
   assert.match(crear, /\["admin", "manager", "cashier"\]\.includes\(rol\)/);
@@ -35,15 +35,19 @@ test("crear-empleado preserves authentication, authorization and validation cont
   assert.doesNotMatch(crear, /SUPABASE_SERVICE_ROLE_KEY\s*=/);
 });
 
-test("crear-empleado preserves create flow and cleanup after a database failure", () => {
+test("crear-empleado preserves create flow and fail-closed audit cleanup", () => {
   appearsInOrder(crear, [
     "admin.auth.admin.createUser",
     '.from("negocio_miembros")',
     ".insert({",
     '.from("empleados")',
     ".insert({",
-    'await admin.from("audit_log").insert'
+    'admin.from("audit_log").insert'
   ]);
+  assert.match(crear, /membership\.rol === "manager"[\s\S]*?\["manager", "cashier"\]\.includes\(rol\)/);
+  assert.match(crear, /actor_role: membership\.rol/);
+  assert.match(crear, /target_user_id: created\.user\.id/);
+  assert.match(crear, /if \(auditError\) throw auditError/);
   assert.match(crear, /catch \(dbError\) \{[\s\S]*?admin\.auth\.admin\.deleteUser\(created\.user\.id\)/);
   assert.match(crear, /JSON\.stringify\(\{[\s\S]*?ok: true,[\s\S]*?codigo_acceso:/);
   assert.match(crear, /status: 400/);
@@ -52,7 +56,7 @@ test("crear-empleado preserves create flow and cleanup after a database failure"
 test("gestionar-empleado preserves caller permission and same-business target isolation", () => {
   assert.match(gestionar, /req\.headers\.get\("Authorization"\)/);
   assert.match(gestionar, /userClient\.auth\.getUser\(\)/);
-  assert.match(gestionar, /\.in\("rol", \["owner", "admin"\]\)/);
+  assert.match(gestionar, /\.in\("rol", \["owner", "admin", "manager"\]\)/);
   assert.match(gestionar, /\.eq\("negocio_id", callerMembership\.negocio_id\)/);
   assert.match(gestionar, /El propietario no puede modificarse desde Equipo/);
   assert.match(gestionar, /No podés modificar tu propia cuenta desde Equipo/);
@@ -60,9 +64,10 @@ test("gestionar-empleado preserves caller permission and same-business target is
 
 test("gestionar-empleado preserves update, delete and password reset rules", () => {
   assert.match(gestionar, /action === "delete"/);
-  assert.match(gestionar, /callerMembership\.rol !== "owner"/);
+  assert.match(gestionar, /canDeleteTarget\(callerMembership\.rol, targetMembership\.rol\)/);
   assert.match(gestionar, /admin\.auth\.admin\.deleteUser\(targetMembership\.user_id\)/);
   assert.match(gestionar, /action === "update"/);
+  assert.match(gestionar, /canAssignRole\(callerMembership\.rol, rol\)/);
   assert.match(gestionar, /admin\.auth\.admin\.updateUserById/);
   assert.match(gestionar, /\.update\(\{[\s\S]*?nombre,[\s\S]*?username,/);
   assert.match(gestionar, /\.update\(\{ rol \}\)/);
@@ -73,6 +78,34 @@ test("gestionar-empleado preserves update, delete and password reset rules", () 
   assert.match(gestionar, /\{ password \}/);
   assert.match(gestionar, /if \(flagError\) throw flagError/);
   assert.match(gestionar, /Acción inválida/);
+});
+
+test("gestionar-empleado enforces manager target hierarchy", () => {
+  assert.match(gestionar, /actorRole === "manager"[\s\S]*?targetRole === "manager"[\s\S]*?targetRole === "cashier"/);
+  assert.match(gestionar, /role === "manager"[\s\S]*?role === "cashier"/);
+  assert.match(gestionar, /targetMembership\.user_id === user\.id/);
+  assert.match(gestionar, /No tenés permiso para administrar ese usuario/);
+});
+
+test("gestionar-empleado verifies audit before privileged Auth mutations", () => {
+  const deleteIndex = gestionar.indexOf('action === "delete"');
+  const updateIndex = gestionar.indexOf('action === "update"');
+  const resetIndex = gestionar.indexOf('action === "reset_password"');
+
+  const deleteBlock = gestionar.slice(deleteIndex, updateIndex);
+  assert.ok(deleteBlock.indexOf('admin.from("audit_log").insert') < deleteBlock.indexOf("admin.auth.admin.deleteUser"));
+  assert.match(deleteBlock, /if \(auditError\) throw auditError/);
+  assert.match(deleteBlock, /actor_role: callerMembership\.rol/);
+  assert.match(deleteBlock, /target_user_id: targetMembership\.user_id/);
+
+  const updateBlock = gestionar.slice(updateIndex, resetIndex);
+  assert.ok(updateBlock.indexOf('admin.from("audit_log").insert') < updateBlock.indexOf("admin.auth.admin.updateUserById"));
+  assert.match(updateBlock, /if \(auditError\) throw auditError/);
+
+  const resetBlock = gestionar.slice(resetIndex);
+  assert.ok(resetBlock.indexOf('admin.from("audit_log").insert') < resetBlock.indexOf("admin.auth.admin.updateUserById"));
+  assert.match(resetBlock, /if \(auditError\) throw auditError/);
+  assert.doesNotMatch(resetBlock.match(/detalle: \{[\s\S]*?\},/)?.[0] ?? "", /password|secret|hash/);
 });
 
 test("typed Team client payloads match the captured Edge Function parsers", () => {
