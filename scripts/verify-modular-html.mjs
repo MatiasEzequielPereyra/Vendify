@@ -16,7 +16,7 @@ const fragments = [
   "html/06-dashboard-admin-modals.html",
   "html/07-cash-sales-modals.html"
 ];
-const expectedMarkupHash = "2ff57fb24f0d87680e6ee61ae3df0bd4dd042415e88c5740fb383d11ec2dd140";
+const expectedMarkupHash = "6ea816a9b8f304fa26a90c04f36b62b2df850e3eeb60e43077b5ed84f3c009a0";
 const fail = (message) => {
   console.error(`FAIL: ${message}`);
   process.exit(1);
@@ -56,10 +56,10 @@ pass("fragment concatenation matches the validated legacy body byte-for-byte");
 if (/<script\b/i.test(markup)) fail("HTML fragments must not execute scripts");
 const ids = [...markup.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]);
 const uniqueIds = new Set(ids);
-if (ids.length !== 547 || uniqueIds.size !== ids.length) {
-  fail(`expected 547 unique fragment IDs, found ${ids.length} IDs / ${uniqueIds.size} unique`);
+if (ids.length !== 551 || uniqueIds.size !== ids.length) {
+  fail(`expected 551 unique fragment IDs, found ${ids.length} IDs / ${uniqueIds.size} unique`);
 }
-pass("all 547 functional DOM IDs remain unique");
+pass("all 551 functional DOM IDs remain unique");
 
 const criticalOrder = [
   'id="auth-screen"',
