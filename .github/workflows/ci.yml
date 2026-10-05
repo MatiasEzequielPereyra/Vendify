@@ -42,3 +42,14 @@ jobs:
 
       - name: Map legacy architecture
         run: npm run analyze:legacy
+
+      - name: Run VEN-007J PWA browser acceptance
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium not found on runner" >&2
+            exit 1
+          fi
+          echo "Using Chrome: $CHROME"
+          VENDIFY_CHROME_PATH="$CHROME" CI=true npm run qa:pwa:browser
