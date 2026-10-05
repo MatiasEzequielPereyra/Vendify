@@ -1,32 +1,34 @@
 {
   "schema_version": 1,
-  "ticket": "VEN-004",
-  "source_capture_date": "2026-10-01",
+  "ticket": "VEN-015",
+  "source_capture_date": "2026-10-05",
   "production_project_ref": "puhkmblnptntorwptvld",
-  "repository_base_sha": "e30fcfd92776e40f78b50a67fa0f4244885264ec",
-  "capture_method": "Supabase Management API read-only Edge Function retrieval",
+  "repository_base_sha": "529f294df13641487ce7c16899a25d586be4b61b",
+  "capture_method": "Repository source deployed to disposable Vendify Staging via Supabase Management API",
   "functions": [
     {
       "function": "crear-empleado",
       "deployed_version": 2,
       "verify_jwt": true,
-      "deployed_ezbr_sha256": "e1c44b3e2b98b13a72be72790d77e14d6480e516b74543876ee07533046c3676",
+      "deployed_ezbr_sha256": "812f5862f12c3a69681093063613c67dd14b4b646200ac2656e5b61416d2391e",
       "repository_path": "supabase/functions/crear-empleado/index.ts",
-      "source_sha256": "df540898703d458e4533730db0a6727bef74cb1ce3c6dc5c8a6b2afbb79f1890",
-      "parity": "byte-identical-to-management-api-files-content-at-capture"
+      "source_sha256": "a672ead4f2a544533c62b552996efd12dce44e61c4c8a3dfde4678395b3768e4",
+      "parity": "repository-source-deployed-to-disposable-staging"
     },
     {
       "function": "gestionar-empleado",
       "deployed_version": 2,
       "verify_jwt": true,
-      "deployed_ezbr_sha256": "db6127e0f367ca74b371a731a7017b0f04dae17efc4d588099eeeb44f054ccb1",
+      "deployed_ezbr_sha256": "a1523bfb180cfd79b3a56c687e4fba7f584f50588efd310c7a5e49d554067bd2",
       "repository_path": "supabase/functions/gestionar-empleado/index.ts",
-      "source_sha256": "6b9902122e94b097cf973812ec9700996cd5fa6c5d82ae19076798ac1f1d8255",
-      "parity": "byte-identical-to-management-api-files-content-at-capture"
+      "source_sha256": "38cac42c9cae619f995ffe591aa589163cc213f6510f03746dc3351a409279da",
+      "parity": "repository-source-deployed-to-disposable-staging"
     }
   ],
   "notes": [
     "deployed_ezbr_sha256 is recorded exactly as reported by Supabase and is not asserted to equal source_sha256",
-    "no production deployment or mutation is part of VEN-004"
-  ]
+    "VEN-015 validation deployments target Vendify Staging (clqxfwiutwnhbejezakw) only",
+    "production project puhkmblnptntorwptvld was not deployed or mutated by VEN-015"
+  ],
+  "validation_project_ref": "clqxfwiutwnhbejezakw"
 }
