@@ -1,0 +1,40 @@
+name: VEN-007J Browser Acceptance
+
+on:
+  push:
+    branches:
+      - refactor/ven-007j-active-branch-lifecycle
+  pull_request:
+    branches:
+      - refactor/modular-runtime
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run PWA browser acceptance
+        shell: bash
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium not found on runner" >&2
+            exit 1
+          fi
+          echo "Using Chrome: $CHROME"
+          VENDIFY_CHROME_PATH="$CHROME" CI=true npm run qa:pwa:browser
