@@ -42,7 +42,7 @@ for (const marker of [
   "window.VendifyPurchasesV232.createController({",
   "purchasesControllerV232.refreshOpenViews()",
   "purchasesControllerV232.setup()",
-  "listBranches: listarSucursalesV2",
+  "activeBranchControllerV232.getBranches().map((branch) => ({",
   "reloadProducts: cargarProductos",
   "emitStockChange: realtimeControllerV232.emitStockChange"
 ]) {
