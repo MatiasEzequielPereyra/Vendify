@@ -5,7 +5,7 @@ import test from "node:test";
 
 const root = resolve(import.meta.dirname, "../..");
 const ven014Migration =
-  "supabase/migrations/20261006170851_preserve_stock_inicial_movement_type.sql";
+  "supabase/migrations/20261006171531_preserve_stock_inicial_movement_type.sql";
 const canonicalTypes = new Set([
   "venta",
   "ingreso",
