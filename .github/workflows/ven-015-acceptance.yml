@@ -23,24 +23,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Adapt acceptance harness to current GoTrue signup shape
+      - name: Install temporary bcrypt helper
+        run: npm install --no-save --ignore-scripts bcryptjs
+      - name: Prepare direct disposable Auth fixture handshake
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path("scripts/ven-015-live-manager-acceptance.mjs")
           source = path.read_text()
-          old = '''if (!signup.response.ok || !signup.body?.user?.id) {
-            throw new Error(`manager fixture signup failed (${signup.response.status})`);
-          }
+          source = source.replace(
+              'import process from "node:process";',
+              'import process from "node:process";\nimport bcrypt from "bcryptjs";'
+          )
+          first = source.index("const tag = crypto.randomUUID()")
+          marker = 'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'
+          last = source.index(marker, first) + len(marker)
+          replacement = r'''const managerUserId = crypto.randomUUID();
+const tag = managerUserId.replaceAll("-", "").slice(0, 16);
+const email = `ven015.manager.${tag}@gmail.com`;
+const password = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+const managerUsername = `ven015_mgr_${tag.slice(0, 10)}`;
+const cashierUsername = `ven015_cash_${tag.slice(0, 10)}`;
+const cashierPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+const resetPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+const passwordHash = await bcrypt.hash(password, 10);
 
-          const managerUserId = signup.body.user.id;'''
-          new = '''const managerUserId = signup.body?.user?.id ?? signup.body?.id ?? null;
-          if (!signup.response.ok || !managerUserId) {
-            throw new Error(`manager fixture signup failed (${signup.response.status})`);
-          }'''
-          if old not in source:
-              raise SystemExit("expected harness block not found")
-          path.write_text(source.replace(old, new))
+process.stdout.write(`VEN015_FIXTURE_USER_ID=${managerUserId}\\n`);
+process.stdout.write(`VEN015_FIXTURE_EMAIL=${email}\\n`);
+process.stdout.write(`VEN015_FIXTURE_USERNAME=${managerUsername}\\n`);
+process.stdout.write(`VEN015_FIXTURE_PASSWORD_HASH=${passwordHash}\\n`);
+process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'''
+          path.write_text(source[:first] + replacement + source[last:])
           PY
       - name: Run authenticated manager acceptance
         run: node scripts/ven-015-live-manager-acceptance.mjs
