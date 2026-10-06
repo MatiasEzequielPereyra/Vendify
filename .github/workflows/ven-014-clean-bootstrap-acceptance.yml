@@ -130,6 +130,10 @@ jobs:
 
           select set_config('request.jwt.claim.sub', :'user_id', true);
           select set_config('request.jwt.claim.role', 'authenticated', true);
+          select set_config('ven014.user_id', :'user_id', true);
+          select set_config('ven014.business_id', :'business_id', true);
+          select set_config('ven014.branch_id', :'branch_id', true);
+          select set_config('ven014.product_id', :'product_id', true);
 
           insert into public.productos(
             id,user_id,nombre,precio_compra,precio_venta,
@@ -170,10 +174,14 @@ jobs:
             v_stock integer;
             v_tipo text;
             v_closed boolean;
+            v_user_id uuid := current_setting('ven014.user_id')::uuid;
+            v_business_id uuid := current_setting('ven014.business_id')::uuid;
+            v_branch_id uuid := current_setting('ven014.branch_id')::uuid;
+            v_product_id uuid := current_setting('ven014.product_id')::uuid;
           begin
             v_result := public.ajustar_stock_inicial_rapido_v2(
-              :'product_id'::uuid,
-              :'branch_id'::uuid,
+              v_product_id,
+              v_branch_id,
               1
             );
 
@@ -192,9 +200,9 @@ jobs:
             select stock, stock_inicial_cerrado
               into v_stock, v_closed
               from public.producto_stock_sucursal
-             where negocio_id = :'business_id'::uuid
-               and sucursal_id = :'branch_id'::uuid
-               and producto_id = :'product_id'::uuid;
+             where negocio_id = v_business_id
+               and sucursal_id = v_branch_id
+               and producto_id = v_product_id;
 
             if v_stock <> 1 or v_closed is not false then
               raise exception 'VEN-014 initial stock persisted incorrectly: stock %, closed %',
@@ -204,9 +212,9 @@ jobs:
             select tipo
               into v_tipo
               from public.movimientos
-             where negocio_id = :'business_id'::uuid
-               and sucursal_id = :'branch_id'::uuid
-               and producto_id = :'product_id'::uuid
+             where negocio_id = v_business_id
+               and sucursal_id = v_branch_id
+               and producto_id = v_product_id
              order by creado desc
              limit 1;
 
@@ -221,10 +229,10 @@ jobs:
               tipo,delta,stock_resultante,motivo,detalle
             )
             values(
-              :'user_id'::uuid,
-              :'business_id'::uuid,
-              :'branch_id'::uuid,
-              :'product_id'::uuid,
+              v_user_id,
+              v_business_id,
+              v_branch_id,
+              v_product_id,
               'VEN-014 Disposable Product',
               'ajuste',
               0,
@@ -236,17 +244,17 @@ jobs:
             select stock_inicial_cerrado
               into v_closed
               from public.producto_stock_sucursal
-             where negocio_id = :'business_id'::uuid
-               and sucursal_id = :'branch_id'::uuid
-               and producto_id = :'product_id'::uuid;
+             where negocio_id = v_business_id
+               and sucursal_id = v_branch_id
+               and producto_id = v_product_id;
 
             if v_closed is not true then
               raise exception 'VEN-014 operational movement did not close initial mode';
             end if;
 
             v_result := public.ajustar_stock_inicial_rapido_v2(
-              :'product_id'::uuid,
-              :'branch_id'::uuid,
+              v_product_id,
+              v_branch_id,
               1
             );
 
@@ -259,26 +267,8 @@ jobs:
             end if;
 
             raise notice 'VEN014_INITIAL_MODE_CLOSE=PASS requiere_motivo=true stock_unchanged=1';
-          end $$;
 
-          rollback;
-
-          begin;
-          set local session_replication_role = replica;
-
-          do $$
-          declare
-            v public.movimientos%rowtype;
-          begin
-            select *
-              into v
-              from public.movimientos
-             order by creado
-             limit 1;
-
-            if not found then
-              raise exception 'VEN-014 invalid-type probe needs one existing movement row';
-            end if;
+            execute 'set local session_replication_role = replica';
 
             begin
               insert into public.movimientos(
@@ -286,8 +276,14 @@ jobs:
                 tipo,delta,stock_resultante,motivo,detalle
               )
               values(
-                v.user_id,v.negocio_id,v.sucursal_id,v.producto_id,v.producto_nombre,
-                'ven014_tipo_invalido',0,v.stock_resultante,
+                v_user_id,
+                v_business_id,
+                v_branch_id,
+                v_product_id,
+                'VEN-014 Disposable Product',
+                'ven014_tipo_invalido',
+                0,
+                1,
                 'VEN-014 invalid-type probe',
                 jsonb_build_object('ven014_probe','invalid_type')
               );
@@ -297,6 +293,8 @@ jobs:
               when check_violation then
                 raise notice 'VEN014_INVALID_TYPE=REJECTED';
             end;
+
+            execute 'set local session_replication_role = origin';
           end $$;
 
           rollback;
