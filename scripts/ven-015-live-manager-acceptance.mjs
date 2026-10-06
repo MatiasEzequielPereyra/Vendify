@@ -6,7 +6,7 @@ const apiKey = process.env.VEN015_SUPABASE_PUBLISHABLE_KEY;
 if (!base || !apiKey) throw new Error("VEN-015 staging public connection config missing");
 
 const tag = crypto.randomUUID().replaceAll("-", "").slice(0, 16);
-const email = `ven015.manager.${tag}@example.com`;
+const email = `ven015.manager.${tag}@gmail.com`;
 const password = `V15!${crypto.randomBytes(24).toString("base64url")}`;
 const managerUsername = `ven015_mgr_${tag.slice(0, 10)}`;
 const cashierUsername = `ven015_cash_${tag.slice(0, 10)}`;
