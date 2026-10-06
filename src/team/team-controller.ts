@@ -97,9 +97,7 @@ export function canManageTeamMember(
   const actor = teamRole(actorRole);
   const target = teamRole(targetRole);
   if (target === "owner") return false;
-  if (actor === "owner" || actor === "admin") {
-    return target === "admin" || target === "manager" || target === "cashier";
-  }
+  if (actor === "owner" || actor === "admin") return true;
   if (actor === "manager") return target === "manager" || target === "cashier";
   return false;
 }
@@ -113,7 +111,7 @@ export function canDeleteTeamMember(
   const actor = teamRole(actorRole);
   const target = teamRole(targetRole);
   if (target === "owner") return false;
-  if (actor === "owner") return target === "admin" || target === "manager" || target === "cashier";
+  if (actor === "owner") return true;
   if (actor === "admin" || actor === "manager") return target === "manager" || target === "cashier";
   return false;
 }
