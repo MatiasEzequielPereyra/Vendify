@@ -61,7 +61,8 @@ if (staging.validation_project_ref === production.production_project_ref) {
 }
 
 for (const entry of staging.functions) {
-  const source = readFileSync(resolve(root, entry.repository_path), "utf8");
+  const source = readFileSync(resolve(root, entry.repository_path), "utf8")
+    .replace(/\r\n?/g, "\n");
   const digest = createHash("sha256").update(source, "utf8").digest("hex");
   if (digest !== entry.source_sha256) {
     throw new Error(entry.function + ": staging source checksum drift");
