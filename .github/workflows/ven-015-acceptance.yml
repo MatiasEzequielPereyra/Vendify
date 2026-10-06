@@ -35,25 +35,18 @@ jobs:
               'import process from "node:process";',
               'import process from "node:process";\nimport bcrypt from "bcryptjs";'
           )
-          first = source.index("const tag = crypto.randomUUID()")
-          marker = 'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'
-          last = source.index(marker, first) + len(marker)
+          first = source.index("const signup = await jsonFetch(")
+          wait_pos = source.index("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1", first)
+          last = source.index(";", wait_pos) + 1
           replacement = "\n".join([
               'const managerUserId = crypto.randomUUID();',
-              'const tag = managerUserId.replaceAll("-", "").slice(0, 16);',
-              'const email = `ven015.manager.${tag}@gmail.com`;',
-              'const password = `V15!${crypto.randomBytes(24).toString("base64url")}`;',
-              'const managerUsername = `ven015_mgr_${tag.slice(0, 10)}`;',
-              'const cashierUsername = `ven015_cash_${tag.slice(0, 10)}`;',
-              'const cashierPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;',
-              'const resetPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;',
               'const passwordHash = await bcrypt.hash(password, 10);',
               '',
-              'process.stdout.write(`VEN015_FIXTURE_USER_ID=${managerUserId}\\\\n`);',
-              'process.stdout.write(`VEN015_FIXTURE_EMAIL=${email}\\\\n`);',
-              'process.stdout.write(`VEN015_FIXTURE_USERNAME=${managerUsername}\\\\n`);',
-              'process.stdout.write(`VEN015_FIXTURE_PASSWORD_HASH=${passwordHash}\\\\n`);',
-              'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\\\n");'
+              'console.log(`VEN015_FIXTURE_USER_ID=${managerUserId}`);',
+              'console.log(`VEN015_FIXTURE_EMAIL=${email}`);',
+              'console.log(`VEN015_FIXTURE_USERNAME=${managerUsername}`);',
+              'console.log(`VEN015_FIXTURE_PASSWORD_HASH=${passwordHash}`);',
+              'console.log("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1");'
           ])
           path.write_text(source[:first] + replacement + source[last:])
           PY
