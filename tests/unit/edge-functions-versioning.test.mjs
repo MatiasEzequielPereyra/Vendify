@@ -8,6 +8,13 @@ const crear = readFileSync(resolve(root, "supabase/functions/crear-empleado/inde
 const gestionar = readFileSync(resolve(root, "supabase/functions/gestionar-empleado/index.ts"), "utf8");
 const client = readFileSync(resolve(root, "src/team/team-edge-service.ts"), "utf8");
 const config = readFileSync(resolve(root, "supabase/config.toml"), "utf8");
+const productionProvenance = JSON.parse(
+  readFileSync(resolve(root, "docs/supabase/edge-functions-provenance.json"), "utf8")
+);
+const stagingValidation = JSON.parse(
+  readFileSync(resolve(root, "docs/supabase/edge-functions-staging-validation.json"), "utf8")
+);
+const verifier = readFileSync(resolve(root, "scripts/verify-edge-functions-versioning.mjs"), "utf8");
 
 function appearsInOrder(source, markers) {
   let cursor = -1;
@@ -124,4 +131,52 @@ test("captured sources do not contain secret values or server stack serializatio
     assert.doesNotMatch(source, /service_role\s*[:=]\s*["'][A-Za-z0-9._-]{20,}/i);
     assert.doesNotMatch(source, /error\.stack/);
   }
+});
+
+
+test("production Edge Function provenance remains the immutable VEN-004 capture", () => {
+  assert.equal(productionProvenance.ticket, "VEN-004");
+  assert.equal(productionProvenance.production_project_ref, "puhkmblnptntorwptvld");
+  assert.equal(Object.hasOwn(productionProvenance, "validation_project_ref"), false);
+  assert.deepEqual(
+    productionProvenance.functions.map((entry) => ({
+      function: entry.function,
+      deployed_version: entry.deployed_version,
+      verify_jwt: entry.verify_jwt,
+      deployed_ezbr_sha256: entry.deployed_ezbr_sha256,
+      source_sha256: entry.source_sha256
+    })),
+    [
+      {
+        function: "crear-empleado",
+        deployed_version: 2,
+        verify_jwt: true,
+        deployed_ezbr_sha256: "e1c44b3e2b98b13a72be72790d77e14d6480e516b74543876ee07533046c3676",
+        source_sha256: "df540898703d458e4533730db0a6727bef74cb1ce3c6dc5c8a6b2afbb79f1890"
+      },
+      {
+        function: "gestionar-empleado",
+        deployed_version: 2,
+        verify_jwt: true,
+        deployed_ezbr_sha256: "db6127e0f367ca74b371a731a7017b0f04dae17efc4d588099eeeb44f054ccb1",
+        source_sha256: "6b9902122e94b097cf973812ec9700996cd5fa6c5d82ae19076798ac1f1d8255"
+      }
+    ]
+  );
+});
+
+test("VEN-015 staging validation is separate from production provenance", () => {
+  assert.equal(stagingValidation.ticket, "VEN-015");
+  assert.equal(stagingValidation.validation_project_ref, "clqxfwiutwnhbejezakw");
+  assert.notEqual(stagingValidation.validation_project_ref, productionProvenance.production_project_ref);
+  assert.equal(stagingValidation.functions.length, 2);
+  assert.ok(stagingValidation.functions.every((entry) => entry.verify_jwt === true));
+});
+
+test("edge-function verifier guards immutable production provenance and current staging parity", () => {
+  assert.match(verifier, /EXPECTED_PRODUCTION/);
+  assert.match(verifier, /production provenance must remain VEN-004/);
+  assert.match(verifier, /staging validation metadata must not replace production provenance/);
+  assert.match(verifier, /staging source checksum drift/);
+  assert.match(verifier, /verify_jwt=true is not declared/);
 });
