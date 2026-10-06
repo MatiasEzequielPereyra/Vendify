@@ -1,0 +1,310 @@
+name: VEN-014 Clean Bootstrap Acceptance
+
+on:
+  push:
+    branches:
+      - fix/ven-014-stock-inicial-constraint-provenance
+
+permissions:
+  contents: read
+
+jobs:
+  clean-bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout VEN-014 branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Generate local pre-v2.31 baseline migration
+        run: npm run prepare:database-local
+
+      - name: Start disposable local Supabase
+        run: supabase start
+
+      - name: Reset from a clean database using only generated baseline plus versioned migrations
+        run: supabase db reset
+
+      - name: Prove migration chain, final constraint, RPC behavior and invalid-type rejection
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+          if [ -z "$DB_CONTAINER" ]; then
+            echo "FAIL: local Supabase database container not found"
+            exit 1
+          fi
+
+          MIGRATIONS="$(docker exec "$DB_CONTAINER" psql -U postgres -d postgres -X -Atc             "select version || ':' || name from supabase_migrations.schema_migrations order by version;")"
+          printf '%s\n' "$MIGRATIONS"
+
+          printf '%s\n' "$MIGRATIONS" | grep -F '20261005192108:team_manager_delegation_audit'
+          printf '%s\n' "$MIGRATIONS" | grep -F '20261006171531:preserve_stock_inicial_movement_type'
+
+          CONSTRAINT_DEF="$(docker exec "$DB_CONTAINER" psql -U postgres -d postgres -X -Atc             "select pg_get_constraintdef(c.oid, true) from pg_constraint c join pg_class t on t.oid=c.conrelid join pg_namespace n on n.oid=t.relnamespace where n.nspname='public' and t.relname='movimientos' and c.conname='movimientos_tipo_check';")"
+
+          echo "VEN014_FINAL_CONSTRAINT=$CONSTRAINT_DEF"
+
+          for TYPE in venta ingreso ajuste rotura vencimiento perdida inventario transferencia_salida transferencia_entrada devolucion compra stock_inicial; do
+            printf '%s' "$CONSTRAINT_DEF" | grep -F "$TYPE" >/dev/null
+          done
+
+          STATUS_JSON="$(supabase status -o json)"
+          API_URL="$(printf '%s' "$STATUS_JSON" | jq -r '.API_URL')"
+          ADMIN_KEY="$(printf '%s' "$STATUS_JSON" | jq -r '.SECRET_KEY // .SERVICE_ROLE_KEY')"
+
+          if [ -z "$API_URL" ] || [ "$API_URL" = "null" ] || [ -z "$ADMIN_KEY" ] || [ "$ADMIN_KEY" = "null" ]; then
+            echo "FAIL: local Supabase status did not expose API/admin credentials"
+            exit 1
+          fi
+
+          USER_JSON="$(curl --fail-with-body -sS             -X POST "$API_URL/auth/v1/admin/users"             -H "apikey: $ADMIN_KEY"             -H "Authorization: Bearer $ADMIN_KEY"             -H "Content-Type: application/json"             -d '{"email":"ven014-clean-bootstrap@vendify.local","password":"VendifyLocalQA!VEN014","email_confirm":true}')"
+          USER_ID="$(printf '%s' "$USER_JSON" | jq -r '.id')"
+
+          if [ -z "$USER_ID" ] || [ "$USER_ID" = "null" ]; then
+            echo "FAIL: disposable Auth user was not created"
+            printf '%s\n' "$USER_JSON"
+            exit 1
+          fi
+
+          BUSINESS_ID="$(python - <<'PY'
+          import uuid
+          print(uuid.uuid4())
+          PY
+          )"
+          BRANCH_ID="$(python - <<'PY'
+          import uuid
+          print(uuid.uuid4())
+          PY
+          )"
+          PRODUCT_ID="$(python - <<'PY'
+          import uuid
+          print(uuid.uuid4())
+          PY
+          )"
+
+          docker exec -i "$DB_CONTAINER" psql -U postgres -d postgres -X -v ON_ERROR_STOP=1             -v user_id="$USER_ID"             -v business_id="$BUSINESS_ID"             -v branch_id="$BRANCH_ID"             -v product_id="$PRODUCT_ID" <<'SQL'
+          begin;
+
+          insert into public.negocios(id,nombre,slug,plan,codigo_acceso)
+          values (
+            :'business_id'::uuid,
+            'VEN-014 Clean Bootstrap',
+            'ven014-clean-bootstrap',
+            'pro',
+            'VEN014BOOT'
+          );
+
+          insert into public.negocio_miembros(
+            negocio_id,user_id,rol,activo,puede_gestionar_stock
+          )
+          values (
+            :'business_id'::uuid,
+            :'user_id'::uuid,
+            'owner',
+            true,
+            true
+          );
+
+          insert into public.sucursales(id,negocio_id,nombre)
+          values (
+            :'branch_id'::uuid,
+            :'business_id'::uuid,
+            'Principal'
+          );
+
+          select set_config('request.jwt.claim.sub', :'user_id', true);
+          select set_config('request.jwt.claim.role', 'authenticated', true);
+
+          insert into public.productos(
+            id,user_id,nombre,precio_compra,precio_venta,
+            stock,stock_minimo,negocio_id,codigo_barras
+          )
+          values (
+            :'product_id'::uuid,
+            :'user_id'::uuid,
+            'VEN-014 Disposable Product',
+            1,
+            2,
+            0,
+            0,
+            :'business_id'::uuid,
+            'VEN014-CLEAN-BOOTSTRAP'
+          );
+
+          insert into public.producto_stock_sucursal(
+            negocio_id,sucursal_id,producto_id,stock,stock_minimo,stock_inicial_cerrado
+          )
+          values (
+            :'business_id'::uuid,
+            :'branch_id'::uuid,
+            :'product_id'::uuid,
+            0,
+            0,
+            false
+          )
+          on conflict (sucursal_id,producto_id) do update
+          set stock = excluded.stock,
+              stock_minimo = excluded.stock_minimo,
+              stock_inicial_cerrado = false,
+              actualizado = now();
+
+          do $$
+          declare
+            v_result jsonb;
+            v_stock integer;
+            v_tipo text;
+            v_closed boolean;
+          begin
+            v_result := public.ajustar_stock_inicial_rapido_v2(
+              :'product_id'::uuid,
+              :'branch_id'::uuid,
+              1
+            );
+
+            if coalesce((v_result->>'ok')::boolean, false) is not true then
+              raise exception 'VEN-014 initial RPC returned not-ok: %', v_result;
+            end if;
+
+            if coalesce((v_result->>'requiere_motivo')::boolean, true) is not false then
+              raise exception 'VEN-014 initial RPC unexpectedly requires motivo: %', v_result;
+            end if;
+
+            if (v_result->>'stock')::integer <> 1 then
+              raise exception 'VEN-014 initial RPC expected stock 1: %', v_result;
+            end if;
+
+            select stock, stock_inicial_cerrado
+              into v_stock, v_closed
+              from public.producto_stock_sucursal
+             where negocio_id = :'business_id'::uuid
+               and sucursal_id = :'branch_id'::uuid
+               and producto_id = :'product_id'::uuid;
+
+            if v_stock <> 1 or v_closed is not false then
+              raise exception 'VEN-014 initial stock persisted incorrectly: stock %, closed %',
+                v_stock, v_closed;
+            end if;
+
+            select tipo
+              into v_tipo
+              from public.movimientos
+             where negocio_id = :'business_id'::uuid
+               and sucursal_id = :'branch_id'::uuid
+               and producto_id = :'product_id'::uuid
+             order by creado desc
+             limit 1;
+
+            if v_tipo <> 'stock_inicial' then
+              raise exception 'VEN-014 movement type expected stock_inicial, got %', v_tipo;
+            end if;
+
+            raise notice 'VEN014_INITIAL_RPC=PASS stock=0->1 requiere_motivo=false movement_type=stock_inicial';
+
+            insert into public.movimientos(
+              user_id,negocio_id,sucursal_id,producto_id,producto_nombre,
+              tipo,delta,stock_resultante,motivo,detalle
+            )
+            values(
+              :'user_id'::uuid,
+              :'business_id'::uuid,
+              :'branch_id'::uuid,
+              :'product_id'::uuid,
+              'VEN-014 Disposable Product',
+              'ajuste',
+              0,
+              1,
+              'VEN-014 valid operational close probe',
+              jsonb_build_object('ven014_probe','close_initial_mode')
+            );
+
+            select stock_inicial_cerrado
+              into v_closed
+              from public.producto_stock_sucursal
+             where negocio_id = :'business_id'::uuid
+               and sucursal_id = :'branch_id'::uuid
+               and producto_id = :'product_id'::uuid;
+
+            if v_closed is not true then
+              raise exception 'VEN-014 operational movement did not close initial mode';
+            end if;
+
+            v_result := public.ajustar_stock_inicial_rapido_v2(
+              :'product_id'::uuid,
+              :'branch_id'::uuid,
+              1
+            );
+
+            if coalesce((v_result->>'requiere_motivo')::boolean, false) is not true then
+              raise exception 'VEN-014 closed-mode RPC did not require motivo: %', v_result;
+            end if;
+
+            if (v_result->>'stock')::integer <> 1 then
+              raise exception 'VEN-014 closed-mode RPC changed stock: %', v_result;
+            end if;
+
+            raise notice 'VEN014_INITIAL_MODE_CLOSE=PASS requiere_motivo=true stock_unchanged=1';
+          end $$;
+
+          rollback;
+
+          begin;
+          set local session_replication_role = replica;
+
+          do $$
+          declare
+            v public.movimientos%rowtype;
+          begin
+            select *
+              into v
+              from public.movimientos
+             order by creado
+             limit 1;
+
+            if not found then
+              raise exception 'VEN-014 invalid-type probe needs one existing movement row';
+            end if;
+
+            begin
+              insert into public.movimientos(
+                user_id,negocio_id,sucursal_id,producto_id,producto_nombre,
+                tipo,delta,stock_resultante,motivo,detalle
+              )
+              values(
+                v.user_id,v.negocio_id,v.sucursal_id,v.producto_id,v.producto_nombre,
+                'ven014_tipo_invalido',0,v.stock_resultante,
+                'VEN-014 invalid-type probe',
+                jsonb_build_object('ven014_probe','invalid_type')
+              );
+
+              raise exception 'VEN-014 invalid movement type unexpectedly accepted';
+            exception
+              when check_violation then
+                raise notice 'VEN014_INVALID_TYPE=REJECTED';
+            end;
+          end $$;
+
+          rollback;
+          SQL
+
+          echo "VEN014_CLEAN_BOOTSTRAP=PASS"
+          echo "VEN014_MANUAL_ALTER_REQUIRED=NO"
+
+      - name: Stop disposable local Supabase
+        if: always()
+        run: supabase stop --no-backup
