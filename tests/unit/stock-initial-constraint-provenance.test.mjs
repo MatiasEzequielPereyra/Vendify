@@ -27,8 +27,9 @@ function movementConstraintRebuilds(sql, path, chainIndex) {
   const drops = [...sql.matchAll(dropPattern)];
 
   for (let index = 0; index < drops.length; index += 1) {
-    const start = drops[index].index ?? 0;
-    const tail = sql.slice(start);
+    const dropIndex = drops[index].index ?? 0;
+    const blockStart = sql.slice(0, dropIndex).lastIndexOf("do $");
+    const tail = sql.slice(blockStart >= 0 ? blockStart : 0);
     const blockEnd = tail.match(/end\s+\$\$\s*;/iu);
     const block = blockEnd
       ? tail.slice(0, (blockEnd.index ?? 0) + blockEnd[0].length)
