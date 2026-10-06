@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "ticket": "VEN-015",
+  "source_capture_date": "2026-10-05",
+  "validation_project_ref": "clqxfwiutwnhbejezakw",
+  "repository_base_sha": "529f294df13641487ce7c16899a25d586be4b61b",
+  "capture_method": "Repository source deployed to disposable Vendify Staging via Supabase Management API",
+  "functions": [
+    {
+      "function": "crear-empleado",
+      "deployed_version": 2,
+      "verify_jwt": true,
+      "deployed_ezbr_sha256": "812f5862f12c3a69681093063613c67dd14b4b646200ac2656e5b61416d2391e",
+      "repository_path": "supabase/functions/crear-empleado/index.ts",
+      "source_sha256": "a672ead4f2a544533c62b552996efd12dce44e61c4c8a3dfde4678395b3768e4",
+      "parity": "repository-source-deployed-to-disposable-staging"
+    },
+    {
+      "function": "gestionar-empleado",
+      "deployed_version": 2,
+      "verify_jwt": true,
+      "deployed_ezbr_sha256": "a1523bfb180cfd79b3a56c687e4fba7f584f50588efd310c7a5e49d554067bd2",
+      "repository_path": "supabase/functions/gestionar-empleado/index.ts",
+      "source_sha256": "38cac42c9cae619f995ffe591aa589163cc213f6510f03746dc3351a409279da",
+      "parity": "repository-source-deployed-to-disposable-staging"
+    }
+  ],
+  "notes": [
+    "deployed_ezbr_sha256 is recorded exactly as reported by Supabase and is not asserted to equal source_sha256",
+    "VEN-015 validation deployments target Vendify Staging only",
+    "production project puhkmblnptntorwptvld was not deployed or mutated by VEN-015"
+  ]
+}
