@@ -1,0 +1,53 @@
+name: VEN-015 Temporary Acceptance
+
+on:
+  push:
+    branches:
+      - fix/ven-015-manager-team-audit
+
+permissions:
+  contents: read
+
+jobs:
+  manager-live:
+    if: contains(github.event.head_commit.message, '[ven015-acceptance]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VEN015_SUPABASE_URL: https://clqxfwiutwnhbejezakw.supabase.co
+      VEN015_SUPABASE_PUBLISHABLE_KEY: sb_publishable_iRTaDuzTMOjrGQDc7VaB1w_c5GzxfI8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run authenticated manager acceptance
+        run: node scripts/ven-015-live-manager-acceptance.mjs
+
+  browser:
+    if: contains(github.event.head_commit.message, '[ven015-acceptance]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Resolve Chrome
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium unavailable on runner"
+            exit 2
+          fi
+          echo "VENDIFY_CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+      - name: Run PWA browser acceptance
+        run: npm run qa:pwa:browser
