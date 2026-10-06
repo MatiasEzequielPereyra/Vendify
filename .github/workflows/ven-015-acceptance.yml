@@ -38,21 +38,23 @@ jobs:
           first = source.index("const tag = crypto.randomUUID()")
           marker = 'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'
           last = source.index(marker, first) + len(marker)
-          replacement = r'''const managerUserId = crypto.randomUUID();
-const tag = managerUserId.replaceAll("-", "").slice(0, 16);
-const email = `ven015.manager.${tag}@gmail.com`;
-const password = `V15!${crypto.randomBytes(24).toString("base64url")}`;
-const managerUsername = `ven015_mgr_${tag.slice(0, 10)}`;
-const cashierUsername = `ven015_cash_${tag.slice(0, 10)}`;
-const cashierPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
-const resetPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
-const passwordHash = await bcrypt.hash(password, 10);
-
-process.stdout.write(`VEN015_FIXTURE_USER_ID=${managerUserId}\\n`);
-process.stdout.write(`VEN015_FIXTURE_EMAIL=${email}\\n`);
-process.stdout.write(`VEN015_FIXTURE_USERNAME=${managerUsername}\\n`);
-process.stdout.write(`VEN015_FIXTURE_PASSWORD_HASH=${passwordHash}\\n`);
-process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'''
+          replacement = "\n".join([
+              'const managerUserId = crypto.randomUUID();',
+              'const tag = managerUserId.replaceAll("-", "").slice(0, 16);',
+              'const email = \`ven015.manager.\${tag}@gmail.com\`;',
+              'const password = \`V15!\${crypto.randomBytes(24).toString("base64url")}\`;',
+              'const managerUsername = \`ven015_mgr_\${tag.slice(0, 10)}\`;',
+              'const cashierUsername = \`ven015_cash_\${tag.slice(0, 10)}\`;',
+              'const cashierPassword = \`V15!\${crypto.randomBytes(24).toString("base64url")}\`;',
+              'const resetPassword = \`V15!\${crypto.randomBytes(24).toString("base64url")}\`;',
+              'const passwordHash = await bcrypt.hash(password, 10);',
+              '',
+              'process.stdout.write(\`VEN015_FIXTURE_USER_ID=\${managerUserId}\\\\n\`);',
+              'process.stdout.write(\`VEN015_FIXTURE_EMAIL=\${email}\\\\n\`);',
+              'process.stdout.write(\`VEN015_FIXTURE_USERNAME=\${managerUsername}\\\\n\`);',
+              'process.stdout.write(\`VEN015_FIXTURE_PASSWORD_HASH=\${passwordHash}\\\\n\`);',
+              'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\\\n");'
+          ])
           path.write_text(source[:first] + replacement + source[last:])
           PY
       - name: Run authenticated manager acceptance
