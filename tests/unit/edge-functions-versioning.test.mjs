@@ -175,7 +175,7 @@ test("VEN-015 staging validation is separate from production provenance", () => 
 
 test("edge-function verifier guards immutable production provenance and current staging parity", () => {
   assert.match(verifier, /EXPECTED_PRODUCTION/);
-  assert.match(verifier, /production provenance must remain VEN-004/);
+  assert.match(verifier, /production Edge Function provenance must remain VEN-004/);
   assert.match(verifier, /staging validation metadata must not replace production provenance/);
   assert.match(verifier, /staging source checksum drift/);
   assert.match(verifier, /verify_jwt=true is not declared/);
