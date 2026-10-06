@@ -28,8 +28,11 @@ function movementConstraintRebuilds(sql, path, chainIndex) {
 
   for (let index = 0; index < drops.length; index += 1) {
     const start = drops[index].index ?? 0;
-    const end = drops[index + 1]?.index ?? sql.length;
-    const block = sql.slice(start, end);
+    const tail = sql.slice(start);
+    const blockEnd = tail.match(/end\s+\$\$\s*;/iu);
+    const block = blockEnd
+      ? tail.slice(0, (blockEnd.index ?? 0) + blockEnd[0].length)
+      : tail;
     if (!/add\s+constraint\s+movimientos_tipo_check/iu.test(block)) continue;
 
     const allowed = new Set(
