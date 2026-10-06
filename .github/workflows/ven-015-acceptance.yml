@@ -60,7 +60,7 @@ jobs:
           ].join("\n") + "\n";
           fs.appendFileSync(process.env.GITHUB_ENV, env);
 
-          fs.writeFileSync(".ven015-fixture.json", JSON.stringify({
+          fs.writeFileSync("ven015-fixture.json", JSON.stringify({
             user_id: id,
             email,
             username,
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ven015-fixture-metadata
-          path: .ven015-fixture.json
+          path: ven015-fixture.json
           retention-days: 1
           if-no-files-found: error
 
