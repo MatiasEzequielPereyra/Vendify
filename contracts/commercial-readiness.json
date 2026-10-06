@@ -40,10 +40,7 @@
       "verificationKind": "static_control",
       "blocksPilot": true,
       "dynamicSource": "github-actions:Vendify CI",
-      "evidence": [
-        "package.json",
-        ".github/workflows/ci.yml"
-      ]
+      "evidence": ["package.json", ".github/workflows/ci.yml"]
     },
     {
       "id": "release-package",
@@ -51,10 +48,7 @@
       "verificationKind": "static_control",
       "blocksPilot": true,
       "dynamicSource": "runtime:npm run build && npm run verify:release",
-      "evidence": [
-        "scripts/build-release.mjs",
-        "scripts/verify-release.mjs"
-      ]
+      "evidence": ["scripts/build-release.mjs", "scripts/verify-release.mjs"]
     },
     {
       "id": "rpc-contract-and-security",
@@ -62,11 +56,7 @@
       "verificationKind": "static_control",
       "blocksPilot": true,
       "dynamicSource": "runtime:npm run qa:rpc",
-      "evidence": [
-        "contracts/rpc-contract.json",
-        "contracts/rpc-source-coverage.json",
-        "scripts/check-rpc-contract.mjs"
-      ]
+      "evidence": ["contracts/rpc-contract.json", "contracts/rpc-source-coverage.json", "scripts/check-rpc-contract.mjs"]
     },
     {
       "id": "offline-durable-core",
@@ -74,11 +64,7 @@
       "verificationKind": "static_control",
       "blocksPilot": true,
       "dynamicSource": "runtime:npm test",
-      "evidence": [
-        "src/offline/indexeddb-store.ts",
-        "src/offline/sync-engine.ts",
-        "src/offline/pending-sales-ui.ts"
-      ]
+      "evidence": ["src/offline/indexeddb-store.ts", "src/offline/sync-engine.ts", "src/offline/pending-sales-ui.ts"]
     },
     {
       "id": "service-worker-atomic-shell",
@@ -86,10 +72,7 @@
       "verificationKind": "static_control",
       "blocksPilot": true,
       "dynamicSource": "runtime:npm test",
-      "evidence": [
-        "sw.js",
-        "tests/unit/service-worker-contract.test.mjs"
-      ]
+      "evidence": ["sw.js", "tests/unit/service-worker-contract.test.mjs"]
     },
     {
       "id": "two-register-realtime-stock",
@@ -98,9 +81,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-15",
       "observationScope": "manual:two-register-realtime-stock",
-      "evidence": [
-        "docs/audit/MATRIZ-QA-v2.31.1.md"
-      ]
+      "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md"]
     },
     {
       "id": "database-clean-bootstrap",
@@ -109,13 +90,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-16",
       "observationScope": "local:disposable-supabase-bootstrap",
-      "evidence": [
-        "contracts/database-baseline.json",
-        "contracts/captures/pre-v231-core-schema-20260915.json",
-        "supabase/baseline/assembly.json",
-        "supabase/baseline/validate_pre_v231_baseline.sql",
-        "docs/DATABASE-BASELINE-DISPOSABLE-TEST.md"
-      ]
+      "evidence": ["contracts/database-baseline.json", "contracts/captures/pre-v231-core-schema-20260915.json", "supabase/baseline/assembly.json", "supabase/baseline/validate_pre_v231_baseline.sql", "docs/DATABASE-BASELINE-DISPOSABLE-TEST.md"]
     },
     {
       "id": "tenant-isolation-live",
@@ -124,11 +99,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-16",
       "observationScope": "local:disposable-supabase-integration",
-      "evidence": [
-        "tests/integration/tenant-isolation.mjs",
-        "scripts/run-local-integration-gates.mjs",
-        "tests/integration/README.md"
-      ]
+      "evidence": ["tests/integration/tenant-isolation.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"]
     },
     {
       "id": "sales-atomicity-live",
@@ -137,11 +108,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-16",
       "observationScope": "local:disposable-supabase-integration",
-      "evidence": [
-        "tests/integration/sales-atomicity.mjs",
-        "scripts/run-local-integration-gates.mjs",
-        "tests/integration/README.md"
-      ]
+      "evidence": ["tests/integration/sales-atomicity.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"]
     },
     {
       "id": "sales-concurrency-live",
@@ -150,11 +117,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-16",
       "observationScope": "local:disposable-supabase-integration",
-      "evidence": [
-        "tests/integration/sales-concurrency.mjs",
-        "scripts/run-local-integration-gates.mjs",
-        "tests/integration/README.md"
-      ]
+      "evidence": ["tests/integration/sales-concurrency.mjs", "scripts/run-local-integration-gates.mjs", "tests/integration/README.md"]
     },
     {
       "id": "offline-signed-lease",
@@ -163,37 +126,21 @@
       "blocksPilot": true,
       "observedAt": "2026-09-21",
       "observationScope": "local:disposable-supabase-integration",
-      "evidence": [
-        "supabase/migrations/20260917140801_offline_signed_lease.sql",
-        "supabase/migrations/20260921120000_offline_lease_reconciliation.sql",
-        "src/offline/offline-lease.ts",
-        "tests/integration/offline-signed-lease.mjs",
-        "scripts/run-local-integration-gates.mjs",
-        "docs/adr/0003-autorizacion-offline-con-cupos-por-caja.md"
-      ]
+      "evidence": ["supabase/migrations/20260917140801_offline_signed_lease.sql", "supabase/migrations/20260921120000_offline_lease_reconciliation.sql", "src/offline/offline-lease.ts", "tests/integration/offline-signed-lease.mjs", "scripts/run-local-integration-gates.mjs", "docs/adr/0003-autorizacion-offline-con-cupos-por-caja.md"]
     },
     {
       "id": "pwa-device-matrix",
       "status": "pending_manual",
       "verificationKind": "manual_observation",
       "blocksPilot": true,
-      "evidence": [
-        "docs/audit/MATRIZ-QA-v2.31.1.md",
-        "docs/qa/PWA-DEVICE-MATRIX.md",
-        "docs/qa/PWA-BROWSER-ACCEPTANCE.md",
-        "scripts/verify-pwa-matrix.mjs",
-        "scripts/run-pwa-browser-acceptance.mjs"
-      ]
+      "evidence": ["docs/audit/MATRIZ-QA-v2.31.1.md", "docs/qa/PWA-DEVICE-MATRIX.md", "docs/qa/PWA-BROWSER-ACCEPTANCE.md", "scripts/verify-pwa-matrix.mjs", "scripts/run-pwa-browser-acceptance.mjs"]
     },
     {
       "id": "self-hosted-critical-runtime",
       "status": "pending_implementation",
       "verificationKind": "implementation",
       "blocksPilot": false,
-      "evidence": [
-        "index.html",
-        "sw.js"
-      ]
+      "evidence": ["index.html", "sw.js"]
     },
     {
       "id": "backup-restore-at-scale",
@@ -202,16 +149,7 @@
       "blocksPilot": true,
       "observedAt": "2026-09-21",
       "observationScope": "local:backup-restore-scale-report",
-      "evidence": [
-        "docs/plans/BACKUP-RESTORE-AT-SCALE.md",
-        "docs/qa/BACKUP-RESTORE-SCALE-REPORT.md",
-        "supabase/migrations/20260921130000_operational_backup_v2.sql",
-        "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql",
-        "src/commercial/backup/",
-        "scripts/run-operational-backup-worker.mjs",
-        "scripts/restore-operational-backup-v2.mjs",
-        "tests/integration/operational-backup-v2.mjs"
-      ]
+      "evidence": ["docs/plans/BACKUP-RESTORE-AT-SCALE.md", "docs/qa/BACKUP-RESTORE-SCALE-REPORT.md", "supabase/migrations/20260921130000_operational_backup_v2.sql", "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql", "src/commercial/backup/", "scripts/run-operational-backup-worker.mjs", "scripts/restore-operational-backup-v2.mjs", "tests/integration/operational-backup-v2.mjs"]
     }
   ]
 }
