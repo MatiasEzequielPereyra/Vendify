@@ -30,7 +30,7 @@
       "supabase/migrations/20260921130000_operational_backup_v2.sql",
       "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql",
       "supabase/migrations/20261005192108_team_manager_delegation_audit.sql",
-      "supabase/migrations/20261006170851_preserve_stock_inicial_movement_type.sql"
+      "supabase/migrations/20261006171531_preserve_stock_inicial_movement_type.sql"
     ]
   },
   "gates": [
