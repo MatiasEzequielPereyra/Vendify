@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  businessAccessCodeFrom,
   allowedAssignableRoles,
   canDeleteTeamMember,
   canManageTeamMember,
@@ -134,4 +135,10 @@ test("manager renderer prevents all Team actions against self", () => {
   assert.match(html, /· Vos/);
   assert.doesNotMatch(html, /equipo-role-select/);
   assert.doesNotMatch(html, /data-equipo-action=/);
+});
+
+test("business access code stays reusable across Settings and Team surfaces", () => {
+  assert.equal(businessAccessCodeFrom({ codigo_acceso: "  CENTRAL01  " }), "CENTRAL01");
+  assert.equal(businessAccessCodeFrom({ codigo_acceso: null }), "");
+  assert.equal(businessAccessCodeFrom(null), "");
 });

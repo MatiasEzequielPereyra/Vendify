@@ -292,6 +292,58 @@
   margin: 4px 0 10px;
 }
 
+.config-business-access-card-v232 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.config-business-access-copy-v232 {
+  min-width: 0;
+}
+
+.config-business-access-copy-v232 h4 {
+  margin: 3px 0 0;
+  font-size: 13px;
+}
+
+.config-business-access-copy-v232 .hint {
+  margin: 5px 0 0;
+  max-width: 620px;
+}
+
+.config-business-access-value-v232 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+#config-business-code-v232 {
+  min-width: 108px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+.config-team-access-code-v232 {
+  margin-top: 7px !important;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.config-team-access-code-v232 span {
+  color: var(--text);
+  font-weight: 750;
+}
+
+
 .settings-danger-v224 {
   border-color: rgba(239,68,68,.35);
   background: rgba(239,68,68,.05);
@@ -392,6 +444,24 @@
   .settings-action-row-v224 .btn,
   .settings-danger-v224 .btn {
     width: 100%;
+  }
+
+  .config-business-access-card-v232 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .config-business-access-value-v232 {
+    width: 100%;
+  }
+
+  #config-business-code-v232 {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  #btn-copy-config-business-code-v232 {
+    flex: 0 0 auto;
   }
 }
 

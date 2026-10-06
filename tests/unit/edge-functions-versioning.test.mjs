@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
@@ -179,4 +180,32 @@ test("edge-function verifier guards immutable production provenance and current 
   assert.match(verifier, /staging validation metadata must not replace production provenance/);
   assert.match(verifier, /staging source checksum drift/);
   assert.match(verifier, /verify_jwt=true is not declared/);
+});
+
+test("edge-function verifier canonicalizes CRLF before hashing staging source", () => {
+  assert.match(
+    verifier,
+    /\.replace\(\/\\r\\n\?\/g, "\\n"\)/
+  );
+
+  for (const entry of stagingValidation.functions) {
+    const canonical = readFileSync(resolve(root, entry.repository_path), "utf8")
+      .replace(/\r\n?/g, "\n");
+
+    const simulatedWindowsCheckout = canonical.replace(/\n/g, "\r\n");
+
+    const normalizedWindowsCheckout = simulatedWindowsCheckout
+      .replace(/\r\n?/g, "\n");
+
+    const canonicalDigest = createHash("sha256")
+      .update(canonical, "utf8")
+      .digest("hex");
+
+    const windowsDigest = createHash("sha256")
+      .update(normalizedWindowsCheckout, "utf8")
+      .digest("hex");
+
+    assert.equal(canonicalDigest, entry.source_sha256);
+    assert.equal(windowsDigest, entry.source_sha256);
+  }
 });
