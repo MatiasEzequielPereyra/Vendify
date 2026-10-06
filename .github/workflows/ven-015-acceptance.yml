@@ -23,6 +23,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Adapt acceptance harness to current GoTrue signup shape
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/ven-015-live-manager-acceptance.mjs")
+          source = path.read_text()
+          old = '''if (!signup.response.ok || !signup.body?.user?.id) {
+            throw new Error(`manager fixture signup failed (${signup.response.status})`);
+          }
+
+          const managerUserId = signup.body.user.id;'''
+          new = '''const managerUserId = signup.body?.user?.id ?? signup.body?.id ?? null;
+          if (!signup.response.ok || !managerUserId) {
+            throw new Error(`manager fixture signup failed (${signup.response.status})`);
+          }'''
+          if old not in source:
+              raise SystemExit("expected harness block not found")
+          path.write_text(source.replace(old, new))
+          PY
       - name: Run authenticated manager acceptance
         run: node scripts/ven-015-live-manager-acceptance.mjs
 
