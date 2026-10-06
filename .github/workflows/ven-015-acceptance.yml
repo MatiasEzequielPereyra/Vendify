@@ -1,0 +1,137 @@
+name: VEN-015 Temporary Acceptance
+
+on:
+  push:
+    branches:
+      - fix/ven-015-manager-team-audit
+
+permissions:
+  contents: read
+
+jobs:
+  manager-live:
+    if: contains(github.event.head_commit.message, '[ven015-acceptance]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      VEN015_SUPABASE_URL: https://clqxfwiutwnhbejezakw.supabase.co
+      VEN015_SUPABASE_PUBLISHABLE_KEY: sb_publishable_iRTaDuzTMOjrGQDc7VaB1w_c5GzxfI8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install temporary bcrypt helper
+        run: npm install --no-save --ignore-scripts bcryptjs
+
+      - name: Prepare disposable fixture metadata
+        run: |
+          node --input-type=module <<'NODE'
+          import crypto from "node:crypto";
+          import fs from "node:fs";
+          import bcrypt from "bcryptjs";
+
+          const id = crypto.randomUUID();
+          const tag = id.replaceAll("-", "").slice(0, 16);
+          const email = `ven015.manager.${tag}@gmail.com`;
+          const username = `ven015_mgr_${tag.slice(0, 10)}`;
+          const password = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+          const cashierUsername = `ven015_cash_${tag.slice(0, 10)}`;
+          const cashierPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+          const resetPassword = `V15!${crypto.randomBytes(24).toString("base64url")}`;
+          const passwordHash = await bcrypt.hash(password, 10);
+
+          for (const value of [password, cashierPassword, resetPassword]) {
+            console.log(`::add-mask::${value}`);
+          }
+
+          const env = [
+            `VEN015_MANAGER_USER_ID=${id}`,
+            `VEN015_MANAGER_EMAIL=${email}`,
+            `VEN015_MANAGER_USERNAME=${username}`,
+            `VEN015_MANAGER_PASSWORD=${password}`,
+            `VEN015_CASHIER_USERNAME=${cashierUsername}`,
+            `VEN015_CASHIER_PASSWORD=${cashierPassword}`,
+            `VEN015_RESET_PASSWORD=${resetPassword}`
+          ].join("\n") + "\n";
+          fs.appendFileSync(process.env.GITHUB_ENV, env);
+
+          fs.writeFileSync("ven015-fixture.json", JSON.stringify({
+            user_id: id,
+            email,
+            username,
+            password_hash: passwordHash
+          }));
+          NODE
+
+      - name: Upload disposable fixture metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: ven015-fixture-metadata
+          path: ven015-fixture.json
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Adapt live acceptance harness to direct Auth fixture
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/ven-015-live-manager-acceptance.mjs")
+          source = path.read_text()
+
+          start = source.index("const tag = crypto.randomUUID()")
+          end = source.index("\n\nasync function jsonFetch", start)
+          declarations = """const managerUserId = process.env.VEN015_MANAGER_USER_ID;
+          const email = process.env.VEN015_MANAGER_EMAIL;
+          const password = process.env.VEN015_MANAGER_PASSWORD;
+          const managerUsername = process.env.VEN015_MANAGER_USERNAME;
+          const cashierUsername = process.env.VEN015_CASHIER_USERNAME;
+          const cashierPassword = process.env.VEN015_CASHIER_PASSWORD;
+          const resetPassword = process.env.VEN015_RESET_PASSWORD;"""
+          source = source[:start] + declarations + source[end:]
+
+          start = source.index("const signup = await jsonFetch(")
+          marker = 'process.stdout.write("VEN015_FIXTURE_WAITING_FOR_MEMBERSHIP=1\\n");'
+          end = source.index(marker, start) + len(marker)
+          source = source[:start] + source[end:]
+
+          path.write_text(source)
+          PY
+
+      - name: Run authenticated manager acceptance
+        run: node scripts/ven-015-live-manager-acceptance.mjs
+
+  browser:
+    if: contains(github.event.head_commit.message, '[ven015-acceptance]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Resolve Chrome
+        run: |
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo "Chrome/Chromium unavailable on runner"
+            exit 2
+          fi
+          echo "VENDIFY_CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+
+      - name: Run PWA browser acceptance
+        run: npm run qa:pwa:browser
