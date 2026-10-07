@@ -179,11 +179,15 @@ class FakeDocument {
 
   async emit(type, event = {}) {
     let prevented = false;
+    let stoppedImmediately = false;
     const actual = {
       type,
       target: null,
       key: "",
       stopPropagation() {},
+      stopImmediatePropagation() {
+        stoppedImmediately = true;
+      },
       preventDefault() {
         prevented = true;
       },
@@ -192,6 +196,7 @@ class FakeDocument {
 
     for (const listener of this.listeners.get(type) ?? []) {
       await listener(actual);
+      if (stoppedImmediately) break;
     }
 
     return prevented;
