@@ -22,6 +22,7 @@ import { dismissConfirmation, showConfirmation } from "../core/confirm.js";
 import { closeTopOpenModal } from "../core/modal-return.js";
 import { createOnboardingController } from "../core/onboarding.js";
 import { createOverlayStabilityController } from "../core/overlay-stability.js";
+import { createNavigationEventsController } from "../core/navigation-events-controller.js";
 
 export interface VendifyCoreV232Api {
   readonly queryOne: typeof queryOne;
@@ -37,6 +38,7 @@ export interface VendifyCoreV232Api {
   readonly closeTopOpenModal: typeof closeTopOpenModal;
   readonly createOnboardingController: typeof createOnboardingController;
   readonly createOverlayStabilityController: typeof createOverlayStabilityController;
+  readonly createNavigationEventsController: typeof createNavigationEventsController;
 }
 
 declare global {
@@ -58,5 +60,6 @@ window.VendifyCoreV232 = Object.freeze({
   dismissConfirmation,
   closeTopOpenModal,
   createOnboardingController,
-  createOverlayStabilityController
+  createOverlayStabilityController,
+  createNavigationEventsController
 });
