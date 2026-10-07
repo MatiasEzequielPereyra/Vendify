@@ -85,19 +85,19 @@ function contextRecord(value: unknown): ContextRecord | null {
 }
 
 function userRecord(value: unknown): ApplicationUserRecord | null {
-  return contextRecord(value) as ApplicationUserRecord | null;
+  return contextRecord(value);
 }
 
 function namedRecord(value: unknown): ApplicationNamedRecord | null {
-  return contextRecord(value) as ApplicationNamedRecord | null;
+  return contextRecord(value);
 }
 
 function membershipRecord(value: unknown): ApplicationMembershipRecord | null {
-  return contextRecord(value) as ApplicationMembershipRecord | null;
+  return contextRecord(value);
 }
 
 function employeeRecord(value: unknown): ApplicationEmployeeRecord | null {
-  return contextRecord(value) as ApplicationEmployeeRecord | null;
+  return contextRecord(value);
 }
 
 function booleanPermissions(value: unknown): Record<string, boolean> {
@@ -266,10 +266,7 @@ export function createApplicationContextAdapter(
       .querySelector('[data-config-tab="operacion"]')
       ?.classList.toggle("permiso-hidden", !(owner || admin));
 
-    setHidden(
-      "#btn-gestion-v230",
-      !(canViewHistory || canManageTeam || owner || admin || manager)
-    );
+    setHidden("#btn-gestion-v230", !canViewHistory);
     setHidden(".card-acciones", !canManageProducts);
     setHidden(".card-stock-controls", !canAdjustStock);
     documentRef.body.classList.toggle("ocultar-costos", cashier);
