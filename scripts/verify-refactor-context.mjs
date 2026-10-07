@@ -112,7 +112,7 @@ for (const directListenerPattern of [
 ]) {
   if (directListenerPattern.test(sourceApp)) {
     throw new Error(
-      `app.js retained direct Context Picker DOM listener: ${directListenerPattern}`
+      `application composition retained direct Context Picker DOM listener: ${directListenerPattern}`
     );
   }
 }
@@ -203,25 +203,30 @@ if (!navigationOwner.includes("dependencies.closeContextPickers();")) {
   );
 }
 
-const showAppStart = sourceApp.indexOf("async function mostrarApp()");
-const showAppEnd = sourceApp.indexOf(
-  "// ============================================================",
-  showAppStart
+const offlineBootStart = sourceApp.indexOf(
+  "const bootOfflineAuthenticated ="
 );
-if (showAppStart < 0 || showAppEnd < 0) {
-  throw new Error("Could not inspect offline startup");
+const onlineBootStart = sourceApp.indexOf(
+  "const bootOnlineAuthenticated =",
+  offlineBootStart
+);
+if (offlineBootStart < 0 || onlineBootStart < 0) {
+  throw new Error("Could not inspect typed offline authenticated startup");
 }
-const showApp = sourceApp.slice(showAppStart, showAppEnd);
+const offlineBoot = sourceApp.slice(
+  offlineBootStart,
+  onlineBootStart
+);
 if (
-  !showApp.includes(
+  !offlineBoot.includes(
     "contextPickerController.updateLabels();"
   )
 ) {
   throw new Error(
-    "Offline startup no longer delegates Context Picker labels to typed owner"
+    "Offline authenticated startup no longer delegates Context Picker labels to typed owner"
   );
 }
 
 console.log(
-  "PASS: Context Picker UI ownership lives in typed Context, Cash keeps Cash rendering, legacy app delegates Overlay/Back Guard/offline composition, and business/backend ownership remains outside"
+  "PASS: Context Picker UI ownership lives in typed Context, Cash keeps Cash rendering, typed application delegates Overlay/Back Guard/offline composition, and business/backend ownership remains outside"
 );
