@@ -1,4 +1,9 @@
-import { isPlatformAdmin, loadPlatformBackoffice, updateBusinessPlan } from "../platform/platform-service.js";
+import { createPlatformAdminController } from "../platform/platform-admin-controller.js";
+import {
+  isPlatformAdmin,
+  loadPlatformBackoffice,
+  updateBusinessPlan
+} from "../platform/platform-service.js";
 
 declare global {
   interface Window {
@@ -6,6 +11,7 @@ declare global {
       readonly isAdmin: typeof isPlatformAdmin;
       readonly loadBackoffice: typeof loadPlatformBackoffice;
       readonly updatePlan: typeof updateBusinessPlan;
+      readonly createPlatformAdminController: typeof createPlatformAdminController;
     };
   }
 }
@@ -13,5 +19,6 @@ declare global {
 window.VendifyPlatformV232 = Object.freeze({
   isAdmin: isPlatformAdmin,
   loadBackoffice: loadPlatformBackoffice,
-  updatePlan: updateBusinessPlan
+  updatePlan: updateBusinessPlan,
+  createPlatformAdminController
 });

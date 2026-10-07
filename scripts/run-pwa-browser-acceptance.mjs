@@ -454,6 +454,301 @@ try {
     );
   }
 
+  const commercialPlatformFlow = await evaluate(firstBrowser.cdp, `(async () => {
+    if (
+      typeof commercialFoundationControllerV232 === "undefined"
+      || typeof platformAdminControllerV232 === "undefined"
+      || typeof supabaseClient === "undefined"
+      || !window.appContext
+    ) {
+      throw new Error("Commercial/Platform composed runtime unavailable");
+    }
+
+    const originalRpc = supabaseClient.rpc;
+    const previousContext = window.appContext;
+    const hideKey = "vendify_onboarding_hide_v231:browser-commercial";
+    const rpcCalls = [];
+
+    supabaseClient.rpc = async (name, args = {}) => {
+      rpcCalls.push({ name, args });
+
+      if (name === "estado_onboarding_comercial_v1") {
+        return {
+          data: {
+            completado: false,
+            productos: 0,
+            caja_utilizada: false,
+            ventas: 0,
+            miembros: 1
+          },
+          error: null
+        };
+      }
+
+      if (name === "obtener_plan_actual_v1") {
+        return {
+          data: {
+            nombre: "Pro Browser",
+            estado: "activo",
+            limites: { sucursales: 2, usuarios: 5, productos: 500 },
+            uso: { sucursales: 1, usuarios: 2, productos: 30 }
+          },
+          error: null
+        };
+      }
+
+      if (name === "obtener_config_operativa_v1") {
+        return {
+          data: {
+            stock_cobertura_alerta: 5,
+            ajuste_grande_unidades: 12,
+            diferencia_caja_alerta: 2500,
+            resumen_diario: true,
+            auto_imprimir_ticket: false,
+            ancho_ticket_mm: 80
+          },
+          error: null
+        };
+      }
+
+      if (name === "guardar_config_operativa_v1") {
+        return { data: { ok: true }, error: null };
+      }
+
+      if (name === "alertas_operativas_v1") {
+        return { data: [], error: null };
+      }
+
+      if (name === "es_admin_plataforma_v1") {
+        return { data: true, error: null };
+      }
+
+      if (name === "platform_overview_v1") {
+        return {
+          data: { negocios: 3, trials: 1, ventas_hoy: 12345, errores_24h: 1 },
+          error: null
+        };
+      }
+
+      if (name === "listar_negocios_plataforma_v1") {
+        return {
+          data: [{
+            id: "browser-business",
+            nombre: "Browser Business",
+            usuarios: 2,
+            productos: 9,
+            trial_hasta: "2026-10-20T00:00:00Z",
+            plan_codigo: "pro",
+            estado: "activo"
+          }],
+          error: null
+        };
+      }
+
+      if (name === "listar_errores_plataforma_v1") {
+        return {
+          data: [{
+            tipo: "client",
+            mensaje: "browser acceptance",
+            negocio_nombre: "Browser Business",
+            version: "2.31.1",
+            creado: "2026-10-07T12:00:00Z"
+          }],
+          error: null
+        };
+      }
+
+      if (name === "actualizar_plan_negocio_plataforma_v1") {
+        return { data: { ok: true }, error: null };
+      }
+
+      return { data: [], error: null };
+    };
+
+    try {
+      localStorage.removeItem(hideKey);
+      window.appContext = {
+        ...previousContext,
+        business: { id: "browser-commercial", nombre: "Browser Commercial" },
+        membership: { role: "owner" },
+        branch: { id: "browser-branch", nombre: "Browser Branch" },
+        cashRegister: { id: "browser-cash", nombre: "Browser Cash" },
+        permissions: {
+          ...(previousContext?.permissions ?? {}),
+          manageProducts: true
+        },
+        ready: true,
+        offlineMode: false
+      };
+
+      const onboarding = document.querySelector("#commercial-onboarding-v231");
+      const onboardingSteps = document.querySelector("#commercial-onboarding-steps-v231");
+      const planName = document.querySelector("#config-plan-name-v231");
+      const stockDays = document.querySelector("#config-stock-days-v231");
+      const adjustThreshold = document.querySelector("#config-adjust-threshold-v231");
+      const cashDifference = document.querySelector("#config-cash-diff-v231");
+      const dailySummary = document.querySelector("#config-daily-summary-v231");
+      const autoPrint = document.querySelector("#config-auto-print-v231");
+      const ticketWidth = document.querySelector("#config-ticket-width-v231");
+      const operationForm = document.querySelector("#form-operacion-v231");
+      const platformButton = document.querySelector("#btn-platform-admin-v231");
+      const platformModal = document.querySelector("#modal-platform-admin-v231");
+
+      if (
+        !onboarding
+        || !onboardingSteps
+        || !planName
+        || !stockDays
+        || !adjustThreshold
+        || !cashDifference
+        || !dailySummary
+        || !autoPrint
+        || !ticketWidth
+        || !operationForm
+        || !platformButton
+        || !platformModal
+      ) {
+        throw new Error("Commercial/Platform browser DOM unavailable");
+      }
+
+      onboarding.classList.add("hidden");
+      platformButton.classList.add("hidden");
+      platformModal.classList.add("hidden");
+
+      await commercialFoundationControllerV232.refreshOnboarding();
+      await commercialFoundationControllerV232.loadPlan();
+      await commercialFoundationControllerV232.loadOperationalConfig();
+
+      const onboardingBeforeHide = {
+        visible: !onboarding.classList.contains("hidden"),
+        steps: onboardingSteps.querySelectorAll(".commercial-step-v231").length,
+        actions: onboardingSteps.querySelectorAll("[data-onboarding-action-v231]").length,
+        planName: planName.textContent,
+        stockDays: stockDays.value,
+        ticketWidth: ticketWidth.value
+      };
+
+      const productAction = onboardingSteps.querySelector(
+        '[data-onboarding-action-v231="product"]'
+      );
+      const productModal = document.querySelector("#modal");
+      if (!productAction || !productModal) {
+        throw new Error("Commercial product action unavailable");
+      }
+
+      productModal.classList.add("hidden");
+      productAction.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const productOwnerReached = !productModal.classList.contains("hidden");
+      productModal.classList.add("hidden");
+
+      document.querySelector("#btn-hide-commercial-onboarding-v231")?.click();
+      const hideMarker = localStorage.getItem(hideKey);
+      const hiddenAfterHide = onboarding.classList.contains("hidden");
+
+      stockDays.value = "7";
+      adjustThreshold.value = "15";
+      cashDifference.value = "9000";
+      dailySummary.checked = false;
+      autoPrint.checked = true;
+      ticketWidth.value = "58";
+      operationForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const saveCall = rpcCalls.find(
+        (call) => call.name === "guardar_config_operativa_v1"
+      );
+
+      await platformAdminControllerV232.refreshAccess();
+      const platformVisible = !platformButton.classList.contains("hidden");
+
+      platformButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const businessRow = document.querySelector(
+        '[data-platform-business="browser-business"]'
+      );
+      const kpis = {
+        businesses: document.querySelector("#platform-businesses-v231")?.textContent,
+        trials: document.querySelector("#platform-trials-v231")?.textContent,
+        errors: document.querySelector("#platform-errors-v231")?.textContent
+      };
+
+      if (!businessRow) {
+        throw new Error("Platform business row did not render");
+      }
+
+      const plan = businessRow.querySelector(".platform-plan-select-v231");
+      const status = businessRow.querySelector(".platform-state-select-v231");
+      const save = businessRow.querySelector("[data-platform-save-plan]");
+      if (!plan || !status || !save) {
+        throw new Error("Platform plan controls unavailable");
+      }
+
+      plan.value = "business";
+      status.value = "suspendido";
+      save.click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      const updateCall = rpcCalls.find(
+        (call) => call.name === "actualizar_plan_negocio_plataforma_v1"
+      );
+
+      return {
+        onboardingBeforeHide,
+        productOwnerReached,
+        hideMarker,
+        hiddenAfterHide,
+        saveArgs: saveCall?.args ?? null,
+        platformVisible,
+        platformModalVisible: !platformModal.classList.contains("hidden"),
+        kpis,
+        businessRowPresent: Boolean(businessRow),
+        updateArgs: updateCall?.args ?? null,
+        rpcNames: rpcCalls.map((call) => call.name)
+      };
+    } finally {
+      supabaseClient.rpc = originalRpc;
+      localStorage.removeItem(hideKey);
+      document.querySelector("#commercial-onboarding-v231")?.classList.add("hidden");
+      document.querySelector("#modal")?.classList.add("hidden");
+      document.querySelector("#modal-platform-admin-v231")?.classList.add("hidden");
+      window.appContext = previousContext;
+    }
+  })()`);
+
+  if (
+    !commercialPlatformFlow.onboardingBeforeHide.visible
+    || commercialPlatformFlow.onboardingBeforeHide.steps !== 4
+    || commercialPlatformFlow.onboardingBeforeHide.actions !== 4
+    || commercialPlatformFlow.onboardingBeforeHide.planName !== "Pro Browser"
+    || commercialPlatformFlow.onboardingBeforeHide.stockDays !== "5"
+    || commercialPlatformFlow.onboardingBeforeHide.ticketWidth !== "80"
+    || !commercialPlatformFlow.productOwnerReached
+    || commercialPlatformFlow.hideMarker !== "1"
+    || !commercialPlatformFlow.hiddenAfterHide
+    || commercialPlatformFlow.saveArgs?.p_stock_cobertura_alerta !== 7
+    || commercialPlatformFlow.saveArgs?.p_ajuste_grande_unidades !== 15
+    || commercialPlatformFlow.saveArgs?.p_diferencia_caja_alerta !== 9000
+    || commercialPlatformFlow.saveArgs?.p_resumen_diario !== false
+    || commercialPlatformFlow.saveArgs?.p_auto_imprimir_ticket !== true
+    || commercialPlatformFlow.saveArgs?.p_ancho_ticket_mm !== 58
+    || !commercialPlatformFlow.platformVisible
+    || !commercialPlatformFlow.platformModalVisible
+    || commercialPlatformFlow.kpis.businesses !== "3"
+    || commercialPlatformFlow.kpis.trials !== "1"
+    || commercialPlatformFlow.kpis.errors !== "1"
+    || !commercialPlatformFlow.businessRowPresent
+    || commercialPlatformFlow.updateArgs?.p_negocio_id !== "browser-business"
+    || commercialPlatformFlow.updateArgs?.p_plan_codigo !== "business"
+    || commercialPlatformFlow.updateArgs?.p_estado !== "suspendido"
+  ) {
+    throw new Error(
+      "El Commercial/Platform flow real no conserva composición/paridad: "
+      + JSON.stringify(commercialPlatformFlow)
+    );
+  }
+
   const diagnosticsDenied = await evaluate(firstBrowser.cdp, `(async () => {
     const diagnosticsButton =
       document.querySelector('#btn-diagnostico-v23011');
@@ -939,6 +1234,10 @@ try {
     activeBranch: {
       runtimeComposition: "real-app-composed-controller",
       flow: activeBranchFlow
+    },
+    commercialPlatform: {
+      runtimeComposition: "real-app-composed-controllers",
+      flow: commercialPlatformFlow
     },
     updated,
     coldBoot,

@@ -14,6 +14,10 @@ if (!runtimeFile || !appFile) {
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
 const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const platformController = readFileSync(
+  resolve(projectRoot, "src/platform/platform-admin-controller.ts"),
+  "utf8"
+);
 
 for (const marker of [
   "VendifyDashboardV232",
@@ -33,14 +37,25 @@ for (const marker of [
 
 for (const marker of [
   "window.VendifyDashboardV232.createController({",
-  "window.VendifyDashboardV232.dashboardEmpty(",
-  "window.VendifyDashboardV232.renderDashboardRows(",
   "dashboardControllerV232.loadAlertBadge()",
   "dashboardControllerV232.setup()",
   "window.VendifyDashboardV232.createNavigationCoordinator("
 ]) {
   if (!app.includes(marker) || !sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Dashboard delegation: ${marker}`);
+  }
+}
+
+
+for (const marker of [
+  'from "../dashboard/dashboard-ui.js"',
+  "dashboardEmpty",
+  "renderDashboardRows"
+]) {
+  if (!platformController.includes(marker)) {
+    throw new Error(
+      `Platform typed owner lost Dashboard UI helper delegation: ${marker}`
+    );
   }
 }
 
