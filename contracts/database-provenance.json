@@ -329,6 +329,15 @@
         "public.actualizar_permiso_stock_miembro_v1"
       ],
       "security": true
+    },
+    {
+      "file": "supabase/migrations/20261006171531_preserve_stock_inicial_movement_type.sql",
+      "purpose": "Restore final movimientos_tipo_check provenance so stock_inicial remains an explicit movement type after historical baseline rebuilds.",
+      "creates": [],
+      "modifies": [
+        "constraint: public.movimientos.movimientos_tipo_check"
+      ],
+      "security": false
     }
   ],
   "reconciliation": {
