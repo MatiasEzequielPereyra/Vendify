@@ -228,7 +228,16 @@ try {
       });
       try {
         window.dispatchEvent(new Event("offline"));
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          if (
+            status.classList.contains('offline')
+            && label.textContent === "Sin conexión"
+            && icon.getAttribute('href') === "#vi-wifi-off"
+          ) {
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
         return {
           navigatorOnline: navigator.onLine,
           offlineClass: status.classList.contains('offline'),
