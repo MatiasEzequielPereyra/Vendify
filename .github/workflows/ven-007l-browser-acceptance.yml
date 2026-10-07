@@ -30,3 +30,9 @@ jobs:
         env:
           VENDIFY_CHROME_PATH: /usr/bin/google-chrome
         run: npm run qa:pwa:browser
+
+      - name: Verify clean checkout
+        shell: bash
+        run: |
+          git status --short
+          test -z "$(git status --short)"
