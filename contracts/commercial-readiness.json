@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-10-01",
+  "updatedAt": "2026-10-06",
   "branch": "refactor/modular-runtime",
   "migrationChain": {
     "kind": "incremental",
@@ -28,7 +28,9 @@
       "supabase/migrations/20260917140801_offline_signed_lease.sql",
       "supabase/migrations/20260921120000_offline_lease_reconciliation.sql",
       "supabase/migrations/20260921130000_operational_backup_v2.sql",
-      "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql"
+      "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql",
+      "supabase/migrations/20261005192108_team_manager_delegation_audit.sql",
+      "supabase/migrations/20261006171531_preserve_stock_inicial_movement_type.sql"
     ]
   },
   "gates": [

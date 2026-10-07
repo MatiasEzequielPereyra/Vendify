@@ -295,8 +295,8 @@ function aplicarPermisosV2() {
   const puedeExportar = esOwner || esAdmin || esManager;
   const puedeVerHistorial = esOwner || esAdmin || esManager;
 
-  // Equipo queda solamente para propietario y administrador.
-  const puedeGestionarEquipo = esOwner || esAdmin;
+  // Equipo está disponible para propietario, administrador y encargado.
+  const puedeGestionarEquipo = esOwner || esAdmin || esManager;
 
   document.body.dataset.role = role;
   document.body.classList.toggle("rol-cashier", esCashier);
@@ -871,6 +871,7 @@ function abrirConfig(tab = "general") {
 
   activarTabConfigV224(tab || "general");
   $("#modal-config").classList.remove("hidden");
+  void teamControllerV232.refreshBusinessAccessCode();
   actualizarEstadoPinDescuento();
   cargarPlanV231?.();
   cargarConfigOperativaV231?.();

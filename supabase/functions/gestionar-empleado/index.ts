@@ -13,6 +13,31 @@ function normalize(value: string) {
     .replace(/[^a-z0-9._-]/g, "");
 }
 
+type TeamRole = "owner" | "admin" | "manager" | "cashier";
+
+function isTeamRole(value: string): value is TeamRole {
+  return value === "owner" || value === "admin" || value === "manager" || value === "cashier";
+}
+
+function canManageTarget(actorRole: TeamRole, targetRole: TeamRole): boolean {
+  if (targetRole === "owner") return false;
+  if (actorRole === "owner" || actorRole === "admin") return true;
+  return actorRole === "manager" && (targetRole === "manager" || targetRole === "cashier");
+}
+
+function canDeleteTarget(actorRole: TeamRole, targetRole: TeamRole): boolean {
+  if (targetRole === "owner") return false;
+  if (actorRole === "owner") return true;
+  return (actorRole === "admin" || actorRole === "manager") &&
+    (targetRole === "manager" || targetRole === "cashier");
+}
+
+function canAssignRole(actorRole: TeamRole, role: TeamRole): boolean {
+  if (role === "owner") return false;
+  if (actorRole === "owner" || actorRole === "admin") return true;
+  return actorRole === "manager" && (role === "manager" || role === "cashier");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -39,7 +64,7 @@ Deno.serve(async (req) => {
       .select("negocio_id, rol, activo")
       .eq("user_id", user.id)
       .eq("activo", true)
-      .in("rol", ["owner", "admin"])
+      .in("rol", ["owner", "admin", "manager"])
       .limit(1)
       .maybeSingle();
 
@@ -61,8 +86,15 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (targetError || !targetMembership) throw new Error("Empleado inexistente");
-    if (targetMembership.rol === "owner") throw new Error("El propietario no puede modificarse desde Equipo");
-    if (targetMembership.user_id === user.id) throw new Error("No podés modificar tu propia cuenta desde Equipo");
+    if (!isTeamRole(callerMembership.rol) || !isTeamRole(targetMembership.rol)) {
+      throw new Error("Rol inválido");
+    }
+    if (targetMembership.user_id === user.id) {
+      throw new Error("No podés modificar tu propia cuenta desde Equipo");
+    }
+    if (!canManageTarget(callerMembership.rol, targetMembership.rol)) {
+      throw new Error("No tenés permiso para administrar ese usuario");
+    }
 
     const { data: empleado, error: employeeError } = await admin
       .from("empleados")
@@ -74,24 +106,26 @@ Deno.serve(async (req) => {
     if (employeeError || !empleado) throw new Error("El perfil del empleado no existe");
 
     if (action === "delete") {
-      if (callerMembership.rol !== "owner") {
-        throw new Error("Solo el propietario puede eliminar usuarios");
+      if (!canDeleteTarget(callerMembership.rol, targetMembership.rol)) {
+        throw new Error("No tenés permiso para eliminar ese usuario");
       }
 
-      // Auditoría antes de borrar el Auth user.
-      await admin.from("audit_log").insert({
+      // La auditoría es fail-closed y ocurre antes de la operación irreversible en Auth.
+      const { error: auditError } = await admin.from("audit_log").insert({
         negocio_id: callerMembership.negocio_id,
         user_id: user.id,
         accion: "empleado_eliminado",
         entidad: "empleados",
         entidad_id: empleado.id,
         detalle: {
+          actor_role: callerMembership.rol,
+          target_user_id: targetMembership.user_id,
           username: empleado.username,
           nombre: empleado.nombre,
           rol: targetMembership.rol,
-          user_id_eliminado: targetMembership.user_id,
         },
       });
+      if (auditError) throw auditError;
 
       // auth.users tiene cascadas hacia empleados/negocio_miembros.
       const { error: deleteError } =
@@ -114,7 +148,9 @@ Deno.serve(async (req) => {
       if (!/^[a-z0-9._-]{3,30}$/.test(username)) {
         throw new Error("El usuario debe tener entre 3 y 30 caracteres");
       }
-      if (!["admin", "manager", "cashier"].includes(rol)) throw new Error("Rol inválido");
+      if (!isTeamRole(rol) || !canAssignRole(callerMembership.rol, rol)) {
+        throw new Error("No tenés permiso para asignar ese rol");
+      }
 
       const { data: duplicate } = await admin
         .from("empleados")
@@ -133,6 +169,26 @@ Deno.serve(async (req) => {
         .single();
 
       if (negocioError || !negocio?.codigo_acceso) throw new Error("El negocio no tiene código de acceso");
+
+      // Registrar el cambio antes de cualquier mutación de Auth/DB.
+      const { error: auditError } = await admin.from("audit_log").insert({
+        negocio_id: callerMembership.negocio_id,
+        user_id: user.id,
+        accion: "empleado_actualizado",
+        entidad: "empleados",
+        entidad_id: empleado.id,
+        detalle: {
+          actor_role: callerMembership.rol,
+          target_user_id: targetMembership.user_id,
+          nombre_anterior: empleado.nombre,
+          nombre_nuevo: nombre,
+          username_anterior: empleado.username,
+          username_nuevo: username,
+          rol_anterior: targetMembership.rol,
+          rol_nuevo: rol,
+        },
+      });
+      if (auditError) throw auditError;
 
       // El username forma parte del email técnico usado por Supabase Auth.
       if (username !== normalize(empleado.username)) {
@@ -165,22 +221,6 @@ Deno.serve(async (req) => {
 
       if (roleError) throw roleError;
 
-      await admin.from("audit_log").insert({
-        negocio_id: callerMembership.negocio_id,
-        user_id: user.id,
-        accion: "empleado_actualizado",
-        entidad: "empleados",
-        entidad_id: empleado.id,
-        detalle: {
-          nombre_anterior: empleado.nombre,
-          nombre_nuevo: nombre,
-          username_anterior: empleado.username,
-          username_nuevo: username,
-          rol_anterior: targetMembership.rol,
-          rol_nuevo: rol,
-        },
-      });
-
       return new Response(JSON.stringify({ ok: true, action: "update" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -190,6 +230,21 @@ Deno.serve(async (req) => {
     if (action === "reset_password") {
       const password = String(body.password || "");
       if (password.length < 8) throw new Error("La contraseña temporal debe tener al menos 8 caracteres");
+
+      // La contraseña no se audita; sólo actor, target y username.
+      const { error: auditError } = await admin.from("audit_log").insert({
+        negocio_id: callerMembership.negocio_id,
+        user_id: user.id,
+        accion: "password_empleado_reiniciada",
+        entidad: "empleados",
+        entidad_id: empleado.id,
+        detalle: {
+          actor_role: callerMembership.rol,
+          target_user_id: targetMembership.user_id,
+          username: empleado.username,
+        },
+      });
+      if (auditError) throw auditError;
 
       const { error: passwordError } = await admin.auth.admin.updateUserById(
         targetMembership.user_id,
@@ -205,15 +260,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", empleado.id);
       if (flagError) throw flagError;
-
-      await admin.from("audit_log").insert({
-        negocio_id: callerMembership.negocio_id,
-        user_id: user.id,
-        accion: "password_empleado_reiniciada",
-        entidad: "empleados",
-        entidad_id: empleado.id,
-        detalle: { username: empleado.username },
-      });
 
       return new Response(JSON.stringify({ ok: true, action: "reset_password" }), {
         status: 200,

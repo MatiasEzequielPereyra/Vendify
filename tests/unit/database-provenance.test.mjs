@@ -28,7 +28,7 @@ test("repo migration inventory is complete, ordered and identical to commercial 
     .map((file) => `supabase/migrations/${file}`);
   assert.deepEqual(inventory, readiness.migrationChain.files);
   assert.deepEqual(inventory, actual);
-  assert.equal(inventory.length, 22);
+  assert.equal(inventory.length, 24);
 });
 
 test("live capture contains schema metadata only and no business row counts", () => {

@@ -37,6 +37,7 @@ export interface TeamController {
   readonly open: () => Promise<void>;
   readonly close: () => void;
   readonly render: () => Promise<void>;
+  readonly refreshBusinessAccessCode: () => Promise<string | null>;
   readonly closeEditor: () => void;
   readonly closePasswordReset: () => void;
 }
@@ -60,8 +61,103 @@ function memberValue(member: TeamMemberRecord, key: string): unknown {
   return member[key];
 }
 
+export function businessAccessCodeFrom(value: unknown): string {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return "";
+  const code = (value as Record<string, unknown>).codigo_acceso;
+  return typeof code === "string" ? code.trim() : "";
+}
+
+function applyBusinessAccessCode(code: string): void {
+  const visibleCode = code || "—";
+  for (const selector of [
+    "#equipo-business-code",
+    "#config-business-code-v232",
+    "#config-team-business-code-v232"
+  ]) {
+    const element = queryOne(selector);
+    if (element) element.textContent = visibleCode;
+  }
+}
+
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+export type TeamRole = "owner" | "admin" | "manager" | "cashier";
+
+const TEAM_ROLE_LABELS: Readonly<Record<TeamRole, string>> = Object.freeze({
+  owner: "Propietario",
+  admin: "Administrador",
+  manager: "Encargado",
+  cashier: "Cajero"
+});
+
+function isTeamRole(value: string): value is TeamRole {
+  return value === "owner" || value === "admin" || value === "manager" || value === "cashier";
+}
+
+function teamRole(value: string): TeamRole {
+  return isTeamRole(value) ? value : "cashier";
+}
+
+export function allowedAssignableRoles(actorRole: string): TeamRole[] {
+  const actor = teamRole(actorRole);
+  if (actor === "owner" || actor === "admin") return ["cashier", "manager", "admin"];
+  if (actor === "manager") return ["cashier", "manager"];
+  return [];
+}
+
+export function canManageTeamMember(
+  actorRole: string,
+  targetRole: string,
+  self: boolean
+): boolean {
+  if (self) return false;
+  const actor = teamRole(actorRole);
+  const target = teamRole(targetRole);
+  if (target === "owner") return false;
+  if (actor === "owner" || actor === "admin") return true;
+  if (actor === "manager") return target === "manager" || target === "cashier";
+  return false;
+}
+
+export function canDeleteTeamMember(
+  actorRole: string,
+  targetRole: string,
+  self: boolean
+): boolean {
+  if (self) return false;
+  const actor = teamRole(actorRole);
+  const target = teamRole(targetRole);
+  if (target === "owner") return false;
+  if (actor === "owner") return true;
+  if (actor === "admin" || actor === "manager") return target === "manager" || target === "cashier";
+  return false;
+}
+
+function roleLabel(role: string): string {
+  return TEAM_ROLE_LABELS[teamRole(role)];
+}
+
+function roleOptionsHtml(actorRole: string, selectedRole: string): string {
+  const selected = teamRole(selectedRole);
+  return allowedAssignableRoles(actorRole)
+    .map((role) =>
+      `<option value="${role}" ${role === selected ? "selected" : ""}>${TEAM_ROLE_LABELS[role]}</option>`
+    )
+    .join("");
+}
+
+function configureRoleSelect(
+  select: HTMLSelectElement | null,
+  actorRole: string,
+  selectedRole = "cashier"
+): void {
+  if (!select) return;
+  const allowed = allowedAssignableRoles(actorRole);
+  select.innerHTML = roleOptionsHtml(actorRole, selectedRole);
+  select.disabled = allowed.length === 0;
+  if (allowed.includes(teamRole(selectedRole))) select.value = teamRole(selectedRole);
 }
 
 export function generateTemporaryPassword(): string {
@@ -77,27 +173,27 @@ export function renderTeamMembers(
   currentRole: string
 ): string {
   return members.map((member) => {
-    const owner = member.rol === "owner";
     const currentUser = text(memberValue(member, "user_id")) === currentUserId;
     const usernameValue = text(memberValue(member, "username"));
     const name = text(memberValue(member, "nombre"));
     const email = text(memberValue(member, "email"));
     const active = memberValue(member, "activo") === true;
     const canManageStock = memberValue(member, "puede_gestionar_stock") === true;
+    const manageable = canManageTeamMember(currentRole, member.rol, currentUser);
+    const deletable = canDeleteTeamMember(currentRole, member.rol, currentUser);
     const username = usernameValue
       ? `<span class="employee-username-badge">@${escapeHtml(usernameValue)}</span>`
       : '<span class="employee-username-badge">Email</span>';
 
-    const roleControl = owner
-      ? '<span class="equipo-role-owner">Propietario</span>'
-      : `
-        <select class="select equipo-role-select" data-membership-id="${escapeHtml(member.membership_id)}" ${currentUser ? "disabled" : ""}>
-          <option value="cashier" ${member.rol === "cashier" ? "selected" : ""}>Cajero</option>
-          <option value="manager" ${member.rol === "manager" ? "selected" : ""}>Encargado</option>
-          <option value="admin" ${member.rol === "admin" ? "selected" : ""}>Administrador</option>
-        </select>`;
+    const roleControl = manageable
+      ? `<select class="select equipo-role-select"
+                 data-membership-id="${escapeHtml(member.membership_id)}"
+                 data-target-role="${escapeHtml(member.rol)}">
+           ${roleOptionsHtml(currentRole, member.rol)}
+         </select>`
+      : `<span class="equipo-role-owner">${escapeHtml(roleLabel(member.rol))}</span>`;
 
-    const actions = !owner && !currentUser
+    const actions = manageable
       ? `
          <button class="btn btn-ghost btn-sm"
                  data-equipo-action="edit-member"
@@ -111,19 +207,22 @@ export function renderTeamMembers(
          <button class="btn btn-ghost btn-sm"
                  data-equipo-action="reset-password"
                  data-id="${escapeHtml(member.membership_id)}"
+                 data-rol="${escapeHtml(member.rol)}"
                  data-nombre="${escapeHtml(name || usernameValue || "Empleado")}">
            Reiniciar clave
          </button>
          <button class="btn ${active ? "btn-ghost" : "btn-secondary"} btn-sm"
                  data-equipo-action="toggle-member"
                  data-id="${escapeHtml(member.membership_id)}"
+                 data-rol="${escapeHtml(member.rol)}"
                  data-activo="${active ? "0" : "1"}">
             ${active ? "Desactivar" : "Activar"}
          </button>
-         ${currentRole === "owner" ? `
+         ${deletable ? `
            <button class="btn btn-danger btn-sm"
                    data-equipo-action="delete-member"
                    data-id="${escapeHtml(member.membership_id)}"
+                   data-rol="${escapeHtml(member.rol)}"
                    data-nombre="${escapeHtml(name || usernameValue || "Empleado")}">
              Eliminar
            </button>` : ""}`
@@ -137,7 +236,7 @@ export function renderTeamMembers(
             ${username}
             <span class="equipo-status ${active ? "active" : "inactive"}">${active ? "Activo" : "Inactivo"}</span>
             ${
-              owner
+              member.rol === "owner"
                 ? '<span class="equipo-permission-badge-v23014 enabled">Stock manual</span>'
                 : `<span class="equipo-permission-badge-v23014 ${canManageStock ? "enabled" : "disabled"}">
                     Stock manual: ${canManageStock ? "Sí" : "No"}
@@ -164,6 +263,22 @@ export function createTeamController(
     return context().membership?.role === "owner";
   }
 
+  async function refreshBusinessAccessCode(): Promise<string | null> {
+    try {
+      const business = await getAdminBusiness(dependencies.client);
+      const code = businessAccessCodeFrom(business);
+      applyBusinessAccessCode(code);
+      return code || null;
+    } catch (error) {
+      applyBusinessAccessCode("");
+      dependencies.showToast(
+        errorMessage(error, "No se pudo cargar el código de acceso del negocio"),
+        "error"
+      );
+      return null;
+    }
+  }
+
   async function members(): Promise<TeamMemberRecord[]> {
     const result = await listTeam(dependencies.client);
     if (result.stockPermissionWarning) {
@@ -188,20 +303,15 @@ export function createTeamController(
 
     const allowStock = ownerCanSetStock();
     const permission = field("#equipo-permiso-stock");
+    const createRole = field("#equipo-rol");
+    if (createRole instanceof HTMLSelectElement) {
+      configureRoleSelect(createRole, context().membership?.role ?? "cashier", createRole.value);
+    }
     if (permission instanceof HTMLInputElement) permission.disabled = !allowStock;
     queryOne("#equipo-permiso-stock-hint")?.classList.toggle("hidden", allowStock);
     queryOne("#modal-equipo")?.classList.remove("hidden");
 
-    try {
-      const business = await getAdminBusiness(dependencies.client);
-      const code = typeof business === "object" && business !== null
-        ? text((business as Record<string, unknown>).codigo_acceso, "—")
-        : "—";
-      const codeElement = queryOne("#equipo-business-code");
-      if (codeElement) codeElement.textContent = code || "—";
-    } catch (error) {
-      dependencies.showToast(errorMessage(error, "No se pudo cargar el negocio"), "error");
-    }
+    await refreshBusinessAccessCode();
     await render();
   }
 
@@ -252,7 +362,12 @@ export function createTeamController(
     const name = nameField.value.trim();
     const username = normalizeInternalLogin(usernameField.value);
     const role = roleField.value;
+    const actorRole = context().membership?.role ?? "cashier";
     const password = passwordField.value;
+    if (!allowedAssignableRoles(actorRole).includes(teamRole(role))) {
+      errorElement.textContent = "No tenés permiso para asignar ese rol";
+      return;
+    }
     const permission = field("#equipo-permiso-stock");
     const requestedStock = ownerCanSetStock() &&
       permission instanceof HTMLInputElement && permission.checked;
@@ -291,12 +406,27 @@ export function createTeamController(
     usernameField.value = "";
     passwordField.value = "";
     if (permission instanceof HTMLInputElement) permission.checked = false;
-    dependencies.showToast(`Empleado @${username} creado`, "success");
+    const createdCode = businessAccessCodeFrom(result.data);
+    if (createdCode) applyBusinessAccessCode(createdCode);
+    dependencies.showToast(
+      createdCode
+        ? `Empleado @${username} creado · Código: ${createdCode}`
+        : `Empleado @${username} creado`,
+      "success"
+    );
     await render();
   }
 
   async function changeRole(select: HTMLSelectElement): Promise<void> {
     const membershipId = select.dataset.membershipId ?? "";
+    const actorRole = context().membership?.role ?? "cashier";
+    const targetRole = select.dataset.targetRole ?? "cashier";
+    if (!canManageTeamMember(actorRole, targetRole, false) ||
+        !allowedAssignableRoles(actorRole).includes(teamRole(select.value))) {
+      dependencies.showToast("No tenés permiso para realizar ese cambio de rol", "error");
+      await render();
+      return;
+    }
     select.disabled = true;
     const result = await updateMemberRole(dependencies.client, membershipId, select.value);
     select.disabled = false;
@@ -309,6 +439,14 @@ export function createTeamController(
   }
 
   async function changeActive(button: HTMLElement): Promise<void> {
+    if (!canManageTeamMember(
+      context().membership?.role ?? "cashier",
+      button.dataset.rol ?? "cashier",
+      false
+    )) {
+      dependencies.showToast("No tenés permiso para cambiar ese usuario", "error");
+      return;
+    }
     const active = button.dataset.activo === "1";
     const result = await setMemberActive(dependencies.client, button.dataset.id ?? "", active);
     if (!result.ok) {
@@ -320,8 +458,12 @@ export function createTeamController(
   }
 
   async function remove(button: HTMLElement): Promise<void> {
-    if (!ownerCanSetStock()) {
-      dependencies.showToast("Solo el propietario puede eliminar usuarios", "error");
+    if (!canDeleteTeamMember(
+      context().membership?.role ?? "cashier",
+      button.dataset.rol ?? "cashier",
+      false
+    )) {
+      dependencies.showToast("No tenés permiso para eliminar ese usuario", "error");
       return;
     }
     const name = button.dataset.nombre?.trim()
@@ -342,6 +484,12 @@ export function createTeamController(
   }
 
   function openEditor(button: HTMLElement): void {
+    const actorRole = context().membership?.role ?? "cashier";
+    const targetRole = button.dataset.rol ?? "cashier";
+    if (!canManageTeamMember(actorRole, targetRole, false)) {
+      dependencies.showToast("No tenés permiso para editar ese usuario", "error");
+      return;
+    }
     const membershipId = field("#editar-membership-id");
     const name = field("#editar-empleado-nombre");
     const username = field("#editar-empleado-username");
@@ -349,7 +497,10 @@ export function createTeamController(
     if (membershipId) membershipId.value = button.dataset.id ?? "";
     if (name) name.value = button.dataset.nombre ?? "";
     if (username) username.value = button.dataset.username ?? "";
-    if (role) role.value = button.dataset.rol ?? "cashier";
+    if (role instanceof HTMLSelectElement) {
+      role.dataset.targetRole = targetRole;
+      configureRoleSelect(role, actorRole, targetRole);
+    }
 
     const permission = field("#editar-empleado-permiso-stock");
     const allowStock = ownerCanSetStock();
@@ -372,7 +523,12 @@ export function createTeamController(
     const membershipId = field("#editar-membership-id")?.value ?? "";
     const name = field("#editar-empleado-nombre")?.value.trim() ?? "";
     const username = normalizeInternalLogin(field("#editar-empleado-username")?.value ?? "");
-    const role = field("#editar-empleado-rol")?.value ?? "cashier";
+    const roleField = field("#editar-empleado-rol");
+    const role = roleField?.value ?? "cashier";
+    const actorRole = context().membership?.role ?? "cashier";
+    const targetRole = roleField instanceof HTMLSelectElement
+      ? roleField.dataset.targetRole ?? "cashier"
+      : "cashier";
     const permission = field("#editar-empleado-permiso-stock");
     const stock = permission instanceof HTMLInputElement && permission.checked;
     const errorElement = queryOne("#editar-empleado-error");
@@ -380,6 +536,11 @@ export function createTeamController(
     if (!errorElement || !(button instanceof HTMLButtonElement)) return;
 
     errorElement.textContent = "";
+    if (!canManageTeamMember(actorRole, targetRole, false) ||
+        !allowedAssignableRoles(actorRole).includes(teamRole(role))) {
+      errorElement.textContent = "No tenés permiso para realizar ese cambio";
+      return;
+    }
     button.disabled = true;
     button.textContent = "Guardando...";
     const result = await updateEmployee(
@@ -407,6 +568,14 @@ export function createTeamController(
   }
 
   function openPasswordReset(button: HTMLElement): void {
+    if (!canManageTeamMember(
+      context().membership?.role ?? "cashier",
+      button.dataset.rol ?? "cashier",
+      false
+    )) {
+      dependencies.showToast("No tenés permiso para reiniciar esa contraseña", "error");
+      return;
+    }
     const membershipId = field("#reset-membership-id");
     const password = field("#reset-empleado-password");
     if (membershipId) membershipId.value = button.dataset.id ?? "";
@@ -456,6 +625,9 @@ export function createTeamController(
 
     const createPermission = field("#equipo-permiso-stock");
     const createRole = field("#equipo-rol");
+    if (createRole instanceof HTMLSelectElement) {
+      configureRoleSelect(createRole, context().membership?.role ?? "cashier", createRole.value);
+    }
     if (createPermission instanceof HTMLInputElement) {
       const allowStock = ownerCanSetStock();
       createPermission.disabled = !allowStock;
@@ -476,6 +648,15 @@ export function createTeamController(
       if (code && code !== "—") {
         void navigator.clipboard.writeText(code).then(() => {
           dependencies.showToast("Código copiado", "success");
+        });
+      }
+    });
+
+    queryOne("#btn-copy-config-business-code-v232")?.addEventListener("click", () => {
+      const code = queryOne("#config-business-code-v232")?.textContent?.trim();
+      if (code && code !== "—") {
+        void navigator.clipboard.writeText(code).then(() => {
+          dependencies.showToast("Código de acceso copiado", "success");
         });
       }
     });
@@ -522,6 +703,7 @@ export function createTeamController(
     open,
     close,
     render,
+    refreshBusinessAccessCode,
     closeEditor,
     closePasswordReset
   });
