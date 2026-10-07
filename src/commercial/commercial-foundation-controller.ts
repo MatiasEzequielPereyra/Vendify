@@ -112,15 +112,15 @@ export function createCommercialFoundationController(
   dependencies: CommercialFoundationControllerDependencies
 ): CommercialFoundationController {
   const storage = dependencies.storage ?? globalThis.localStorage;
-  const documentRef =
-    dependencies.document ??
-    (globalThis.document as unknown as CommercialDocumentPort);
+  const documentRef = dependencies.document ?? globalThis.document;
   const setIntervalFn =
     dependencies.setIntervalFn ??
     ((callback, ms) => globalThis.setInterval(callback, ms));
   const clearIntervalFn =
     dependencies.clearIntervalFn ??
-    ((id) => globalThis.clearInterval(id));
+    ((id) => {
+      globalThis.clearInterval(id);
+    });
   const now = dependencies.now ?? (() => new Date());
   const logger = dependencies.logger ?? console;
 
@@ -135,8 +135,24 @@ export function createCommercialFoundationController(
     ticketWidthMm: 80
   };
 
-  function query<T extends Element = Element>(selector: string): T | null {
-    return documentRef.querySelector(selector) as T | null;
+  function query(selector: string): Element | null {
+    return documentRef.querySelector(selector);
+  }
+
+  function html(selector: string): HTMLElement | null {
+    return documentRef.querySelector(selector) as HTMLElement | null;
+  }
+
+  function input(selector: string): HTMLInputElement | null {
+    return documentRef.querySelector(selector) as HTMLInputElement | null;
+  }
+
+  function select(selector: string): HTMLSelectElement | null {
+    return documentRef.querySelector(selector) as HTMLSelectElement | null;
+  }
+
+  function button(selector: string): HTMLButtonElement | null {
+    return documentRef.querySelector(selector) as HTMLButtonElement | null;
   }
 
   function role(): string | null {
@@ -152,7 +168,9 @@ export function createCommercialFoundationController(
   }
 
   function onboardingHideKey(): string {
-    return `${ONBOARDING_HIDE_PREFIX}:${dependencies.getBusiness()?.id || "none"}`;
+    const businessId = dependencies.getBusiness()?.id;
+    const suffix = businessId ? businessId : "none";
+    return `${ONBOARDING_HIDE_PREFIX}:${suffix}`;
   }
 
   function hideOnboarding(): void {
@@ -171,7 +189,9 @@ export function createCommercialFoundationController(
       element.classList.add("hidden");
       try {
         storage.removeItem(onboardingHideKey());
-      } catch {}
+      } catch {
+        // Storage may be unavailable in hardened browser contexts.
+      }
       return;
     }
 
@@ -180,7 +200,9 @@ export function createCommercialFoundationController(
         element.classList.add("hidden");
         return;
       }
-    } catch {}
+    } catch {
+        // Storage may be unavailable in hardened browser contexts.
+      }
 
     const productCount = numberValue(data.productos);
     const saleCount = numberValue(data.ventas);
@@ -190,7 +212,7 @@ export function createCommercialFoundationController(
         done: productCount > 0,
         title: "Cargá tu catálogo",
         detail: productCount > 0
-          ? `${productCount} productos listos`
+          ? `${String(productCount)} productos listos`
           : "Agregá productos o importá un CSV.",
         action: "product",
         actionLabel: "Cargar productos",
@@ -210,7 +232,7 @@ export function createCommercialFoundationController(
         done: saleCount > 0,
         title: "Registrá la primera venta",
         detail: saleCount > 0
-          ? `${saleCount} venta(s) registradas`
+          ? `${String(saleCount)} venta(s) registradas`
           : "Probá el flujo completo de cobro.",
         action: "sale",
         actionLabel: "Vender",
@@ -220,7 +242,7 @@ export function createCommercialFoundationController(
         done: memberCount > 1,
         title: "Sumá a tu equipo",
         detail: memberCount > 1
-          ? `${memberCount} usuarios activos`
+          ? `${String(memberCount)} usuarios activos`
           : "Creá al menos un empleado.",
         action: "team",
         actionLabel: "Crear empleado",
@@ -230,12 +252,12 @@ export function createCommercialFoundationController(
 
     const completed = steps.filter((step) => step.done).length;
     const progress = Math.round((completed / steps.length) * 100);
-    const bar = query<HTMLElement>("#commercial-progress-bar-v231");
-    const label = query<HTMLElement>("#commercial-progress-label-v231");
-    if (bar) bar.style.width = `${progress}%`;
+    const bar = html("#commercial-progress-bar-v231");
+    const label = html("#commercial-progress-label-v231");
+    if (bar) bar.style.width = `${String(progress)}%`;
     if (label) {
       label.textContent =
-        `${progress}% completo · ${completed} de ${steps.length} pasos`;
+        `${String(progress)}% completo · ${String(completed)} de ${String(steps.length)} pasos`;
     }
 
     container.innerHTML = steps.map((step) => `
@@ -269,15 +291,17 @@ export function createCommercialFoundationController(
     try {
       const data = await getCommercialOnboarding(dependencies.client);
       renderOnboarding(data);
-    } catch {}
+    } catch {
+        // Storage may be unavailable in hardened browser contexts.
+      }
   }
 
   async function loadPlan(): Promise<void> {
     if (!dependencies.isOnline() || !dependencies.getAppReady()) return;
 
-    const name = query<HTMLElement>("#config-plan-name-v231");
-    const detail = query<HTMLElement>("#config-plan-detail-v231");
-    const usage = query<HTMLElement>("#config-plan-usage-v231");
+    const name = html("#config-plan-name-v231");
+    const detail = html("#config-plan-detail-v231");
+    const usage = html("#config-plan-usage-v231");
 
     try {
       const data = await getCurrentPlan(dependencies.client);
@@ -285,7 +309,7 @@ export function createCommercialFoundationController(
 
       if (detail) {
         detail.textContent = data.trial_dias_restantes != null
-          ? `Prueba · ${numberValue(data.trial_dias_restantes)} día(s) restantes`
+          ? `Prueba · ${String(numberValue(data.trial_dias_restantes))} día(s) restantes`
           : data.estado === "legacy"
             ? "Cuenta existente sin límites comerciales aplicados."
             : `Estado: ${textValue(data.estado, "activo")}`;
@@ -298,8 +322,8 @@ export function createCommercialFoundationController(
           <span>
             <strong>${escapeHtml(labelText)}</strong>
             <small>
-              ${numberValue(value)}
-              ${limit == null ? "" : ` / ${numberValue(limit)}`}
+              ${String(numberValue(value))}
+              ${limit == null ? "" : ` / ${String(numberValue(limit))}`}
             </small>
           </span>`;
 
@@ -316,24 +340,24 @@ export function createCommercialFoundationController(
   }
 
   function applyOperationalConfigToDom(): void {
-    const stockDays = query<HTMLInputElement>("#config-stock-days-v231");
+    const stockDays = input("#config-stock-days-v231");
     if (!stockDays) return;
 
     stockDays.value = String(operationalConfig.stockCoverageAlert);
 
-    const threshold = query<HTMLInputElement>("#config-adjust-threshold-v231");
+    const threshold = input("#config-adjust-threshold-v231");
     if (threshold) threshold.value = String(operationalConfig.largeAdjustmentUnits);
 
-    const cashDifference = query<HTMLInputElement>("#config-cash-diff-v231");
+    const cashDifference = input("#config-cash-diff-v231");
     if (cashDifference) cashDifference.value = String(operationalConfig.cashDifferenceAlert);
 
-    const dailySummary = query<HTMLInputElement>("#config-daily-summary-v231");
+    const dailySummary = input("#config-daily-summary-v231");
     if (dailySummary) dailySummary.checked = operationalConfig.dailySummary;
 
-    const autoPrint = query<HTMLInputElement>("#config-auto-print-v231");
+    const autoPrint = input("#config-auto-print-v231");
     if (autoPrint) autoPrint.checked = operationalConfig.autoPrintTicket;
 
-    const width = query<HTMLSelectElement>("#config-ticket-width-v231");
+    const width = select("#config-ticket-width-v231");
     if (width) width.value = String(operationalConfig.ticketWidthMm === 58 ? 58 : 80);
   }
 
@@ -366,11 +390,12 @@ export function createCommercialFoundationController(
   }
 
   function inputValue(selector: string, fallback: string): string {
-    return query<HTMLInputElement>(selector)?.value || fallback;
+    const value = input(selector)?.value;
+    return value ? value : fallback;
   }
 
   function checked(selector: string): boolean {
-    return query<HTMLInputElement>(selector)?.checked === true;
+    return input(selector)?.checked === true;
   }
 
   async function saveConfig(event?: Event): Promise<void> {
@@ -384,7 +409,7 @@ export function createCommercialFoundationController(
       return;
     }
 
-    const button = query<HTMLButtonElement>("#btn-save-operacion-v231");
+    const button = button("#btn-save-operacion-v231");
     if (button) {
       button.disabled = true;
       button.textContent = "Guardando...";
@@ -421,13 +446,14 @@ export function createCommercialFoundationController(
       return;
     }
 
-    const button = query<HTMLButtonElement>("#btn-backup-json-v231");
+    const button = button("#btn-backup-json-v231");
     if (button) button.disabled = true;
 
     try {
       const data = await exportOperationalBackup(dependencies.client);
       const date = now().toISOString().slice(0, 10);
-      const business = slug(dependencies.getBusiness()?.nombre || "negocio") || "negocio";
+      const businessSlug = slug(dependencies.getBusiness()?.nombre ?? "negocio");
+      const business = businessSlug.length > 0 ? businessSlug : "negocio";
       dependencies.downloadText(
         JSON.stringify(data, null, 2),
         "application/json;charset=utf-8",
@@ -451,7 +477,9 @@ export function createCommercialFoundationController(
     query("#btn-hide-commercial-onboarding-v231")?.addEventListener("click", () => {
       try {
         storage.setItem(onboardingHideKey(), "1");
-      } catch {}
+      } catch {
+        // Storage may be unavailable in hardened browser contexts.
+      }
       hideOnboarding();
     });
 
