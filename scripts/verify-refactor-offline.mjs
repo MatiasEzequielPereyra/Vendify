@@ -19,6 +19,13 @@ const typedOverlayOwner = readFileSync(
   resolve(projectRoot, "src/core/overlay-stability.ts"),
   "utf8"
 );
+const typedNavigationOwner = readFileSync(
+  resolve(
+    projectRoot,
+    "src/core/navigation-events-controller.ts"
+  ),
+  "utf8"
+);
 
 for (const marker of [
   "VendifyOfflineCompatV232",
@@ -184,11 +191,22 @@ for (const forbidden of [
 }
 for (const marker of [
   "window.VendifyCoreV232.createOverlayStabilityController({",
-  "overlayStabilityControllerV232.setup();",
-  "const escapeTargets = ["
+  "overlayStabilityControllerV232.setup();"
 ]) {
   if (!sourceApp.includes(marker)) {
-    throw new Error(`Overlay/global Escape stability composition disappeared: ${marker}`);
+    throw new Error(
+      `Overlay Stability composition disappeared: ${marker}`
+    );
+  }
+}
+for (const marker of [
+  "const escapeTargets: NavigationModalTarget[] = [",
+  'documentRef.addEventListener(\n      "keydown",\n      handleGlobalKeydown'
+]) {
+  if (!typedNavigationOwner.includes(marker)) {
+    throw new Error(
+      `Typed global Escape router disappeared: ${marker}`
+    );
   }
 }
 for (const retiredMarker of [
