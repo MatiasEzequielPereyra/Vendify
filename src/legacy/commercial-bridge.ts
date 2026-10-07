@@ -1,3 +1,4 @@
+import { createCommercialFoundationController } from "../commercial/commercial-foundation-controller.js";
 import {
   exportOperationalBackup,
   getCommercialOnboarding,
@@ -12,6 +13,7 @@ export interface VendifyCommercialV232Api {
   readonly getOperationalConfig: typeof getOperationalConfig;
   readonly saveOperationalConfig: typeof saveOperationalConfig;
   readonly exportBackup: typeof exportOperationalBackup;
+  readonly createCommercialFoundationController: typeof createCommercialFoundationController;
 }
 
 declare global {
@@ -23,5 +25,6 @@ window.VendifyCommercialV232 = Object.freeze({
   getPlan: getCurrentPlan,
   getOperationalConfig,
   saveOperationalConfig,
-  exportBackup: exportOperationalBackup
+  exportBackup: exportOperationalBackup,
+  createCommercialFoundationController
 });
