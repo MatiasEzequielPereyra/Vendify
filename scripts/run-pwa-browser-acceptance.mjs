@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { cp, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -16,6 +16,33 @@ const site = await mkdtemp(path.join(tmpdir(), "vendify-pwa-site-"));
 const outputDir = path.resolve("qa-output", "pwa-matrix");
 await mkdir(outputDir, { recursive: true });
 await cp(path.resolve("dist-refactor-modular"), site, { recursive: true });
+
+const artifactFiles = await readdir(site);
+const artifactIndex = await readFile(path.join(site, "index.html"), "utf8");
+const typedApplicationFiles = artifactFiles.filter(
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/u.test(file)
+);
+if (typedApplicationFiles.length !== 1) {
+  throw new Error(
+    `Browser acceptance requires exactly one typed application entry, found ${typedApplicationFiles.length}`
+  );
+}
+if (!artifactIndex.includes(typedApplicationFiles[0])) {
+  throw new Error(
+    "Browser acceptance artifact index does not reference the typed application entry"
+  );
+}
+if (
+  artifactFiles.includes("app.js")
+  || artifactFiles.some((file) => /^app-refactor-v232-/u.test(file))
+  || artifactIndex.includes("app-refactor-v232-")
+  || artifactIndex.includes('src: "app.js')
+) {
+  throw new Error(
+    "Browser acceptance refuses compatibility app.js/app-refactor runtime"
+  );
+}
+const typedApplicationFile = typedApplicationFiles[0];
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -165,6 +192,51 @@ let secondBrowser;
 try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
+
+  await waitForBrowserCondition(
+    firstBrowser.cdp,
+    `(() => {
+      const resources = performance
+        .getEntriesByType("resource")
+        .map((entry) => entry.name);
+      return Boolean(
+        window.VendifyApplicationV232
+        && resources.some((name) => name.includes("${typedApplicationFile}"))
+        && !resources.some((name) =>
+          name.includes("app-refactor-v232-")
+          || /\\/app\\.js(?:[?#]|$)/u.test(name)
+        )
+      );
+    })()`,
+    "typed application runtime identity"
+  );
+
+  const runtimeIdentity = await evaluate(
+    firstBrowser.cdp,
+    `(() => ({
+      typedApplication:
+        Boolean(window.VendifyApplicationV232),
+      resources: performance
+        .getEntriesByType("resource")
+        .map((entry) => entry.name)
+        .filter((name) =>
+          name.includes("vendify-app-v232-")
+          || name.includes("app-refactor-v232-")
+          || /\\/app\\.js(?:[?#]|$)/u.test(name)
+        )
+    }))()`
+  );
+  if (
+    !runtimeIdentity.typedApplication
+    || runtimeIdentity.resources.some((name) =>
+      name.includes("app-refactor-v232-")
+      || /\/app\.js(?:[?#]|$)/u.test(name)
+    )
+  ) {
+    throw new Error(
+      `Browser loaded the wrong application runtime: ${JSON.stringify(runtimeIdentity)}`
+    );
+  }
 
   await waitForBrowserCondition(
     firstBrowser.cdp,
