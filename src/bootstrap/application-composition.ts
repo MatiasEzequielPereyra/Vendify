@@ -65,7 +65,6 @@ type TeamDependencies = Parameters<TeamApi["createController"]>[0];
 type ProductsDependencies = Parameters<ProductsApi["createController"]>[0];
 type ScannerDependencies = Parameters<ProductsApi["createScannerController"]>[0];
 type RealtimeDependencies = Parameters<RealtimeApi["createController"]>[0];
-type DiagnosticsDependencies = Parameters<ObservabilityApi["createDiagnosticsController"]>[0];
 type DashboardDependencies = Parameters<DashboardApi["createController"]>[0];
 type PlatformDependencies = Parameters<PlatformApi["createPlatformAdminController"]>[0];
 type CommercialDependencies = Parameters<CommercialApi["createCommercialFoundationController"]>[0];
@@ -85,7 +84,7 @@ export interface BrowserApplicationComposition {
   readonly bootstrap: ApplicationBootstrap;
   readonly controllers: Readonly<{
     auth: AuthController;
-    inactivity: InactivityGuard;
+    inactivity: InactivitySessionGuard;
     team: TeamController;
     realtime: RealtimeController;
     products: ProductsController;
