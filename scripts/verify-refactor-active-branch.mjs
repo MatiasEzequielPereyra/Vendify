@@ -9,7 +9,7 @@ const runtimeFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!runtimeFile || !appFile) {
@@ -20,7 +20,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const controllerSource = readFileSync(
   resolve(projectRoot, "src/branches/active-branch-controller.ts"),
   "utf8"
@@ -45,15 +45,15 @@ if (!bridgeSource.includes("createActiveBranchController")) {
 }
 
 for (const marker of [
-  "const activeBranchControllerV232 =",
-  "window.VendifyBranchesV232.createActiveBranchController({",
-  "getBranches: () => activeBranchControllerV232.getBranches(),",
-  "selectBranch: (id) => activeBranchControllerV232.select(id),",
-  "refreshBranches: () => activeBranchControllerV232.refresh(),",
-  "await activeBranchControllerV232.initialize();",
-  "activeBranchControllerV232.setup();",
-  "branchTransferControllerV232.setup();",
-  "branchAdministrationControllerV232.setup();"
+  "const activeBranchController =",
+  "branchesApi.createActiveBranchController({",
+  "getBranches: () => activeBranchController.getBranches(),",
+  "selectBranch: (id) => activeBranchController.select(id),",
+  "refreshBranches: () => activeBranchController.refresh(),",
+  "await activeBranchController.initialize();",
+  "activeBranchController.setup();",
+  "branchTransferController.setup();",
+  "branchAdministrationController.setup();"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(`Root app.js missing Active Branch composition: ${marker}`);
@@ -105,10 +105,10 @@ for (const serviceMarker of [
 for (const forbiddenControllerMarker of [
   ".rpc(",
   "window.Vendify",
-  "posControllerV232",
-  "cashControllerV232",
-  "contextPickerControllerV232",
-  "realtimeControllerV232",
+  "posController",
+  "cashController",
+  "contextPickerController",
+  "realtimeController",
   "cargarProductos",
   "renderGrid",
   "appContext"
@@ -121,9 +121,9 @@ for (const forbiddenControllerMarker of [
 }
 
 for (const separationMarker of [
-  "window.VendifyBranchesV232.createBranchAdministrationController({",
-  "window.VendifyInventoryV232.createBranchTransferController({",
-  "window.VendifyCashV232.createController({"
+  "branchesApi.createBranchAdministrationController({",
+  "inventoryApi.createBranchTransferController({",
+  "cashApi.createController({"
 ]) {
   if (!sourceApp.includes(separationMarker)) {
     throw new Error(

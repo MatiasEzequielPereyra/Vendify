@@ -5,13 +5,13 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(root);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 
 if (!runtimeFile || !appFile) throw new Error("Refactor Auth verification could not find generated bundles");
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const buildSource = readFileSync(
   resolve(projectRoot, "scripts/build-refactor-modular.mjs"),
   "utf8"
@@ -46,13 +46,13 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyAuthV232.createController({",
-  "window.VendifyAuthV232.createInactivityGuard({",
-  "inactivityGuardV232.start();",
-  "authControllerV232.setup();",
-  "authControllerV232.initialize()",
-  "authControllerV232.getSession()",
-  "authControllerV232.signOut()"
+  "authApi.createController({",
+  "authApi.createInactivityGuard({",
+  "inactivityGuard.start();",
+  "authController.setup();",
+  "authController.initialize()",
+  "authController.getSession()",
+  "authController.signOut()"
 ]) {
   if (!app.includes(marker)) throw new Error(`Compatibility app missing Auth delegation: ${marker}`);
   if (!sourceApp.includes(marker)) throw new Error(`Root app.js missing Auth delegation: ${marker}`);

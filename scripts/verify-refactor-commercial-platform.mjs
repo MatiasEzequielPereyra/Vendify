@@ -9,7 +9,7 @@ const runtimeFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!runtimeFile || !appFile) {
@@ -20,7 +20,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const commercialController = readFileSync(
   resolve(projectRoot, "src/commercial/commercial-foundation-controller.ts"),
   "utf8"
@@ -65,17 +65,17 @@ for (const [bridge, marker, label] of [
 }
 
 for (const marker of [
-  "const commercialFoundationControllerV232 =",
-  "window.VendifyCommercialV232.createCommercialFoundationController({",
-  "const platformAdminControllerV232 =",
-  "window.VendifyPlatformV232.createPlatformAdminController({",
-  "await commercialFoundationControllerV232.load();",
-  "reloadCommercialFoundation: () => commercialFoundationControllerV232.load(),",
-  "commercialFoundationControllerV232.setup();",
-  "platformAdminControllerV232.setup();",
+  "const commercialFoundationController =",
+  "commercialApi.createCommercialFoundationController({",
+  "const platformAdminController =",
+  "platformApi.createPlatformAdminController({",
+  "await commercialFoundationController.load();",
+  "reloadCommercialFoundation: () => commercialFoundationController.load(),",
+  "commercialFoundationController.setup();",
+  "platformAdminController.setup();",
   "setupObservabilityV231();",
   "setupOfflineSalesV2311();",
-  "dashboardControllerV232.setup();",
+  "dashboardController.setup();",
   "setupProductCsvImportV231();"
 ]) {
   if (!sourceApp.includes(marker)) {
@@ -115,10 +115,10 @@ for (const [source, label] of [
   for (const forbidden of [
     ".rpc(",
     "window.Vendify",
-    "dashboardControllerV232",
-    "teamControllerV232",
-    "cashControllerV232",
-    "posControllerV232",
+    "dashboardController",
+    "teamController",
+    "cashController",
+    "posController",
     "appContext",
     "supabaseClient"
   ]) {
@@ -184,10 +184,10 @@ if (
 }
 
 for (const separationMarker of [
-  "window.VendifyProductsV232.createController({",
-  "window.VendifyDashboardV232.createController({",
-  "window.VendifyOfflineCompatV232.createController({",
-  "window.VendifyTeamV232.createController({"
+  "productsApi.createController({",
+  "dashboardApi.createController({",
+  "offlineApi.createController({",
+  "teamApi.createController({"
 ]) {
   if (!sourceApp.includes(separationMarker)) {
     throw new Error(

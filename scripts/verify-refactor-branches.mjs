@@ -9,7 +9,7 @@ const runtimeFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!runtimeFile || !appFile) {
@@ -20,7 +20,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const controllerSource = readFileSync(
   resolve(projectRoot, "src/branches/branch-administration-controller.ts"),
   "utf8"
@@ -47,11 +47,11 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyBranchesV232.createBranchAdministrationController({",
-  "const branchAdministrationControllerV232 =",
-  "refreshBranches: () => activeBranchControllerV232.refresh(),",
-  "branchAdministrationControllerV232.setup();",
-  "refreshBranchSettings: () => branchAdministrationControllerV232.render(),"
+  "branchesApi.createBranchAdministrationController({",
+  "const branchAdministrationController =",
+  "refreshBranches: () => activeBranchController.refresh(),",
+  "branchAdministrationController.setup();",
+  "refreshBranchSettings: () => branchAdministrationController.render(),"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(
