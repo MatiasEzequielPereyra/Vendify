@@ -128,13 +128,15 @@ export function createNavigationEventsController(
     );
 
     menu.style.position = "fixed";
-    menu.style.left = `${left}px`;
+    menu.style.left = `${String(left)}px`;
     menu.style.right = "auto";
-    menu.style.width = `${Math.max(
-      Math.min(minWidth, maxAvailableWidth),
-      width
+    menu.style.width = `${String(
+      Math.max(
+        Math.min(minWidth, maxAvailableWidth),
+        width
+      )
     )}px`;
-    menu.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+    menu.style.maxWidth = `calc(100vw - ${String(margin * 2)}px)`;
 
     const measuredHeight = Math.min(
       menu.scrollHeight || 240,
@@ -147,15 +149,20 @@ export function createNavigationEventsController(
 
     if (openAbove) {
       menu.style.top =
-        `${Math.max(margin, rect.top - measuredHeight - gap)}px`;
+        `${String(Math.max(margin, rect.top - measuredHeight - gap))}px`;
       menu.dataset.placement = "top";
       return;
     }
 
     menu.style.top =
-      `${Math.min(
-        rect.bottom + gap,
-        Math.max(margin, viewportHeight - measuredHeight - margin)
+      `${String(
+        Math.min(
+          rect.bottom + gap,
+          Math.max(
+            margin,
+            viewportHeight - measuredHeight - margin
+          )
+        )
       )}px`;
     menu.dataset.placement = "bottom";
   }
@@ -206,7 +213,7 @@ export function createNavigationEventsController(
 
     if (open) {
       toggleManagementMenu(false);
-      requestFrame(() => positionUserMenu());
+      requestFrame(() => { positionUserMenu(); });
       return;
     }
 
@@ -232,7 +239,7 @@ export function createNavigationEventsController(
 
     if (open) {
       toggleUserMenu(false);
-      requestFrame(() => positionManagementMenu());
+      requestFrame(() => { positionManagementMenu(); });
       return;
     }
 
@@ -267,19 +274,19 @@ export function createNavigationEventsController(
         },
         {
           isOpen: () => isOpen("modal-ticket-v228"),
-          close: () => clickById("btn-close-ticket-v228")
+          close: () => { clickById("btn-close-ticket-v228"); }
         },
         {
           isOpen: () => isOpen("modal-return-v228"),
-          close: () => clickById("btn-close-return-v228")
+          close: () => { clickById("btn-close-return-v228"); }
         },
         {
           isOpen: () => isOpen("modal-caja-movimiento-v227"),
-          close: () => clickById("btn-close-cash-movement-v227")
+          close: () => { clickById("btn-close-cash-movement-v227"); }
         },
         {
           isOpen: () => isOpen("modal-cash-close-v227"),
-          close: () => clickById("btn-close-cash-close-v227")
+          close: () => { clickById("btn-close-cash-close-v227"); }
         },
         {
           isOpen: () => isOpen("modal-editar-empleado"),
@@ -291,11 +298,11 @@ export function createNavigationEventsController(
         },
         {
           isOpen: () => isOpen("modal-proveedor-editor"),
-          close: () => clickById("btn-close-proveedor-editor")
+          close: () => { clickById("btn-close-proveedor-editor"); }
         },
         {
           isOpen: () => isOpen("modal-compra-editor"),
-          close: () => clickById("btn-close-compra-editor")
+          close: () => { clickById("btn-close-compra-editor"); }
         },
         {
           isOpen: () => isOpen("modal-scanner-v29"),
@@ -307,7 +314,7 @@ export function createNavigationEventsController(
         },
         {
           isOpen: () => isOpen("modal-catalogo-v29"),
-          close: () => clickById("btn-close-catalogo-v29")
+          close: () => { clickById("btn-close-catalogo-v29"); }
         },
         {
           isOpen: () => isOpen("modal-historial"),
@@ -315,19 +322,19 @@ export function createNavigationEventsController(
         },
         {
           isOpen: () => isOpen("modal-compras"),
-          close: () => clickById("btn-close-compras")
+          close: () => { clickById("btn-close-compras"); }
         },
         {
           isOpen: () => isOpen("modal-inventario"),
-          close: () => clickById("btn-close-inventory")
+          close: () => { clickById("btn-close-inventory"); }
         },
         {
           isOpen: () => isOpen("modal-caja-operativa-v227"),
-          close: () => clickById("btn-cerrar-caja-panel-v227")
+          close: () => { clickById("btn-cerrar-caja-panel-v227"); }
         },
         {
           isOpen: () => isOpen("modal-dashboard-v231"),
-          close: () => clickById("btn-close-dashboard-v231")
+          close: () => { clickById("btn-close-dashboard-v231"); }
         },
         {
           isOpen: () => isOpen("modal-equipo"),
@@ -524,9 +531,13 @@ export function createNavigationEventsController(
     return true;
   }
 
+  function onPopState(): void {
+    void handleBack();
+  }
+
   function attemptExit(): void {
     backGuardEnabled = false;
-    windowRef.removeEventListener("popstate", handleBack);
+    windowRef.removeEventListener("popstate", onPopState);
 
     const currentUrl = windowRef.location.href;
     let moved = false;
@@ -690,7 +701,7 @@ export function createNavigationEventsController(
       .querySelector<HTMLElement>(".header-actions-vpro")
       ?.addEventListener(
         "scroll",
-        () => closeManagementMenu(),
+        () => { closeManagementMenu(); },
         { passive: true }
       );
 
@@ -758,7 +769,7 @@ export function createNavigationEventsController(
     );
 
     armBackGuard();
-    windowRef.addEventListener("popstate", handleBack);
+    windowRef.addEventListener("popstate", onPopState);
   }
 
   return Object.freeze({
