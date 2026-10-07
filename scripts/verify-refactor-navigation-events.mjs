@@ -119,7 +119,9 @@ for (const app of [sourceApp, generatedApp]) {
 for (const marker of [
   'getElementById("btn-user-menu")',
   'getElementById("btn-gestion-v230")',
-  'addEventListener("popstate", handleBack)',
+  'addEventListener("popstate", onPopState)',
+  "function onPopState(): void",
+  "void handleBack();"
   'addEventListener(\n      "keydown",\n      handleGlobalKeydown'
 ]) {
   if (!typedOwner.includes(marker)) {
