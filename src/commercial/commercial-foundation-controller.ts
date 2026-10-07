@@ -168,8 +168,8 @@ export function createCommercialFoundationController(
   }
 
   function onboardingHideKey(): string {
-    const businessId = dependencies.getBusiness()?.id;
-    const suffix = businessId ? businessId : "none";
+    const businessId = dependencies.getBusiness()?.id ?? "";
+    const suffix = businessId.length > 0 ? businessId : "none";
     return `${ONBOARDING_HIDE_PREFIX}:${suffix}`;
   }
 
@@ -391,7 +391,8 @@ export function createCommercialFoundationController(
 
   function inputValue(selector: string, fallback: string): string {
     const value = input(selector)?.value;
-    return value ? value : fallback;
+    if (!value) return fallback;
+    return value;
   }
 
   function checked(selector: string): boolean {
