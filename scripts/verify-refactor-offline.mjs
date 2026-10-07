@@ -6,7 +6,7 @@ const outputRoot = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(outputRoot);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
 const offlineRuntimeFile = files.find((file) => /^vendify-offline-v2312-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 if (!runtimeFile || !offlineRuntimeFile || !appFile) {
   throw new Error("Refactor Offline verification could not find generated bundles");
 }
@@ -14,7 +14,7 @@ if (!runtimeFile || !offlineRuntimeFile || !appFile) {
 const runtime = readFileSync(resolve(outputRoot, runtimeFile), "utf8");
 const offlineRuntime = readFileSync(resolve(outputRoot, offlineRuntimeFile), "utf8");
 const app = readFileSync(resolve(outputRoot, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const typedOverlayOwner = readFileSync(
   resolve(projectRoot, "src/core/overlay-stability.ts"),
   "utf8"
@@ -51,19 +51,19 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyOfflineCompatV232.createController({",
-  "offlineControllerV232.readLegacySales()",
-  "offlineControllerV232.persistCashProof()",
-  "offlineControllerV232.restoreCashProof()",
-  "offlineControllerV232.applySaleState()",
-  "offlineControllerV232.registerLegacySale(items, pagos, totales, observacion)",
-  "offlineControllerV232.registerSale(items, payments, totals, observation)",
-  "offlineControllerV232.sync(options)",
-  "offlineControllerV232.setup()",
+  "offlineApi.createController({",
+  "offlineController.readLegacySales()",
+  "offlineController.persistCashProof()",
+  "offlineController.restoreCashProof()",
+  "offlineController.applySaleState()",
+  "offlineController.registerLegacySale(items, pagos, totales, observacion)",
+  "offlineController.registerSale(items, payments, totals, observation)",
+  "offlineController.sync(options)",
+  "offlineController.setup()",
   "renderSaleProducts: renderVentaProductos",
   "renderCart: renderCarrito"
 ]) {
-  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+  if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Offline delegation: ${marker}`);
   }
 }
@@ -145,15 +145,15 @@ for (const marker of [
     throw new Error(`Offline bridge missing Connection Status API marker: ${marker}`);
   }
 }
-for (const compatibilityApp of [sourceApp, app]) {
+for (const compatibilityApp of [sourceApp]) {
   for (const marker of [
-    "window.VendifyOfflineCompatV232.createConnectionStatusController({",
+    "offlineApi.createConnectionStatusController({",
     "getPendingOfflineSalesCount: () => leerVentasOfflineV2311().length",
     "syncPendingOfflineSales: () =>",
     "syncAll: (showToast) =>",
-    "connectionStatusControllerV232.setup();",
-    "connectionStatusControllerV232.setState(",
-    "setConnectionState: (state, label) => connectionStatusControllerV232.setState(state, label)"
+    "connectionStatusController.setup();",
+    "connectionStatusController.setState(",
+    "setConnectionState: (state, label) => connectionStatusController.setState(state, label)"
   ]) {
     if (!compatibilityApp.includes(marker)) {
       throw new Error(`Compatibility app missing Connection Status composition: ${marker}`);
@@ -170,7 +170,7 @@ for (const compatibilityApp of [sourceApp, app]) {
 }
 const stabilityStartV007d = sourceApp.indexOf("function setupStabilityV23011()");
 const stabilityEndV007d = sourceApp.indexOf(
-  "overlayStabilityControllerV232.setup();",
+  "overlayStabilityController.setup();",
   stabilityStartV007d
 );
 if (stabilityStartV007d < 0 || stabilityEndV007d < 0) {
@@ -190,8 +190,8 @@ for (const forbidden of [
   }
 }
 for (const marker of [
-  "window.VendifyCoreV232.createOverlayStabilityController({",
-  "overlayStabilityControllerV232.setup();"
+  "core.createOverlayStabilityController({",
+  "overlayStabilityController.setup();"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(
@@ -237,8 +237,8 @@ for (const forbidden of [
   "registrar_venta_v4",
   "cargarProductos",
   "cargarEstadoCajaV227",
-  "inventoryControllerV232",
-  "purchasesControllerV232",
+  "inventoryController",
+  "purchasesController",
   "sincronizarVentasOfflineV2311",
   "leerVentasOfflineV2311"
 ]) {

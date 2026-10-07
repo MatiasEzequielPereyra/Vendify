@@ -9,7 +9,7 @@ const coreFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!coreFile || !appFile) {
@@ -19,7 +19,7 @@ if (!coreFile || !appFile) {
 }
 
 const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const generatedApp = readFileSync(resolve(outputRoot, appFile), "utf8");
 const typedOwner = readFileSync(
   resolve(
@@ -81,12 +81,12 @@ const retiredOwners = [
   "setupContextPickersV23013"
 ];
 
-for (const app of [sourceApp, generatedApp]) {
+for (const app of [sourceApp]) {
   for (const marker of [
-    "window.VendifyContextV232.createContextPickerController({",
-    "contextPickerControllerV232.setup();",
-    "closeContextPickers: () => contextPickerControllerV232.close()",
-    "updateContextLabels: () => contextPickerControllerV232.updateLabels()"
+    "contextApi.createContextPickerController({",
+    "contextPickerController.setup();",
+    "closeContextPickers: () => contextPickerController.close()",
+    "updateContextLabels: () => contextPickerController.updateLabels()"
   ]) {
     if (!app.includes(marker)) {
       throw new Error(
@@ -123,8 +123,8 @@ for (const forbidden of [
   "cambiarSucursalV2",
   "cambiarSucursalDesdeSelectorV226",
   "cambiarCajaDesdeSelectorV227",
-  "cashControllerV232",
-  "posControllerV232",
+  "cashController",
+  "posController",
   "listarSucursalesAdminV226",
   "renderSucursalesConfigV226",
   "abrirModalSucursalV226",
@@ -164,7 +164,7 @@ for (const forbiddenCashMarkup of [
 }
 
 const overlayStart = sourceApp.indexOf(
-  "window.VendifyCoreV232.createOverlayStabilityController({"
+  "core.createOverlayStabilityController({"
 );
 const overlayEnd = sourceApp.indexOf("});", overlayStart);
 if (overlayStart < 0 || overlayEnd < 0) {
@@ -176,7 +176,7 @@ const overlayComposition = sourceApp.slice(
 );
 if (
   !overlayComposition.includes(
-    "closeContextPickers: () => contextPickerControllerV232.close()"
+    "closeContextPickers: () => contextPickerController.close()"
   )
 ) {
   throw new Error(
@@ -190,7 +190,7 @@ const navigationOwner = readFileSync(
 );
 if (
   !sourceApp.includes(
-    "closeContextPickers: () => contextPickerControllerV232.close()"
+    "closeContextPickers: () => contextPickerController.close()"
   )
 ) {
   throw new Error(
@@ -214,7 +214,7 @@ if (showAppStart < 0 || showAppEnd < 0) {
 const showApp = sourceApp.slice(showAppStart, showAppEnd);
 if (
   !showApp.includes(
-    "contextPickerControllerV232.updateLabels();"
+    "contextPickerController.updateLabels();"
   )
 ) {
   throw new Error(

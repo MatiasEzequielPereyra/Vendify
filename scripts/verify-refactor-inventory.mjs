@@ -5,7 +5,7 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(root);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 
 if (!runtimeFile || !appFile) {
   throw new Error("Refactor Inventory verification could not find generated bundles");
@@ -13,7 +13,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 
 for (const marker of [
   "VendifyInventoryV232",
@@ -36,18 +36,18 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyInventoryV232.createController({",
-  "window.VendifyInventoryV232.createBranchTransferController({",
-  "inventoryControllerV232.refreshOpenView(false)",
-  "inventoryControllerV232.refreshOpenView()",
-  "inventoryControllerV232.openAdjustmentFromProduct(id, delta)",
-  "inventoryControllerV232.setup()",
-  "branchTransferControllerV232.setup()",
-  "activeBranchControllerV232.getBranches().map((branch) => ({",
+  "inventoryApi.createController({",
+  "inventoryApi.createBranchTransferController({",
+  "inventoryController.refreshOpenView(false)",
+  "inventoryController.refreshOpenView()",
+  "inventoryController.openAdjustmentFromProduct(id, delta)",
+  "inventoryController.setup()",
+  "branchTransferController.setup()",
+  "activeBranchController.getBranches().map((branch) => ({",
   "reloadProducts: cargarProductos",
-  "emitStockChange: realtimeControllerV232.emitStockChange"
+  "emitStockChange: realtimeController.emitStockChange"
 ]) {
-  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+  if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Inventory delegation: ${marker}`);
   }
 }

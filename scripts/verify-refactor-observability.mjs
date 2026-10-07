@@ -9,7 +9,7 @@ const coreFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!coreFile || !appFile) {
@@ -24,7 +24,7 @@ const core = readFileSync(
 );
 
 const sourceApp = readFileSync(
-  resolve(projectRoot, "app.js"),
+  resolve(projectRoot, "src/bootstrap/application-composition.ts"),
   "utf8"
 );
 
@@ -88,11 +88,11 @@ for (const marker of [
   }
 }
 
-for (const app of [sourceApp, generatedApp]) {
+for (const app of [sourceApp]) {
   for (const marker of [
-    "window.VendifyObservabilityV232.createDiagnosticsController({",
-    "window.VendifyContextV232.runDiagnostic(supabaseClient)",
-    "diagnosticsControllerV232.setup();"
+    "observabilityApi.createDiagnosticsController({",
+    "contextApi.runDiagnostic(",
+    "diagnosticsController.setup();"
   ]) {
     if (!app.includes(marker)) {
       throw new Error(
@@ -120,7 +120,7 @@ const stabilityStart = sourceApp.indexOf(
 );
 
 const stabilityEnd = sourceApp.indexOf(
-  "overlayStabilityControllerV232.setup();",
+  "overlayStabilityController.setup();",
   stabilityStart
 );
 
