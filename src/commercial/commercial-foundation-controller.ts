@@ -151,7 +151,7 @@ export function createCommercialFoundationController(
     return documentRef.querySelector(selector) as HTMLSelectElement | null;
   }
 
-  function button(selector: string): HTMLButtonElement | null {
+  function buttonElement(selector: string): HTMLButtonElement | null {
     return documentRef.querySelector(selector) as HTMLButtonElement | null;
   }
 
@@ -409,7 +409,7 @@ export function createCommercialFoundationController(
       return;
     }
 
-    const button = button("#btn-save-operacion-v231");
+    const button = buttonElement("#btn-save-operacion-v231");
     if (button) {
       button.disabled = true;
       button.textContent = "Guardando...";
@@ -446,7 +446,7 @@ export function createCommercialFoundationController(
       return;
     }
 
-    const button = button("#btn-backup-json-v231");
+    const button = buttonElement("#btn-backup-json-v231");
     if (button) button.disabled = true;
 
     try {
