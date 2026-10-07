@@ -986,12 +986,10 @@ test("typed owner contains no backend or direct domain-controller globals", () =
     "productsControllerV232",
     "contextPickerControllerV232"
   ]) {
-    assert.doesNotMatch(
-      source,
-      new RegExp(
-        forbidden.replace(".", "\\."),
-        "u"
-      )
+    assert.equal(
+      source.includes(forbidden),
+      false,
+      forbidden
     );
   }
 });
