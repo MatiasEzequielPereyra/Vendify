@@ -184,24 +184,22 @@ if (
   );
 }
 
-const backStart = sourceApp.indexOf(
-  "function cerrarPopoverAbiertoV2311()"
+const navigationOwner = readFileSync(
+  resolve(projectRoot, "src/core/navigation-events-controller.ts"),
+  "utf8"
 );
-const backEnd = sourceApp.indexOf(
-  "function modalSuperiorVisibleV2311()",
-  backStart
-);
-if (backStart < 0 || backEnd < 0) {
-  throw new Error("Could not inspect Back Guard composition");
-}
-const backGuardClose = sourceApp.slice(backStart, backEnd);
 if (
-  !backGuardClose.includes(
-    "contextPickerControllerV232.close();"
+  !sourceApp.includes(
+    "closeContextPickers: () => contextPickerControllerV232.close()"
   )
 ) {
   throw new Error(
-    "Back Guard no longer delegates Context Picker close to typed owner"
+    "Navigation Events composition no longer delegates Context Picker close to typed owner"
+  );
+}
+if (!navigationOwner.includes("dependencies.closeContextPickers();")) {
+  throw new Error(
+    "Navigation Events owner no longer delegates Back Guard picker close through dependency"
   );
 }
 

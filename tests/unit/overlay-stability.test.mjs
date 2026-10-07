@@ -366,9 +366,13 @@ test("setup is idempotent", () => {
   assert.equal(harness.document.listeners.get("keydown").length, 1);
 });
 
-test("legacy app composes the typed owner without retiring the other global Escape router", () => {
+test("Overlay Stability stays independent while Navigation Events owns the second Escape router", () => {
   const app = readFileSync("app.js", "utf8");
   const bridge = readFileSync("src/legacy/core-bridge.ts", "utf8");
+  const navigation = readFileSync(
+    "src/core/navigation-events-controller.ts",
+    "utf8"
+  );
 
   for (const retiredMarker of [
     "function modalVisibleV23011",
@@ -388,7 +392,12 @@ test("legacy app composes the typed owner without retiring the other global Esca
     app,
     /overlayStabilityControllerV232\.isModalVisible\(modal\)/
   );
-  assert.match(app, /const escapeTargets = \[/);
+  assert.doesNotMatch(app, /const escapeTargets = \[/);
+  assert.match(
+    navigation,
+    /const escapeTargets: NavigationModalTarget\[\] = \[/
+  );
+  assert.match(app, /navigationEventsControllerV232\.setup\(\)/);
 
   assert.match(
     bridge,

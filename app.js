@@ -445,92 +445,6 @@ async function mostrarApp() {
   await commercialFoundationControllerV232.load();
 }
 
-function posicionarPopoverAncladoV23012(
-  menu,
-  trigger,
-  { minWidth = 230, maxWidth = 290, gap = 8, margin = 10 } = {}
-) {
-  if (!menu || !trigger || menu.classList.contains("hidden")) return;
-
-  const rect = trigger.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const maxAvailableWidth = Math.max(180, viewportWidth - margin * 2);
-  const width = Math.min(maxWidth, maxAvailableWidth);
-
-  let left = rect.right - width;
-  left = Math.max(margin, Math.min(left, viewportWidth - width - margin));
-
-  menu.style.position = "fixed";
-  menu.style.left = `${left}px`;
-  menu.style.right = "auto";
-  menu.style.width = `${Math.max(Math.min(minWidth, maxAvailableWidth), width)}px`;
-  menu.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
-
-  const measuredHeight = Math.min(
-    menu.scrollHeight || 240,
-    viewportHeight - margin * 2
-  );
-
-  const below = viewportHeight - rect.bottom - margin;
-  const above = rect.top - margin;
-  const openAbove = below < Math.min(measuredHeight, 250) && above > below;
-
-  if (openAbove) {
-    menu.style.top = `${Math.max(margin, rect.top - measuredHeight - gap)}px`;
-    menu.dataset.placement = "top";
-  } else {
-    menu.style.top = `${Math.min(
-      rect.bottom + gap,
-      Math.max(margin, viewportHeight - measuredHeight - margin)
-    )}px`;
-    menu.dataset.placement = "bottom";
-  }
-}
-
-function posicionarMenuUsuarioMobile() {
-  posicionarPopoverAncladoV23012(
-    $("#user-menu"),
-    $("#btn-user-menu"),
-    { minWidth: 230, maxWidth: 270 }
-  );
-}
-
-function limpiarPosicionMenuUsuario() {
-  const menu = $("#user-menu");
-  if (!menu) return;
-  menu.style.position = "";
-  menu.style.left = "";
-  menu.style.right = "";
-  menu.style.top = "";
-  menu.style.width = "";
-  menu.style.maxWidth = "";
-  delete menu.dataset.placement;
-}
-
-function abrirCerrarMenuUsuarioV224(force) {
-  const menu = $("#user-menu");
-  const trigger = $("#btn-user-menu");
-  if (!menu || !trigger) return;
-
-  const abrir =
-    typeof force === "boolean"
-      ? force
-      : menu.classList.contains("hidden");
-
-  menu.classList.toggle("hidden", !abrir);
-  trigger.setAttribute("aria-expanded", abrir ? "true" : "false");
-
-  if (abrir) {
-    if (typeof abrirCerrarGestionV230 === "function") {
-      abrirCerrarGestionV230(false);
-    }
-    requestAnimationFrame(posicionarMenuUsuarioMobile);
-  } else {
-    limpiarPosicionMenuUsuario();
-  }
-}
-
 // ============================================================
 // V2.3 — EQUIPO / USUARIOS INTERNOS — controlador TypeScript
 // ============================================================
@@ -952,9 +866,44 @@ async function sincronizarTodoV23011({ toast = false } = {}) {
 
 const overlayStabilityControllerV232 =
   window.VendifyCoreV232.createOverlayStabilityController({
-    closeUserMenu: () => abrirCerrarMenuUsuarioV224?.(false),
-    closeManagementMenu: () => abrirCerrarGestionV230?.(false),
+    closeUserMenu: () => navigationEventsControllerV232.closeUserMenu(),
+    closeManagementMenu: () =>
+      navigationEventsControllerV232.closeManagementMenu(),
     closeContextPickers: () => contextPickerControllerV232.close(),
+  });
+
+const navigationEventsControllerV232 =
+  window.VendifyCoreV232.createNavigationEventsController({
+    toggleTheme: toggleTema,
+    exportProducts: exportarCSV,
+    openSettings: abrirConfig,
+    activateSettingsTab: activarTabConfigV224,
+    closeSettings: cerrarConfig,
+    openCatalog: abrirCatalogoV29,
+    openTeam: () => teamControllerV232.open(),
+    dismissConfirmation: () =>
+      window.VendifyCoreV232.dismissConfirmation(),
+    closeTopOpenModal: (targets) =>
+      window.VendifyCoreV232.closeTopOpenModal(targets),
+    openSale: abrirVenta,
+    focusProductSearch: () => $("#buscador")?.focus(),
+    openProductEditor: () => abrirModal(),
+    hasPermission: tienePermisoV2,
+    closeProductEditor: () => cerrarModal(),
+    closeSale: cerrarVenta,
+    closeSalesHistory: cerrarHistorial,
+    closeTeam: () => teamControllerV232.close(),
+    closeTeamEditor: () => teamControllerV232.closeEditor(),
+    closeTeamPasswordReset: () =>
+      teamControllerV232.closePasswordReset(),
+    closeScanner: () => scannerControllerV232.close(),
+    closeContextPickers: () => contextPickerControllerV232.close(),
+    getCartSize: () => posControllerV232.getCart().length,
+    confirm: confirmar,
+    showToast: mostrarToast,
+    isModalVisible: (modal) =>
+      overlayStabilityControllerV232.isModalVisible(modal),
+    getAppReady: () => appContext?.ready === true,
   });
 
 function setupStabilityV23011() {
@@ -966,264 +915,6 @@ function setupStabilityV23011() {
 // Vendify v2.30.1.3 — Context pickers (Sucursal / Caja)
 // Typed owner: window.VendifyContextV232.createContextPickerController
 // ============================================================
-
-// ============================================================
-// Vendify v2.31.1 — Navegación Atrás / salida accidental
-// ============================================================
-
-let backGuardInstalledV2311 = false;
-let backGuardExitConfirmingV2311 = false;
-let backGuardEnabledV2311 = true;
-
-function appVisibleV2311() {
-  return (
-    appContext?.ready === true &&
-    !$(".app")?.classList.contains("hidden")
-  );
-}
-
-function armarBackGuardV2311() {
-  if (!backGuardEnabledV2311) return;
-
-  const current = history.state || {};
-
-  history.replaceState(
-    {
-      ...current,
-      vendifyBaseV2311: true,
-    },
-    "",
-    location.href
-  );
-
-  history.pushState(
-    {
-      vendifyGuardV2311: true,
-    },
-    "",
-    location.href
-  );
-}
-
-function rearmarBackGuardV2311() {
-  if (!backGuardEnabledV2311) return;
-
-  const state = history.state || {};
-  if (state.vendifyGuardV2311) return;
-
-  history.pushState(
-    {
-      vendifyGuardV2311: true,
-    },
-    "",
-    location.href
-  );
-}
-
-function popoverAbiertoV2311() {
-  const menus = [
-    $("#gestion-menu-v230"),
-    $("#user-menu"),
-    $("#branch-menu-v23013"),
-    $("#cash-menu-v23013"),
-  ];
-
-  return menus.some(
-    (menu) =>
-      menu &&
-      !menu.classList.contains("hidden")
-  );
-}
-
-function cerrarPopoverAbiertoV2311() {
-  if (!popoverAbiertoV2311()) return false;
-
-  abrirCerrarGestionV230?.(false);
-  abrirCerrarMenuUsuarioV224?.(false);
-  contextPickerControllerV232.close();
-
-  return true;
-}
-
-function modalSuperiorVisibleV2311() {
-  const visibles = Array.from(
-    document.querySelectorAll(".modal")
-  ).filter((modal) => overlayStabilityControllerV232.isModalVisible(modal));
-
-  if (!visibles.length) return null;
-
-  return visibles
-    .map((modal, index) => ({
-      modal,
-      index,
-      z: Number.parseInt(
-        getComputedStyle(modal).zIndex || "0",
-        10
-      ) || 0,
-    }))
-    .sort((a, b) => {
-      if (b.z !== a.z) return b.z - a.z;
-      return b.index - a.index;
-    })[0]?.modal || null;
-}
-
-async function cerrarCapaSuperiorV2311() {
-  if (cerrarPopoverAbiertoV2311()) {
-    return true;
-  }
-
-  const modal = modalSuperiorVisibleV2311();
-  if (!modal) return false;
-
-  // Venta requiere cuidado para no perder el carrito con un gesto accidental.
-  if (modal.id === "modal-venta") {
-    if (posControllerV232.getCart().length > 0) {
-      const cerrar = await confirmar(
-        "¿Cerrar esta venta?",
-        "El carrito actual se descartará.",
-        {
-          okText: "Cerrar venta",
-          cancelText: "Seguir vendiendo",
-          danger: false,
-        }
-      );
-
-      if (cerrar) cerrarVenta();
-    } else {
-      cerrarVenta();
-    }
-
-    return true;
-  }
-
-  // La confirmación genérica se interpreta como Cancelar al volver.
-  if (modal.id === "modal-confirm") {
-    $("#btn-confirm-cancel")?.click();
-    return true;
-  }
-
-  const closeButton =
-    modal.querySelector(
-      'button[id*="close"], button[id*="cerrar"]'
-    ) ||
-    modal.querySelector(
-      'button[id*="cancel"], button[id*="cancelar"]'
-    );
-
-  if (closeButton) {
-    closeButton.click();
-    return true;
-  }
-
-  // Fallback seguro: solo ocultamos una capa que realmente es modal.
-  modal.classList.add("hidden");
-  return true;
-}
-
-function intentarSalirVendifyV2311() {
-  backGuardEnabledV2311 = false;
-  window.removeEventListener(
-    "popstate",
-    manejarBackVendifyV2311
-  );
-
-  const currentUrl = location.href;
-  let moved = false;
-
-  const markMoved = () => {
-    moved = location.href !== currentUrl;
-  };
-
-  window.addEventListener(
-    "pagehide",
-    () => {
-      moved = true;
-    },
-    { once: true }
-  );
-
-  // En una pestaña normal, vuelve a la página anterior si existe.
-  history.back();
-
-  // Una ventana/PWA instalada puede no tener historial anterior.
-  // window.close() es un intento adicional; algunos contenedores PWA
-  // lo permiten y los navegadores comunes pueden ignorarlo.
-  setTimeout(() => {
-    markMoved();
-    if (moved || document.visibilityState === "hidden") return;
-
-    try {
-      window.close();
-    } catch {}
-  }, 180);
-
-  // Si el sistema operativo no permite cierre programático, dejamos de
-  // interceptar Atrás para que el siguiente gesto sea nativo.
-  setTimeout(() => {
-    markMoved();
-
-    if (!moved && document.visibilityState !== "hidden") {
-      mostrarToast(
-        "El sistema no permite cerrar esta PWA por código. El próximo gesto Atrás saldrá normalmente.",
-        "info"
-      );
-    }
-  }, 550);
-}
-
-async function manejarBackVendifyV2311() {
-  if (!backGuardEnabledV2311 || !appVisibleV2311()) {
-    return;
-  }
-
-  // En este punto el navegador ya consumió la entrada "guard" y estamos
-  // sobre la entrada base.
-  const handled = await cerrarCapaSuperiorV2311();
-
-  if (handled) {
-    rearmarBackGuardV2311();
-    return;
-  }
-
-  if (backGuardExitConfirmingV2311) {
-    rearmarBackGuardV2311();
-    return;
-  }
-
-  backGuardExitConfirmingV2311 = true;
-
-  const salir = await confirmar(
-    "¿Salir de Vendify?",
-    "No hay ninguna pantalla abierta. ¿Querés salir de la aplicación?",
-    {
-      okText: "Salir",
-      cancelText: "Seguir en Vendify",
-      danger: true,
-    }
-  );
-
-  backGuardExitConfirmingV2311 = false;
-
-  if (!salir) {
-    rearmarBackGuardV2311();
-    return;
-  }
-
-  intentarSalirVendifyV2311();
-}
-
-function setupBackGuardV2311() {
-  if (backGuardInstalledV2311) return;
-  backGuardInstalledV2311 = true;
-  backGuardEnabledV2311 = true;
-
-  armarBackGuardV2311();
-
-  window.addEventListener(
-    "popstate",
-    manejarBackVendifyV2311
-  );
-}
 
 // ============================================================
 // Vendify v2.31 — Commercial Foundation
@@ -1559,7 +1250,7 @@ const dashboardControllerV232 =
     getBranchId: () => appContext.branch?.id || null,
     getBusinessName: () =>
       appContext.business?.nombre || "Negocio",
-    closeManagement: () => abrirCerrarGestionV230(false),
+    closeManagement: () => navigationEventsControllerV232.closeManagementMenu(),
     icon: iconV23011,
     showToast: mostrarToast,
     reportError: registrarErrorClienteV231,
@@ -1573,7 +1264,7 @@ const platformAdminControllerV232 =
   window.VendifyPlatformV232.createPlatformAdminController({
     client: supabaseClient,
     isOnline: () => navigator.onLine,
-    closeUserMenu: () => abrirCerrarMenuUsuarioV224(false),
+    closeUserMenu: () => navigationEventsControllerV232.closeUserMenu(),
     formatPrice: formatearPrecio,
     icon: iconV23011,
     showToast: mostrarToast,
@@ -1797,78 +1488,6 @@ function setupProductCsvImportV231() {
     if (file) await importarCSVV231(file);
   });
 }
-
-// ============================================================
-// Vendify v2.30 — Menú Gestión compacto
-// ============================================================
-
-function posicionarGestionMenuV230() {
-  posicionarPopoverAncladoV23012(
-    $("#gestion-menu-v230"),
-    $("#btn-gestion-v230"),
-    { minWidth: 252, maxWidth: 292 }
-  );
-}
-
-function abrirCerrarGestionV230(force) {
-  const menu = $("#gestion-menu-v230");
-  const trigger = $("#btn-gestion-v230");
-  if (!menu || !trigger) return;
-
-  const open =
-    typeof force === "boolean"
-      ? force
-      : menu.classList.contains("hidden");
-
-  menu.classList.toggle("hidden", !open);
-  trigger.setAttribute("aria-expanded", open ? "true" : "false");
-
-  if (open) {
-    abrirCerrarMenuUsuarioV224(false);
-    requestAnimationFrame(posicionarGestionMenuV230);
-  } else {
-    menu.style.position = "";
-    menu.style.left = "";
-    menu.style.right = "";
-    menu.style.top = "";
-    menu.style.width = "";
-    menu.style.maxWidth = "";
-    delete menu.dataset.placement;
-  }
-}
-
-function setupGestionMenuV230() {
-  $("#btn-gestion-v230")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    abrirCerrarGestionV230();
-  });
-
-  $("#gestion-menu-v230")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (e.target.closest("button")) abrirCerrarGestionV230(false);
-  });
-
-  document.addEventListener("click", () => abrirCerrarGestionV230(false));
-
-  window.addEventListener("resize", () => {
-    if (!$("#gestion-menu-v230")?.classList.contains("hidden")) {
-      posicionarGestionMenuV230();
-    }
-  });
-
-  window.addEventListener(
-    "scroll",
-    () => abrirCerrarGestionV230(false),
-    { passive: true }
-  );
-
-  $(".header-actions-vpro")?.addEventListener(
-    "scroll",
-    () => abrirCerrarGestionV230(false),
-    { passive: true }
-  );
-}
-
 
 // ============================================================
 // Vendify v2.29 — Inventario profesional
@@ -2161,127 +1780,6 @@ function cerrarHistorial() {
 async function renderHistorial() {
   await salesHistoryControllerV232.render();
 }
-// Eventos
-// =====================
-function inicializarEventos() {
-  // Ventas/POS, descuentos, tickets e historial se conectan desde sus controladores TypeScript.
-
-  $("#btn-theme").addEventListener("click", toggleTema);
-  $("#btn-export").addEventListener("click", exportarCSV);
-
-  $("#btn-user-menu")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    abrirCerrarMenuUsuarioV224();
-  });
-
-  $("#user-menu")?.addEventListener("click", (e) => e.stopPropagation());
-
-  document.addEventListener("click", () => {
-    abrirCerrarMenuUsuarioV224(false);
-  });
-
-  window.addEventListener("resize", () => {
-    if (!$("#user-menu")?.classList.contains("hidden")) {
-      posicionarMenuUsuarioMobile();
-    }
-  });
-
-  window.addEventListener(
-    "scroll",
-    () => abrirCerrarMenuUsuarioV224(false),
-    { passive: true }
-  );
-
-  $("#btn-user-settings")?.addEventListener("click", () => {
-    abrirCerrarMenuUsuarioV224(false);
-    abrirConfig("general");
-  });
-
-  document.querySelectorAll(".config-tab-v224").forEach((btn) => {
-    btn.addEventListener("click", () => activarTabConfigV224(btn.dataset.configTab));
-  });
-
-  document.querySelectorAll("[data-config-go]").forEach((btn) => {
-    btn.addEventListener("click", () => activarTabConfigV224(btn.dataset.configGo));
-  });
-
-  $("#btn-config-catalogo")?.addEventListener("click", () => {
-    cerrarConfig();
-    abrirCatalogoV29();
-  });
-
-  $("#btn-config-equipo")?.addEventListener("click", () => {
-    cerrarConfig();
-    void teamControllerV232.open();
-  });
-
-
-  $("#btn-cerrar-config").addEventListener("click", cerrarConfig);
-  $("#btn-cerrar-config-ok").addEventListener("click", cerrarConfig);
-  $("#modal-config .modal-backdrop").addEventListener("click", cerrarConfig);
-
-  $("#modal-confirm .modal-backdrop").addEventListener("click", () => {
-    window.VendifyCoreV232.dismissConfirmation();
-  });
-
-  document.addEventListener("keydown", (e) => {
-    const tag = document.activeElement?.tagName;
-    const escribiendo = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-
-    if (e.key === "Escape") {
-      const escapeTargets = [
-        ["modal-confirm", () => window.VendifyCoreV232.dismissConfirmation()],
-        ["modal-ticket-v228", () => $("#btn-close-ticket-v228")?.click()],
-        ["modal-return-v228", () => $("#btn-close-return-v228")?.click()],
-        ["modal-caja-movimiento-v227", () => $("#btn-close-cash-movement-v227")?.click()],
-        ["modal-cash-close-v227", () => $("#btn-close-cash-close-v227")?.click()],
-        ["modal-editar-empleado", () => teamControllerV232.closeEditor()],
-        ["modal-reset-empleado", () => teamControllerV232.closePasswordReset()],
-        ["modal-proveedor-editor", () => $("#btn-close-proveedor-editor")?.click()],
-        ["modal-compra-editor", () => $("#btn-close-compra-editor")?.click()],
-        ["modal-scanner-v29", () => scannerControllerV232.close()],
-        ["modal", () => cerrarModal()],
-        ["modal-catalogo-v29", () => $("#btn-close-catalogo-v29")?.click()],
-        ["modal-historial", () => cerrarHistorial()],
-        ["modal-compras", () => $("#btn-close-compras")?.click()],
-        ["modal-inventario", () => $("#btn-close-inventory")?.click()],
-        ["modal-caja-operativa-v227", () => $("#btn-cerrar-caja-panel-v227")?.click()],
-        ["modal-dashboard-v231", () => $("#btn-close-dashboard-v231")?.click()],
-        ["modal-equipo", () => teamControllerV232.close()],
-        ["modal-venta", () => cerrarVenta()],
-        ["modal-config", () => cerrarConfig()],
-      ].map(([id, close]) => ({
-        isOpen: () => {
-          const modal = $("#" + id);
-          return Boolean(modal && !modal.classList.contains("hidden"));
-        },
-        close,
-      }));
-      if (window.VendifyCoreV232.closeTopOpenModal(escapeTargets)) {
-        e.preventDefault();
-        return;
-      }
-      if (!$("#modal").classList.contains("hidden")) cerrarModal();
-      else if (!$("#modal-venta").classList.contains("hidden")) cerrarVenta();
-      else if (!$("#modal-historial").classList.contains("hidden")) cerrarHistorial();
-      else if (!$("#modal-equipo").classList.contains("hidden")) teamControllerV232.close();
-      else if (!$("#modal-editar-empleado").classList.contains("hidden")) teamControllerV232.closeEditor();
-      else if (!$("#modal-reset-empleado").classList.contains("hidden")) teamControllerV232.closePasswordReset();
-      else if (!$("#modal-config").classList.contains("hidden")) cerrarConfig();
-      else if (!$("#modal-confirm").classList.contains("hidden")) {
-        window.VendifyCoreV232.dismissConfirmation();
-      }
-      return;
-    }
-    if (escribiendo) return;
-
-    if (e.key === "v" || e.key === "V") { e.preventDefault(); abrirVenta(); }
-    else if (e.key === "t" || e.key === "T") { e.preventDefault(); toggleTema(); }
-    else if (e.key === "/") { e.preventDefault(); $("#buscador").focus(); }
-    else if ((e.key === "n" || e.key === "N") && tienePermisoV2("manageProducts")) { e.preventDefault(); abrirModal(); }
-  });
-}
-
 // =====================
 // PWA registration compatibility
 // =====================
@@ -2465,9 +1963,10 @@ const contextPickerControllerV232 =
       });
     },
     renderCashOptions: () => cashControllerV232.renderOptions(),
-    closeUserMenu: () => abrirCerrarMenuUsuarioV224?.(false),
-    closeManagementMenu: () => abrirCerrarGestionV230?.(false),
-    positionPopover: posicionarPopoverAncladoV23012,
+    closeUserMenu: () => navigationEventsControllerV232.closeUserMenu(),
+    closeManagementMenu: () =>
+      navigationEventsControllerV232.closeManagementMenu(),
+    positionPopover: navigationEventsControllerV232.positionPopover,
     icon: iconV23011,
   });
 
@@ -2547,7 +2046,7 @@ function init() {
   registrarServiceWorker();
   cargarTema();
   normalizarVistaProductosVQA();
-  inicializarEventos();
+  navigationEventsControllerV232.setup();
   authControllerV232.setup();
   teamControllerV232.setup();
   setupV29();
@@ -2560,12 +2059,10 @@ function init() {
   setupCajaV227();
   contextPickerControllerV232.setup();
   inventoryControllerV232.setup();
-  setupGestionMenuV230();
   purchasesControllerV232.setup();
   inactivityGuardV232.start();
   setupStabilityV23011();
   diagnosticsControllerV232.setup();
-  setupBackGuardV2311();
   setupObservabilityV231();
   setupOfflineSalesV2311();
   dashboardControllerV232.setup();
