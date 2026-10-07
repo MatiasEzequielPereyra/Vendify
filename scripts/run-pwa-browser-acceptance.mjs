@@ -454,7 +454,7 @@ try {
     );
   }
 
-  const commercialPlatformFlow = await evaluate(firstBrowser.cdp, \`(async () => {
+  const commercialPlatformFlow = await evaluate(firstBrowser.cdp, `(async () => {
     if (
       typeof commercialFoundationControllerV232 === "undefined"
       || typeof platformAdminControllerV232 === "undefined"
@@ -715,7 +715,7 @@ try {
       document.querySelector("#modal-platform-admin-v231")?.classList.add("hidden");
       window.appContext = previousContext;
     }
-  })()\`);
+  })()`);
 
   if (
     !commercialPlatformFlow.onboardingBeforeHide.visible
