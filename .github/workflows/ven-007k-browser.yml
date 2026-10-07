@@ -1,0 +1,32 @@
+name: VEN-007K Browser Acceptance
+
+on:
+  push:
+    branches:
+      - refactor/ven-007k-commercial-platform-ui
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run PWA browser acceptance
+        env:
+          VENDIFY_CHROME_PATH: /usr/bin/google-chrome
+        run: npm run qa:pwa:browser
