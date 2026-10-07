@@ -357,6 +357,12 @@ try {
       }
 
       const previousReady = window.appContext.ready;
+      const previousCashRegister =
+        window.appContext.cashRegister;
+      const previousCashState =
+        typeof cashControllerV232 !== "undefined"
+          ? cashControllerV232.getState()
+          : null;
       const appWasHidden = app.classList.contains("hidden");
       const originalBodyTabIndex =
         document.body.getAttribute("tabindex");
@@ -371,6 +377,11 @@ try {
           "#ven007l-browser-management-action"
         )?.remove();
         window.appContext.ready = previousReady;
+        window.appContext.cashRegister =
+          previousCashRegister;
+        if (typeof cashControllerV232 !== "undefined") {
+          cashControllerV232.setState(previousCashState);
+        }
         app.classList.toggle("hidden", appWasHidden);
         if (originalBodyTabIndex === null) {
           document.body.removeAttribute("tabindex");
@@ -528,6 +539,15 @@ try {
 
         search.blur();
         document.body.focus();
+        window.appContext.ready = true;
+        window.appContext.cashRegister = {
+          id: "ven007l-browser-cash",
+          nombre: "Caja Browser"
+        };
+        cashControllerV232.setState({
+          sesion: { id: "ven007l-browser-session" },
+          es_mia: true
+        });
         saleModal.classList.add("hidden");
         document.dispatchEvent(
           new KeyboardEvent("keydown", {
