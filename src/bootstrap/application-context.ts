@@ -78,16 +78,30 @@ export interface ApplicationContextAdapter {
 
 const CONTEXT_PREFIX = "vendify_context_v231";
 
-function recordOrNull<T extends ContextRecord>(
-  value: unknown
-): T | null {
+function contextRecord(value: unknown): ContextRecord | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? value as T
+    ? value as ContextRecord
     : null;
 }
 
+function userRecord(value: unknown): ApplicationUserRecord | null {
+  return contextRecord(value) as ApplicationUserRecord | null;
+}
+
+function namedRecord(value: unknown): ApplicationNamedRecord | null {
+  return contextRecord(value) as ApplicationNamedRecord | null;
+}
+
+function membershipRecord(value: unknown): ApplicationMembershipRecord | null {
+  return contextRecord(value) as ApplicationMembershipRecord | null;
+}
+
+function employeeRecord(value: unknown): ApplicationEmployeeRecord | null {
+  return contextRecord(value) as ApplicationEmployeeRecord | null;
+}
+
 function booleanPermissions(value: unknown): Record<string, boolean> {
-  const record = recordOrNull<ContextRecord>(value);
+  const record = contextRecord(value);
   if (!record) return {};
 
   return Object.fromEntries(
@@ -176,7 +190,7 @@ export function createApplicationContextAdapter(
       : sessionEmail;
     const currentRoleName = roleName(context.membership?.role);
 
-    const values: ReadonlyArray<readonly [string, string]> = [
+    const values: readonly (readonly [string, string])[] = [
       ["#context-usuario", visibleName],
       ["#context-rol", currentRoleName],
       ["#sesion-email", sessionLabel],
@@ -305,21 +319,21 @@ export function createApplicationContextAdapter(
       const raw = storage.getItem(`${CONTEXT_PREFIX}:${userId}`);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as unknown;
-      const record = recordOrNull<ContextRecord>(parsed);
+      const record = contextRecord(parsed);
       if (!record) return null;
 
-      const business = recordOrNull<ApplicationNamedRecord>(record.business);
-      const membership = recordOrNull<ApplicationMembershipRecord>(record.membership);
+      const business = namedRecord(record.business);
+      const membership = membershipRecord(record.membership);
       if (!business?.id || !membership?.role) return null;
 
       return {
-        user: recordOrNull<ApplicationUserRecord>(record.user),
+        user: userRecord(record.user),
         business,
         membership,
-        branch: recordOrNull<ApplicationNamedRecord>(record.branch),
-        cashRegister: recordOrNull<ApplicationNamedRecord>(record.cashRegister),
+        branch: namedRecord(record.branch),
+        cashRegister: namedRecord(record.cashRegister),
         permissions: booleanPermissions(record.permissions),
-        employee: recordOrNull<ApplicationEmployeeRecord>(record.employee),
+        employee: employeeRecord(record.employee),
         ready: true,
         offlineMode: true,
         ...(text(record.savedAt) ? { savedAt: text(record.savedAt) } : {})
@@ -355,11 +369,11 @@ export function createApplicationContextAdapter(
     }
 
     context = {
-      user: recordOrNull<ApplicationUserRecord>(data.user),
-      business: recordOrNull<ApplicationNamedRecord>(data.business),
-      membership: recordOrNull<ApplicationMembershipRecord>(data.membership),
-      branch: recordOrNull<ApplicationNamedRecord>(data.branch),
-      cashRegister: recordOrNull<ApplicationNamedRecord>(data.cashRegister),
+      user: userRecord(data.user),
+      business: namedRecord(data.business),
+      membership: membershipRecord(data.membership),
+      branch: namedRecord(data.branch),
+      cashRegister: namedRecord(data.cashRegister),
       permissions: booleanPermissions(data.permissions),
       employee: null,
       ready: true
@@ -381,7 +395,7 @@ export function createApplicationContextAdapter(
     }
 
     try {
-      const employee = recordOrNull<ApplicationEmployeeRecord>(
+      const employee = employeeRecord(
         await dependencies.getEmployee(dependencies.client)
       );
       if (employee && Object.keys(employee).length > 0) context.employee = employee;
@@ -408,13 +422,13 @@ export function createApplicationContextAdapter(
     branch: ContextRecord | null,
     cashRegister: ContextRecord | null
   ): void => {
-    context.branch = recordOrNull<ApplicationNamedRecord>(branch);
-    context.cashRegister = recordOrNull<ApplicationNamedRecord>(cashRegister);
+    context.branch = namedRecord(branch);
+    context.cashRegister = namedRecord(cashRegister);
     publish();
   };
 
   const setCashRegister = (cashRegister: ContextRecord | null): void => {
-    context.cashRegister = recordOrNull<ApplicationNamedRecord>(cashRegister);
+    context.cashRegister = namedRecord(cashRegister);
     publish();
   };
 
