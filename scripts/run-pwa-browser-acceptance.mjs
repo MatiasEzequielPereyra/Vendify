@@ -114,6 +114,20 @@ async function evaluate(cdp, expression) {
   return result.result.value;
 }
 
+async function waitForBrowserCondition(
+  cdp,
+  expression,
+  label,
+  attempts = 80
+) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const ready = await evaluate(cdp, expression);
+    if (ready === true) return;
+    await delay(50);
+  }
+  throw new Error(`Timeout esperando ${label}`);
+}
+
 async function navigate(cdp, url) {
   const loaded = cdp.event("Page.loadEventFired", 30_000);
   const result = await cdp.send("Page.navigate", { url });
@@ -151,6 +165,27 @@ let secondBrowser;
 try {
   await waitForHttp(appUrl);
   firstBrowser = await openBrowser(appUrl);
+
+  await waitForBrowserCondition(
+    firstBrowser.cdp,
+    `(() => {
+      const status =
+        document.querySelector('#connection-status-v23011');
+      const label =
+        document.querySelector('#connection-label-v23011');
+      const icon = status?.querySelector('use');
+      return Boolean(
+        status
+        && label
+        && icon
+        && navigator.onLine
+        && status.classList.contains('online')
+        && label.textContent === 'Online'
+        && icon.getAttribute('href') === '#vi-wifi'
+      );
+    })()`,
+    "Connection Status online initialization"
+  );
 
   const connectionStatusInitialOnline = await evaluate(
     firstBrowser.cdp,
