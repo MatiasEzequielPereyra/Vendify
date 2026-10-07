@@ -267,16 +267,24 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     cashController.isOpenByCurrentUser();
 
   const formatDate = (value: unknown): string => {
-    if (!value) return "—";
+    if (
+      typeof value !== "string"
+      && typeof value !== "number"
+      && !(value instanceof Date)
+    ) {
+      return "—";
+    }
+
+    const source = value instanceof Date ? value : new Date(value);
     try {
       return new Intl.DateTimeFormat("es-AR", {
         day: "2-digit",
         month: "2-digit",
         hour: "2-digit",
         minute: "2-digit"
-      }).format(new Date(String(value)));
+      }).format(source);
     } catch {
-      return String(value);
+      return typeof value === "string" ? value : "—";
     }
   };
 
