@@ -1,0 +1,26 @@
+name: VEN-007M Fast Modular Gate
+
+on:
+  push:
+    branches:
+      - refactor/ven-007m-typed-bootstrap-runtime-retirement
+
+permissions:
+  contents: read
+
+jobs:
+  modular:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typed modular gate
+        run: npm run qa:refactor:modular
