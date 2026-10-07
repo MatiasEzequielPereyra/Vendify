@@ -54,8 +54,9 @@ for (const marker of [
   "authController.getSession()",
   "authController.signOut()"
 ]) {
-  if (!app.includes(marker)) throw new Error(`Compatibility app missing Auth delegation: ${marker}`);
-  if (!sourceApp.includes(marker)) throw new Error(`Root app.js missing Auth delegation: ${marker}`);
+  if (!sourceApp.includes(marker)) {
+    throw new Error(`Typed application composition missing Auth delegation: ${marker}`);
+  }
 }
 
 for (const obsoleteMarker of [
@@ -112,4 +113,4 @@ for (const obsoleteBuildPatch of [
   }
 }
 
-console.log("PASS: root and generated runtimes delegate Auth and inactivity guard ownership to TypeScript without legacy duplicate logic");
+console.log("PASS: typed application composes Auth and inactivity guard ownership once without legacy duplicate logic");
