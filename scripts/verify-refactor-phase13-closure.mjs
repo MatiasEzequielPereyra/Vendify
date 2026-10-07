@@ -140,7 +140,7 @@ for (const marker of [
   "__VENDIFY_EXPECTED_SUPABASE_REF__",
   'vite.refactor-app.config.ts',
   'vendify-app-v232-',
-  'unlinkSync(resolve(out, "app.js"))'
+  'const copiedAppPath = resolve(out, "app.js")'
 ]) {
   if (!buildSource.includes(marker)) {
     fail(`modular build lost Phase 13 safety marker: ${marker}`);
