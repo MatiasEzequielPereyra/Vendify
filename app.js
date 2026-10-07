@@ -442,7 +442,7 @@ async function mostrarApp() {
   }
 
   realtimeControllerV232.subscribe();
-  await cargarCommercialFoundationV231?.();
+  await commercialFoundationControllerV232.load();
 }
 
 function posicionarPopoverAncladoV23012(
@@ -672,7 +672,7 @@ const productsControllerV232 =
     },
     loadCategoriesOffline: () => Boolean(cargarCategoriasOfflineV231?.()),
     saveCategoriesOffline: () => { guardarCategoriasOfflineV231?.(); },
-    refreshOnboarding: () => { refrescarOnboardingComercialV231?.(); },
+    refreshOnboarding: () => { void commercialFoundationControllerV232.refreshOnboarding(); },
     emitStockChange: realtimeControllerV232.emitStockChange,
     scheduleSmartRefresh: realtimeControllerV232.scheduleSmartRefresh,
     renderSaleProducts: () => { renderVentaProductos(); },
@@ -873,8 +873,8 @@ function abrirConfig(tab = "general") {
   $("#modal-config").classList.remove("hidden");
   void teamControllerV232.refreshBusinessAccessCode();
   actualizarEstadoPinDescuento();
-  cargarPlanV231?.();
-  cargarConfigOperativaV231?.();
+  void commercialFoundationControllerV232.loadPlan();
+  void commercialFoundationControllerV232.loadOperationalConfig();
 
   requestAnimationFrame(
     () => activarTabConfigV224(tab || "general")
@@ -1235,18 +1235,7 @@ const VENDIFY_CONTEXT_PREFIX_V231 = "vendify_context_v231";
 const VENDIFY_PRODUCTS_PREFIX_V231 = "vendify_products_v231";
 const VENDIFY_CATEGORIES_PREFIX_V231 = "vendify_categories_v231";
 const VENDIFY_CATALOG_PREFIX_V232 = "vendify_catalog_v232";
-const VENDIFY_ONBOARDING_HIDE_PREFIX_V231 = "vendify_onboarding_hide_v231";
 
-let commercialConfigV231 = {
-  stock_cobertura_alerta: 3,
-  ajuste_grande_unidades: 10,
-  diferencia_caja_alerta: 10000,
-  resumen_diario: true,
-  auto_imprimir_ticket: false,
-  ancho_ticket_mm: 80,
-};
-
-let commercialRefreshTimerV231 = null;
 let errorLogThrottleV231 = new Map();
 
 function esSupervisorV231() {
@@ -1578,317 +1567,39 @@ const dashboardControllerV232 =
   });
 
 // ---------------------
-// Onboarding comercial
+// Commercial + Platform typed owners
 // ---------------------
-function onboardingHideKeyV231() {
-  return `${VENDIFY_ONBOARDING_HIDE_PREFIX_V231}:${
-    appContext.business?.id || "none"
-  }`;
-}
+const platformAdminControllerV232 =
+  window.VendifyPlatformV232.createPlatformAdminController({
+    client: supabaseClient,
+    isOnline: () => navigator.onLine,
+    closeUserMenu: () => abrirCerrarMenuUsuarioV224(false),
+    formatPrice: formatearPrecio,
+    icon: iconV23011,
+    showToast: mostrarToast,
+  });
 
-function renderOnboardingComercialV231(data) {
-  const el = $("#commercial-onboarding-v231");
-  const cont = $("#commercial-onboarding-steps-v231");
-
-  if (!el || !cont || !esOwnerV231()) {
-    el?.classList.add("hidden");
-    return;
-  }
-
-  if (data?.completado) {
-    el.classList.add("hidden");
-    try {
-      localStorage.removeItem(onboardingHideKeyV231());
-    } catch {}
-    return;
-  }
-
-  if (localStorage.getItem(onboardingHideKeyV231()) === "1") {
-    el.classList.add("hidden");
-    return;
-  }
-
-  const steps = [
-    {
-      done: Number(data?.productos || 0) > 0,
-      title: "Cargá tu catálogo",
-      detail:
-        Number(data?.productos || 0) > 0
-          ? `${Number(data.productos)} productos listos`
-          : "Agregá productos o importá un CSV.",
-      action: "product",
-      actionLabel: "Cargar productos",
-      icon: "inventory",
-    },
-    {
-      done: Boolean(data?.caja_utilizada),
-      title: "Prepará una caja",
-      detail: data?.caja_utilizada
-        ? "La caja ya fue utilizada"
-        : "Abrí tu primer turno de caja.",
-      action: "cash",
-      actionLabel: "Abrir caja",
-      icon: "register",
-    },
-    {
-      done: Number(data?.ventas || 0) > 0,
-      title: "Registrá la primera venta",
-      detail:
-        Number(data?.ventas || 0) > 0
-          ? `${Number(data.ventas)} venta(s) registradas`
-          : "Probá el flujo completo de cobro.",
-      action: "sale",
-      actionLabel: "Vender",
-      icon: "cart",
-    },
-    {
-      done: Number(data?.miembros || 0) > 1,
-      title: "Sumá a tu equipo",
-      detail:
-        Number(data?.miembros || 0) > 1
-          ? `${Number(data.miembros)} usuarios activos`
-          : "Creá al menos un empleado.",
-      action: "team",
-      actionLabel: "Crear empleado",
-      icon: "team",
-    },
-  ];
-
-  const completed = steps.filter((x) => x.done).length;
-  const pct = Math.round((completed / steps.length) * 100);
-
-  $("#commercial-progress-bar-v231").style.width = `${pct}%`;
-  $("#commercial-progress-label-v231").textContent =
-    `${pct}% completo · ${completed} de ${steps.length} pasos`;
-
-  cont.innerHTML = steps
-    .map(
-      (step) => `
-        <article class="commercial-step-v231 ${
-          step.done ? "done" : ""
-        }">
-          <span class="commercial-step-icon-v231">
-            ${iconV23011(step.done ? "check" : step.icon)}
-          </span>
-          <div class="commercial-step-copy-v231">
-            <strong>${escapeHtml(step.title)}</strong>
-            <small>${escapeHtml(step.detail)}</small>
-          </div>
-          ${
-            step.done
-              ? `<span class="commercial-step-done-v231">Listo</span>`
-              : `<button type="button"
-                         class="btn btn-secondary btn-sm"
-                         data-onboarding-action-v231="${step.action}">
-                   ${escapeHtml(step.actionLabel)}
-                 </button>`
-          }
-        </article>`
-    )
-    .join("");
-
-  el.classList.remove("hidden");
-}
-
-async function refrescarOnboardingComercialV231() {
-  if (!esOwnerV231() || !navigator.onLine) return;
-
-  try {
-    const data = await window.VendifyCommercialV232.getOnboarding(supabaseClient);
-    renderOnboardingComercialV231(data);
-  } catch {}
-}
-
-// ---------------------
-// Plan y configuración
-// ---------------------
-async function cargarPlanV231() {
-  if (!navigator.onLine || !appContext?.ready) return;
-
-  const name = $("#config-plan-name-v231");
-  const detail = $("#config-plan-detail-v231");
-  const usage = $("#config-plan-usage-v231");
-
-  try {
-    const data = await window.VendifyCommercialV232.getPlan(supabaseClient);
-
-    if (name) {
-      name.textContent = data?.nombre || "Plan";
-    }
-
-    if (detail) {
-      detail.textContent =
-        data?.trial_dias_restantes != null
-          ? `Prueba · ${Number(
-              data.trial_dias_restantes
-            )} día(s) restantes`
-          : data?.estado === "legacy"
-            ? "Cuenta existente sin límites comerciales aplicados."
-            : `Estado: ${data?.estado || "activo"}`;
-    }
-
-    if (usage) {
-      const limits = data?.limites || {};
-      const use = data?.uso || {};
-
-      const row = (label, current, limit) => `
-        <span>
-          <strong>${escapeHtml(label)}</strong>
-          <small>
-            ${Number(current || 0)}
-            ${limit == null ? "" : ` / ${Number(limit)}`}
-          </small>
-        </span>`;
-
-      usage.innerHTML = [
-        row("Sucursales", use.sucursales, limits.sucursales),
-        row("Usuarios", use.usuarios, limits.usuarios),
-        row("Productos", use.productos, limits.productos),
-      ].join("");
-    }
-  } catch {
-    if (name) name.textContent = "No disponible";
-    if (detail) {
-      detail.textContent =
-        "Ejecutá la migración comercial v2.31.";
-    }
-  }
-}
-
-async function cargarConfigOperativaV231() {
-  if (!navigator.onLine || !esSupervisorV231()) return;
-
-  try {
-    const data = await window.VendifyCommercialV232.getOperationalConfig(supabaseClient);
-
-    commercialConfigV231 = {
-      ...commercialConfigV231,
-      ...(data || {}),
-    };
-
-    if ($("#config-stock-days-v231")) {
-      $("#config-stock-days-v231").value =
-        commercialConfigV231.stock_cobertura_alerta ?? 3;
-
-      $("#config-adjust-threshold-v231").value =
-        commercialConfigV231.ajuste_grande_unidades ?? 10;
-
-      $("#config-cash-diff-v231").value =
-        commercialConfigV231.diferencia_caja_alerta ?? 10000;
-
-      $("#config-daily-summary-v231").checked =
-        commercialConfigV231.resumen_diario !== false;
-
-      $("#config-auto-print-v231").checked =
-        commercialConfigV231.auto_imprimir_ticket === true;
-
-      $("#config-ticket-width-v231").value = String(
-        Number(commercialConfigV231.ancho_ticket_mm) === 58
-          ? 58
-          : 80
-      );
-    }
-  } catch (error) {
-    console.warn("[Config v2.31]", error);
-  }
-}
-
-async function guardarConfigOperativaV231(event) {
-  event.preventDefault();
-
-  if (
-    !["owner", "admin"].includes(
-      appContext.membership?.role
-    )
-  ) {
-    mostrarToast(
-      "Solo Propietario o Administrador pueden cambiar esta configuración",
-      "error"
-    );
-    return;
-  }
-
-  const btn = $("#btn-save-operacion-v231");
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Guardando...";
-  }
-
-  try {
-    await window.VendifyCommercialV232.saveOperationalConfig(supabaseClient, {
-      stockCoverageAlert: Number($("#config-stock-days-v231").value || 3),
-      largeAdjustmentUnits: Number($("#config-adjust-threshold-v231").value || 10),
-      cashDifferenceAlert: Number($("#config-cash-diff-v231").value || 0),
-      dailySummary: $("#config-daily-summary-v231").checked,
-      autoPrintTicket: $("#config-auto-print-v231").checked,
-      ticketWidthMm: Number($("#config-ticket-width-v231").value || 80),
-    });
-
-    await cargarConfigOperativaV231();
-    await dashboardControllerV232.loadAlertBadge();
-    mostrarToast(
-      "Configuración operativa guardada",
-      "success"
-    );
-  } catch (error) {
-    mostrarToast(
-      error.message || "No se pudo guardar",
-      "error"
-    );
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "Guardar configuración";
-    }
-  }
-}
-
-// ---------------------
-// Respaldo
-// ---------------------
-async function descargarBackupOperativoV231() {
-  if (!esOwnerV231()) {
-    mostrarToast(
-      "Solo el propietario puede descargar un respaldo completo",
-      "error"
-    );
-    return;
-  }
-
-  const btn = $("#btn-backup-json-v231");
-  if (btn) btn.disabled = true;
-
-  try {
-    const data = await window.VendifyCommercialV232.exportBackup(supabaseClient);
-
-    const date = new Date().toISOString().slice(0, 10);
-    const business = String(
-      appContext.business?.nombre || "negocio"
-    )
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "");
-
-    descargarBlobV231(
-      JSON.stringify(data, null, 2),
-      "application/json;charset=utf-8",
-      `vendify-backup-${
-        business || "negocio"
-      }-${date}.json`
-    );
-
-    mostrarToast("Respaldo descargado", "success");
-  } catch (error) {
-    mostrarToast(
-      error.message ||
-        "No se pudo generar el respaldo",
-      "error"
-    );
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
+const commercialFoundationControllerV232 =
+  window.VendifyCommercialV232.createCommercialFoundationController({
+    client: supabaseClient,
+    getAppReady: () => Boolean(appContext?.ready),
+    getBusiness: () => appContext?.business || null,
+    getRole: () => appContext.membership?.role || null,
+    hasPermission: tienePermisoV2,
+    isOnline: () => navigator.onLine,
+    persistOfflineContext: () => guardarContextoOfflineV231(),
+    applyOfflineState: () => aplicarEstadoOfflineVentaV231(),
+    openProduct: () => abrirModal(),
+    openConfig: (tab) => abrirConfig(tab),
+    openCash: () => abrirPanelCajaV227(),
+    openSale: () => abrirVenta(),
+    openTeam: () => teamControllerV232.open(),
+    reloadDashboardAlertBadge: () => dashboardControllerV232.loadAlertBadge(),
+    refreshPlatformAccess: () => platformAdminControllerV232.refreshAccess(),
+    showToast: mostrarToast,
+    downloadText: descargarBlobV231,
+    icon: iconV23011,
+  });
 
 // ---------------------
 // Importación CSV
@@ -2047,7 +1758,7 @@ async function importarCSVV231(file) {
     await cargarProductos();
     actualizarFiltroCategorias();
     renderGrid();
-    await refrescarOnboardingComercialV231();
+    await commercialFoundationControllerV232.refreshOnboarding();
 
     mostrarToast(
       `${Number(
@@ -2075,302 +1786,17 @@ async function importarCSVV231(file) {
 
 
 
-// ---------------------
-// Platform backoffice
-// ---------------------
-async function verificarPlatformAdminV231() {
-  const btn = $("#btn-platform-admin-v231");
-  if (!btn || !navigator.onLine) return;
-
-  try {
-    const data = await window.VendifyPlatformV232.isAdmin(supabaseClient);
-
-    btn.classList.toggle(
-      "hidden",
-      error || data !== true
-    );
-  } catch {
-    btn.classList.add("hidden");
-  }
+function setupProductCsvImportV231() {
+  $("#btn-template-csv-v231")?.addEventListener("click", descargarPlantillaCSVV231);
+  $("#btn-import-csv-v231")?.addEventListener("click", () => {
+    $("#input-import-csv-v231")?.click();
+  });
+  $("#input-import-csv-v231")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) await importarCSVV231(file);
+  });
 }
-
-async function abrirPlatformAdminV231() {
-  $("#modal-platform-admin-v231")?.classList.remove(
-    "hidden"
-  );
-
-  try {
-    const { overview: data, businesses, errors: errorsResult } =
-      await window.VendifyPlatformV232.loadBackoffice(supabaseClient);
-
-    $("#platform-businesses-v231").textContent =
-      Number(data.negocios || 0);
-
-    $("#platform-trials-v231").textContent =
-      Number(data.trials || 0);
-
-    $("#platform-sales-v231").textContent =
-      formatearPrecio(Number(data.ventas_hoy || 0));
-
-    $("#platform-errors-v231").textContent =
-      Number(data.errores_24h || 0);
-
-    window.VendifyDashboardV232.renderDashboardRows(
-      $("#platform-business-list-v231"),
-      businesses,
-      (row) => `
-        <div class="platform-business-row-v231" data-platform-business="${row.id}">
-          <span class="dashboard-list-icon-v231">
-            ${iconV23011("store")}
-          </span>
-
-          <div class="dashboard-list-copy-v231">
-            <strong>${escapeHtml(row.nombre || "Negocio")}</strong>
-            <small>
-              ${Number(row.usuarios || 0)} usuario(s) ·
-              ${Number(row.productos || 0)} productos
-              ${
-                row.trial_hasta
-                  ? ` · trial hasta ${new Date(row.trial_hasta).toLocaleDateString("es-AR")}`
-                  : ""
-              }
-            </small>
-          </div>
-
-          <div class="platform-plan-controls-v231">
-            <select class="platform-plan-select-v231" aria-label="Plan del negocio">
-              ${["legacy","trial","starter","pro","business"]
-                .map((plan) =>
-                  `<option value="${plan}" ${row.plan_codigo === plan ? "selected" : ""}>${plan === "trial" ? "Prueba Pro" : plan.charAt(0).toUpperCase() + plan.slice(1)}</option>`
-                )
-                .join("")}
-            </select>
-
-            <select class="platform-state-select-v231" aria-label="Estado de suscripción">
-              ${["legacy","trial","activo","vencido","suspendido"]
-                .map((state) =>
-                  `<option value="${state}" ${row.estado === state ? "selected" : ""}>${state}</option>`
-                )
-                .join("")}
-            </select>
-
-            <button type="button"
-                    class="btn btn-secondary btn-sm"
-                    data-platform-save-plan="${row.id}">
-              Guardar
-            </button>
-          </div>
-        </div>`,
-      "Todavía no hay negocios."
-    );
-
-    window.VendifyDashboardV232.renderDashboardRows(
-      $("#platform-error-list-v231"),
-      errorsResult,
-      (row) => `
-        <div class="platform-error-row-v231">
-          <span class="dashboard-list-icon-v231 ${row.tipo === "window_error" ? "warning" : ""}">
-            ${iconV23011("alert")}
-          </span>
-          <div class="dashboard-list-copy-v231">
-            <strong>${escapeHtml(row.mensaje || "Error")}</strong>
-            <small>
-              ${escapeHtml(row.negocio_nombre || "Negocio")}
-              · ${escapeHtml(row.version || "sin versión")}
-              · ${row.creado ? new Date(row.creado).toLocaleString("es-AR") : ""}
-            </small>
-          </div>
-          <span class="platform-status-v231">${escapeHtml(row.tipo || "client")}</span>
-        </div>`,
-      "No hay errores recientes."
-    );
-  } catch (error) {
-    $("#platform-business-list-v231").innerHTML =
-      window.VendifyDashboardV232.dashboardEmpty(
-        error.message ||
-          "No se pudo cargar el backoffice."
-      );
-  }
-}
-
-async function guardarPlanPlataformaV231(button) {
-  const row = button.closest("[data-platform-business]");
-  if (!row) return;
-
-  const negocioId = row.dataset.platformBusiness;
-  const plan = row.querySelector(".platform-plan-select-v231")?.value;
-  const estado = row.querySelector(".platform-state-select-v231")?.value;
-
-  if (!negocioId || !plan || !estado) return;
-
-  button.disabled = true;
-  button.textContent = "Guardando...";
-
-  try {
-    await window.VendifyPlatformV232.updatePlan(
-      supabaseClient, negocioId, plan, estado
-    );
-
-    mostrarToast("Plan actualizado", "success");
-    await abrirPlatformAdminV231();
-  } catch (error) {
-    mostrarToast(
-      error.message || "No se pudo actualizar el plan",
-      "error"
-    );
-  } finally {
-    button.disabled = false;
-    button.textContent = "Guardar";
-  }
-}
-
-function cerrarPlatformAdminV231() {
-  $("#modal-platform-admin-v231")?.classList.add(
-    "hidden"
-  );
-}
-
-// ---------------------
-// Lifecycle
-// ---------------------
-async function cargarCommercialFoundationV231() {
-  if (!appContext?.ready) return;
-
-  guardarContextoOfflineV231();
-
-  if (!navigator.onLine) {
-    aplicarEstadoOfflineVentaV231();
-    return;
-  }
-
-  await Promise.allSettled([
-    cargarConfigOperativaV231(),
-    cargarPlanV231(),
-    refrescarOnboardingComercialV231(),
-    dashboardControllerV232.loadAlertBadge(),
-    verificarPlatformAdminV231(),
-  ]);
-
-  clearInterval(commercialRefreshTimerV231);
-
-  commercialRefreshTimerV231 = setInterval(() => {
-    if (
-      document.visibilityState === "visible" &&
-      navigator.onLine
-    ) {
-      void dashboardControllerV232.loadAlertBadge();
-    }
-  }, 60000);
-}
-
-function setupCommercialFoundationV231() {
-  setupObservabilityV231();
-  setupOfflineSalesV2311();
-
-  dashboardControllerV232.setup();
-
-  $("#btn-hide-commercial-onboarding-v231")
-    ?.addEventListener("click", () => {
-      try {
-        localStorage.setItem(
-          onboardingHideKeyV231(),
-          "1"
-        );
-      } catch {}
-
-      $("#commercial-onboarding-v231")
-        ?.classList.add("hidden");
-    });
-
-  $("#commercial-onboarding-steps-v231")
-    ?.addEventListener("click", (event) => {
-      const btn = event.target.closest(
-        "[data-onboarding-action-v231]"
-      );
-
-      if (!btn) return;
-
-      const action =
-        btn.dataset.onboardingActionV231;
-
-      if (action === "product") {
-        if (tienePermisoV2("manageProducts")) {
-          abrirModal();
-        } else {
-          abrirConfig("datos");
-        }
-      } else if (action === "cash") {
-        abrirPanelCajaV227();
-      } else if (action === "sale") {
-        abrirVenta();
-      } else if (action === "team") {
-        void teamControllerV232.open();
-      }
-    });
-
-  $("#form-operacion-v231")?.addEventListener(
-    "submit",
-    guardarConfigOperativaV231
-  );
-
-  $("#btn-backup-json-v231")
-    ?.addEventListener(
-      "click",
-      descargarBackupOperativoV231
-    );
-
-  $("#btn-template-csv-v231")
-    ?.addEventListener(
-      "click",
-      descargarPlantillaCSVV231
-    );
-
-  $("#btn-import-csv-v231")
-    ?.addEventListener("click", () => {
-      $("#input-import-csv-v231")?.click();
-    });
-
-  $("#input-import-csv-v231")
-    ?.addEventListener(
-      "change",
-      async (event) => {
-        const file =
-          event.target.files?.[0];
-
-        event.target.value = "";
-
-        if (file) {
-          await importarCSVV231(file);
-        }
-      }
-    );
-
-  $("#btn-platform-admin-v231")
-    ?.addEventListener("click", () => {
-      abrirCerrarMenuUsuarioV224(false);
-      abrirPlatformAdminV231();
-    });
-
-  $("#btn-close-platform-v231")
-    ?.addEventListener(
-      "click",
-      cerrarPlatformAdminV231
-    );
-
-  $("#modal-platform-admin-v231 .modal-backdrop")
-    ?.addEventListener(
-      "click",
-      cerrarPlatformAdminV231
-    );
-
-  $("#platform-business-list-v231")
-    ?.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-platform-save-plan]");
-      if (btn) guardarPlanPlataformaV231(btn);
-    });
-
-}
-
 
 // ============================================================
 // Vendify v2.30 — Menú Gestión compacto
@@ -2640,8 +2066,8 @@ const salesHistoryControllerV232 =
     openCashPanel: () => abrirPanelCajaV227(),
     formatCurrency: formatearPrecio,
     showToast: mostrarToast,
-    getAutoPrint: () => commercialConfigV231?.auto_imprimir_ticket === true,
-    getTicketWidth: () => Number(commercialConfigV231?.ancho_ticket_mm) === 58 ? 58 : 80,
+    getAutoPrint: () => commercialFoundationControllerV232.getAutoPrint(),
+    getTicketWidth: () => commercialFoundationControllerV232.getTicketWidth(),
     emitStockChange: realtimeControllerV232.emitStockChange,
     reloadProducts: cargarProductos,
     renderProducts: renderGrid,
@@ -2686,7 +2112,7 @@ const posControllerV232 =
     refreshDependentViews: realtimeControllerV232.refreshDependentViews,
     showTicket: (data) => salesHistoryControllerV232.showTicket(data),
     afterOnlineSale: () => {
-      refrescarOnboardingComercialV231?.();
+      void commercialFoundationControllerV232.refreshOnboarding();
       void dashboardControllerV232.loadAlertBadge();
     },
   });
@@ -3092,7 +2518,7 @@ const offlineControllerV232 = window.VendifyOfflineCompatV232.createController({
   renderCart: renderCarrito,
   reloadProducts: cargarProductos,
   reloadCash: cargarEstadoCajaV227,
-  reloadCommercialFoundation: cargarCommercialFoundationV231,
+  reloadCommercialFoundation: () => commercialFoundationControllerV232.load(),
   setConnectionState: (state, label) => connectionStatusControllerV232.setState(state, label),
   showToast: mostrarToast,
 });
@@ -3140,7 +2566,12 @@ function init() {
   setupStabilityV23011();
   diagnosticsControllerV232.setup();
   setupBackGuardV2311();
-  setupCommercialFoundationV231();
+  setupObservabilityV231();
+  setupOfflineSalesV2311();
+  dashboardControllerV232.setup();
+  commercialFoundationControllerV232.setup();
+  platformAdminControllerV232.setup();
+  setupProductCsvImportV231();
   realtimeControllerV232.startWatchdog();
   window.VendifyPwaV232.setupInstallPrompt();
   onboardingControllerV232.setup();
