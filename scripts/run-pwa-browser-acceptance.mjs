@@ -700,11 +700,17 @@ try {
             window.appContext.ready === true
         };
 
-        userButton.click();
-        await frame();
+        search.blur();
+        document.body.focus();
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "/",
+            bubbles: true,
+            cancelable: true
+          })
+        );
         const operativeAfterCancel =
-          !userMenu.classList.contains("hidden");
-        userMenu.classList.add("hidden");
+          document.activeElement === search;
 
         return {
           userOpen,
