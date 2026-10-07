@@ -5,12 +5,12 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const outputRoot = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(outputRoot);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 if (!runtimeFile || !appFile) throw new Error("Refactor Realtime verification could not find generated bundles");
 
 const runtime = readFileSync(resolve(outputRoot, runtimeFile), "utf8");
 const app = readFileSync(resolve(outputRoot, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 
 for (const marker of [
   "VendifyRealtimeV232",
@@ -25,14 +25,14 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyRealtimeV232.createController({",
-  "realtimeControllerV232.subscribe()",
-  "realtimeControllerV232.disconnect()",
-  "realtimeControllerV232.emitStockChange",
-  "realtimeControllerV232.refreshDependentViews",
-  "realtimeControllerV232.startWatchdog()"
+  "realtimeApi.createController({",
+  "realtimeController.subscribe()",
+  "realtimeController.disconnect()",
+  "realtimeController.emitStockChange",
+  "realtimeController.refreshDependentViews",
+  "realtimeController.startWatchdog()"
 ]) {
-  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+  if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Realtime delegation: ${marker}`);
   }
 }

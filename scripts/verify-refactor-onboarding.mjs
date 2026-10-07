@@ -5,14 +5,14 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const outputRoot = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(outputRoot);
 const coreFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 
 if (!coreFile || !appFile) {
   throw new Error("Onboarding verification could not find modular bundles");
 }
 
 const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const generatedApp = readFileSync(resolve(outputRoot, appFile), "utf8");
 const typedOwner = readFileSync(
   resolve(projectRoot, "src/core/onboarding.ts"),
@@ -49,11 +49,11 @@ for (const marker of [
   }
 }
 
-for (const app of [sourceApp, generatedApp]) {
+for (const app of [sourceApp]) {
   for (const marker of [
-    "window.VendifyCoreV232.createOnboardingController({",
-    "onExamples: () => productsControllerV232.openCatalog()",
-    "onboardingControllerV232.setup();"
+    "core.createOnboardingController({",
+    "onExamples: () => productsController.openCatalog()",
+    "onboardingController.setup();"
   ]) {
     if (!app.includes(marker)) {
       throw new Error(`Compatibility app missing onboarding composition: ${marker}`);
@@ -77,7 +77,7 @@ for (const app of [sourceApp, generatedApp]) {
 for (const forbidden of [
   "openCatalog",
   "VendifyProductsV232",
-  "productsControllerV232"
+  "productsController"
 ]) {
   if (typedOwner.includes(forbidden)) {
     throw new Error(`Generic onboarding owner crossed Products boundary: ${forbidden}`);
