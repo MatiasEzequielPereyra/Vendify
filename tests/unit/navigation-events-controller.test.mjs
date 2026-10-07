@@ -259,7 +259,11 @@ class FakeWindow {
     for (const listener of [
       ...(this.listeners.get(type) ?? [])
     ]) {
-      await listener({ type, ...event });
+      listener({ type, ...event });
+    }
+
+    for (let index = 0; index < 8; index += 1) {
+      await Promise.resolve();
     }
   }
 
