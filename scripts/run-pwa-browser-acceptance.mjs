@@ -305,6 +305,155 @@ try {
     throw new Error(`El Examples real no alcanza al owner Products: ${JSON.stringify(onboardingExamples)}`);
   }
 
+  const activeBranchFlow = await evaluate(firstBrowser.cdp, `(async () => {
+    if (
+      typeof activeBranchControllerV232 === "undefined"
+      || typeof supabaseClient === "undefined"
+      || !window.appContext
+    ) {
+      throw new Error("Active Branch composed runtime unavailable");
+    }
+
+    const originalRpc = supabaseClient.rpc;
+    const previousContext = window.appContext;
+    const storageKey = "vendify_branch_browser-biz";
+    const rpcCalls = [];
+
+    supabaseClient.rpc = async (name, args = {}) => {
+      rpcCalls.push({ name, args });
+      if (name === "listar_sucursales_app") {
+        return {
+          data: [
+            { id: "branch-a", nombre: "Sucursal A" },
+            { id: "branch-b", nombre: "Sucursal B" }
+          ],
+          error: null
+        };
+      }
+      if (name === "obtener_contexto_sucursal") {
+        return {
+          data: {
+            branch: { id: args.p_sucursal_id, nombre: "Sucursal B" },
+            cashRegister: { id: "cash-b", nombre: "Caja B" }
+          },
+          error: null
+        };
+      }
+      if (name === "listar_cajas_sucursal_v1") {
+        return {
+          data: [{ id: "cash-b", nombre: "Caja B", activa: true }],
+          error: null
+        };
+      }
+      if (name === "obtener_estado_caja_v1") {
+        return {
+          data: { id: "cash-b", es_mia: false, abierta: false },
+          error: null
+        };
+      }
+      if (
+        name === "listar_productos_sucursal_seguro_v1"
+        || name === "listar_stock_inteligente_sucursal_v1"
+      ) {
+        return { data: [], error: null };
+      }
+      return { data: [], error: null };
+    };
+
+    try {
+      localStorage.removeItem(storageKey);
+      window.appContext = {
+        ...previousContext,
+        business: { id: "browser-biz", nombre: "Browser Biz" },
+        membership: { role: "owner" },
+        branch: { id: "branch-a", nombre: "Sucursal A" },
+        cashRegister: { id: "cash-a", nombre: "Caja A" },
+        permissions: previousContext?.permissions ?? {},
+        ready: false,
+        offlineMode: false
+      };
+
+      await activeBranchControllerV232.initialize();
+
+      const selector = document.querySelector("#branch-selector-v226");
+      const branchLabel = document.querySelector("#branch-current-label-v23013");
+      const branchOptions = document.querySelector("#branch-options-v23013");
+
+      const before = {
+        contextBranch: window.appContext.branch?.id ?? null,
+        selector: selector?.value ?? null,
+        selectorOptions: Array.from(selector?.options ?? []).map(
+          (option) => ({ value: option.value, text: option.textContent })
+        ),
+        label: branchLabel?.textContent ?? null,
+        branchBOptionPresent: Boolean(
+          branchOptions?.querySelector('[data-context-branch="branch-b"]')
+        )
+      };
+
+      await activeBranchControllerV232.select("branch-b");
+
+      const cashSelector = document.querySelector("#cash-selector-v227");
+      const cashLabel = document.querySelector("#cash-current-label-v23013");
+      const activeBranchOption = branchOptions?.querySelector(
+        '[data-context-branch="branch-b"]'
+      );
+      const activeCashOption = document.querySelector(
+        '[data-context-cash="cash-b"]'
+      );
+
+      return {
+        before,
+        after: {
+          contextBranch: window.appContext.branch?.id ?? null,
+          contextBranchName: window.appContext.branch?.nombre ?? null,
+          contextCash: window.appContext.cashRegister?.id ?? null,
+          contextCashName: window.appContext.cashRegister?.nombre ?? null,
+          selector: selector?.value ?? null,
+          branchLabel: branchLabel?.textContent ?? null,
+          cashLabel: cashLabel?.textContent ?? null,
+          cashSelector: cashSelector?.value ?? null,
+          persistedBranch: localStorage.getItem(storageKey),
+          branchOptionActive:
+            activeBranchOption?.getAttribute("aria-selected") === "true",
+          cashOptionActive:
+            activeCashOption?.getAttribute("aria-selected") === "true"
+        },
+        rpcNames: rpcCalls.map((call) => call.name)
+      };
+    } finally {
+      supabaseClient.rpc = originalRpc;
+      localStorage.removeItem(storageKey);
+      window.appContext = previousContext;
+    }
+  })()`);
+
+  if (
+    activeBranchFlow.before.contextBranch !== "branch-a"
+    || activeBranchFlow.before.selector !== "branch-a"
+    || activeBranchFlow.before.selectorOptions.length !== 2
+    || !activeBranchFlow.before.branchBOptionPresent
+    || activeBranchFlow.after.contextBranch !== "branch-b"
+    || activeBranchFlow.after.contextBranchName !== "Sucursal B"
+    || activeBranchFlow.after.contextCash !== "cash-b"
+    || activeBranchFlow.after.contextCashName !== "Caja B"
+    || activeBranchFlow.after.selector !== "branch-b"
+    || activeBranchFlow.after.branchLabel !== "Sucursal B"
+    || activeBranchFlow.after.cashLabel !== "Caja B"
+    || activeBranchFlow.after.cashSelector !== "cash-b"
+    || activeBranchFlow.after.persistedBranch !== "branch-b"
+    || !activeBranchFlow.after.branchOptionActive
+    || !activeBranchFlow.after.cashOptionActive
+    || !activeBranchFlow.rpcNames.includes("obtener_contexto_sucursal")
+    || !activeBranchFlow.rpcNames.includes("listar_cajas_sucursal_v1")
+    || !activeBranchFlow.rpcNames.includes("listar_productos_sucursal_seguro_v1")
+  ) {
+    throw new Error(
+      "El Active Branch flow real no conserva composición/paridad: "
+      + JSON.stringify(activeBranchFlow)
+    );
+  }
+
   const diagnosticsDenied = await evaluate(firstBrowser.cdp, `(async () => {
     const diagnosticsButton =
       document.querySelector('#btn-diagnostico-v23011');
@@ -786,6 +935,10 @@ try {
     productMedia: {
       runtimeComposition: "real-app-init-and-listeners",
       ...productMedia
+    },
+    activeBranch: {
+      runtimeComposition: "real-app-composed-controller",
+      flow: activeBranchFlow
     },
     updated,
     coldBoot,

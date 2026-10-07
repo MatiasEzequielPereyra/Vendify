@@ -8,7 +8,6 @@ const files = readdirSync(root);
 const runtimeFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
-
 const appFile = files.find(
   (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
 );
@@ -22,15 +21,10 @@ if (!runtimeFile || !appFile) {
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
 const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
-
 const controllerSource = readFileSync(
-  resolve(
-    projectRoot,
-    "src/branches/branch-administration-controller.ts"
-  ),
+  resolve(projectRoot, "src/branches/branch-administration-controller.ts"),
   "utf8"
 );
-
 const bridgeSource = readFileSync(
   resolve(projectRoot, "src/legacy/branches-bridge.ts"),
   "utf8"
@@ -55,6 +49,7 @@ for (const marker of [
 for (const marker of [
   "window.VendifyBranchesV232.createBranchAdministrationController({",
   "const branchAdministrationControllerV232 =",
+  "refreshBranches: () => activeBranchControllerV232.refresh(),",
   "branchAdministrationControllerV232.setup();",
   "refreshBranchSettings: () => branchAdministrationControllerV232.render(),"
 ]) {
@@ -63,7 +58,6 @@ for (const marker of [
       `Root app.js missing Branch Administration composition: ${marker}`
     );
   }
-
   if (!app.includes(marker)) {
     throw new Error(
       `Compatibility app missing Branch Administration composition: ${marker}`
@@ -75,28 +69,6 @@ if (!bridgeSource.includes("createBranchAdministrationController")) {
   throw new Error(
     "Branches bridge does not expose createBranchAdministrationController"
   );
-}
-
-for (const retainedMarker of [
-  "let sucursalesV226",
-  "async function inicializarSucursalActivaV226",
-  "function renderSelectorSucursalesV226",
-  "async function cambiarSucursalDesdeSelectorV226",
-  "async function refrescarSucursalesV226",
-  "async function listarSucursalesV2",
-  "async function cambiarSucursalV2"
-]) {
-  if (!sourceApp.includes(retainedMarker)) {
-    throw new Error(
-      `Root app.js lost retained active-branch lifecycle marker: ${retainedMarker}`
-    );
-  }
-
-  if (!app.includes(retainedMarker)) {
-    throw new Error(
-      `Compatibility app lost retained active-branch lifecycle marker: ${retainedMarker}`
-    );
-  }
 }
 
 for (const obsoleteMarker of [
@@ -112,58 +84,6 @@ for (const obsoleteMarker of [
   if (sourceApp.includes(obsoleteMarker) || app.includes(obsoleteMarker)) {
     throw new Error(
       `Legacy app still contains migrated Branch Administration logic: ${obsoleteMarker}`
-    );
-  }
-}
-
-const normalizedSourceApp = sourceApp.replace(/\r\n/g, "\n");
-
-const setupStart = normalizedSourceApp.indexOf(
-  "function setupSucursalesV226() {"
-);
-
-const initStart = normalizedSourceApp.indexOf(
-  "function init() {",
-  setupStart
-);
-
-if (setupStart === -1 || initStart === -1 || initStart <= setupStart) {
-  throw new Error(
-    "Could not isolate setupSucursalesV226 for Branch Administration verification"
-  );
-}
-
-const setupBody = normalizedSourceApp.slice(setupStart, initStart);
-
-for (const retainedSetupMarker of [
-  '#branch-selector-v226',
-  'cambiarSucursalDesdeSelectorV226',
-  'branchTransferControllerV232.setup();',
-  'branchAdministrationControllerV232.setup();'
-]) {
-  if (!setupBody.includes(retainedSetupMarker)) {
-    throw new Error(
-      `setupSucursalesV226 missing retained composition: ${retainedSetupMarker}`
-    );
-  }
-}
-
-for (const migratedSetupMarker of [
-  "btn-nueva-sucursal-v226",
-  "form-sucursal-v226",
-  "btn-cerrar-sucursal-v226",
-  "btn-cancelar-sucursal-v226",
-  "modal-sucursal-v226",
-  "form-caja-v226",
-  "btn-cerrar-caja-v226",
-  "btn-cancelar-caja-v226",
-  "modal-caja-v226",
-  'data-config-tab="sucursales"',
-  'data-config-go="sucursales"'
-]) {
-  if (setupBody.includes(migratedSetupMarker)) {
-    throw new Error(
-      `setupSucursalesV226 still owns Branch Administration listener: ${migratedSetupMarker}`
     );
   }
 }
@@ -205,5 +125,5 @@ for (const serviceImportMarker of [
 }
 
 console.log(
-  "PASS: root and generated runtimes delegate Branch Administration UI ownership to TypeScript while active-branch lifecycle remains legacy composition"
+  "PASS: Branch Administration remains a separate typed owner while Active Branch refresh delegates through its typed controller"
 );

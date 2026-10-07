@@ -43,7 +43,7 @@ for (const marker of [
   "inventoryControllerV232.openAdjustmentFromProduct(id, delta)",
   "inventoryControllerV232.setup()",
   "branchTransferControllerV232.setup()",
-  "listBranches: listarSucursalesV2",
+  "activeBranchControllerV232.getBranches().map((branch) => ({",
   "reloadProducts: cargarProductos",
   "emitStockChange: realtimeControllerV232.emitStockChange"
 ]) {
