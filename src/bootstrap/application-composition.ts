@@ -15,7 +15,7 @@ import {
   type RealtimeStockClientPort
 } from "../products/realtime-stock-service.js";
 import type { AuthController } from "../auth/auth-controller.js";
-import type { InactivityGuard } from "../auth/inactivity-guard.js";
+import type { InactivitySessionGuard } from "../auth/inactivity-guard.js";
 import type { ActiveBranchController } from "../branches/active-branch-controller.js";
 import type { BranchAdministrationController } from "../branches/branch-administration-controller.js";
 import type { CashController } from "../cash/cash-controller.js";
@@ -24,10 +24,8 @@ import type { ContextPickerController } from "../context/context-picker-controll
 import type { RealtimeController } from "../context/realtime-controller.js";
 import type { DashboardController } from "../dashboard/dashboard-controller.js";
 import type { DashboardNavigationCoordinator } from "../dashboard/dashboard-navigation.js";
-import type {
-  BranchTransferController,
-  InventoryController
-} from "../inventory/inventory-controller.js";
+import type { InventoryController } from "../inventory/inventory-controller.js";
+import type { BranchTransferController } from "../inventory/branch-transfer-controller.js";
 import type { DiagnosticsController } from "../observability/diagnostics-controller.js";
 import type { ConnectionStatusController } from "../offline/connection-status-controller.js";
 import type { OfflineCompatController } from "../offline/compat-controller.js";
@@ -61,7 +59,6 @@ type CashApi = NonNullable<typeof window.VendifyCashV232>;
 type BranchesApi = NonNullable<typeof window.VendifyBranchesV232>;
 type ContextApi = NonNullable<typeof window.VendifyContextV232>;
 type OfflineApi = NonNullable<typeof window.VendifyOfflineCompatV232>;
-type PwaApi = NonNullable<typeof window.VendifyPwaV232>;
 
 type AuthDependencies = Parameters<AuthApi["createController"]>[0];
 type TeamDependencies = Parameters<TeamApi["createController"]>[0];
@@ -82,8 +79,6 @@ type CashDependencies = Parameters<CashApi["createController"]>[0];
 type ActiveBranchDependencies = Parameters<BranchesApi["createActiveBranchController"]>[0];
 type BranchAdministrationDependencies =
   Parameters<BranchesApi["createBranchAdministrationController"]>[0];
-type ContextPickerDependencies =
-  Parameters<ContextApi["createContextPickerController"]>[0];
 type OfflineDependencies = Parameters<OfflineApi["createController"]>[0];
 
 export interface BrowserApplicationComposition {
@@ -177,14 +172,13 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
 
   const productsStore: ProductsStore = productsApi.createStore();
   let editingProductId: string | null = null;
-  let productOverSale = false;
   const client = supabaseClient;
 
   let applicationBootstrap: ApplicationBootstrap;
   let contextAdapter: ApplicationContextAdapter;
   let offlineStorage: ApplicationOfflineStorage;
   let authController: AuthController;
-  let inactivityGuard: InactivityGuard;
+  let inactivityGuard: InactivitySessionGuard;
   let teamController: TeamController;
   let realtimeController: RealtimeController;
   let productsController: ProductsController;
@@ -209,7 +203,8 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
   let connectionStatusController: ConnectionStatusController;
   let offlineController: OfflineCompatController;
 
-  const formatPrice = (value: unknown): string => core.formatArs(value);
+  const formatPrice = (value: unknown): string =>
+    core.formatArs(value as Parameters<CoreApi["formatArs"]>[0]);
   const showToast = (
     message: string,
     type: "error" | "info" | "success" = "success"
@@ -391,7 +386,6 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     const productModal = query("#modal");
     const saleModal = query("#modal-venta");
     if (!productModal || !saleModal) return;
-    productOverSale = true;
     productModal.classList.add("modal-product-over-sale");
     saleModal.classList.add("modal-under-product");
     saleModal.setAttribute("aria-hidden", "true");
@@ -403,7 +397,6 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     productModal?.classList.remove("modal-product-over-sale");
     saleModal?.classList.remove("modal-under-product");
     saleModal?.removeAttribute("aria-hidden");
-    productOverSale = false;
     if (
       focus &&
       saleModal &&
@@ -422,7 +415,6 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
 
   const isSupervisor = (): boolean =>
     ["owner", "admin", "manager"].includes(role());
-  const isOwner = (): boolean => role() === "owner";
 
   let errorLogThrottle = new Map<string, number>();
   const logClientError = async (
@@ -680,7 +672,7 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     getCashRegisterName: () => contextAdapter.get().cashRegister?.nombre ?? null,
     runDiagnostic: () =>
       contextApi.runDiagnostic(
-        client as DiagnosticsDependencies["client"]
+        client as Parameters<ContextApi["runDiagnostic"]>[0]
       ),
     showToast
   });
@@ -755,7 +747,11 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     closeContextPickers: () => contextPickerController.close(),
     getCartSize: () => posController.getCart().length,
     confirm: (title, message) => confirm(title, message),
-    showToast,
+    showToast: (message, type) =>
+      showToast(
+        message,
+        type === "error" || type === "info" ? type : "success"
+      ),
     isModalVisible: (modal) => overlayStabilityController.isModalVisible(modal),
     getAppReady: () => contextAdapter.get().ready
   });
@@ -789,6 +785,22 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
         await inventoryController.openFiltered(destination.filter);
         return;
       }
+      if (
+        destination.kind === "cash"
+        && contextAdapter.get().cashRegister?.id
+      ) {
+        dashboardNavigation.begin(destination);
+        dashboardController.close();
+        try {
+          await cashController.openPanel();
+        } catch (error) {
+          dashboardNavigation.complete("cash");
+          showToast(errorMessage(error, "No se pudo abrir la caja"), "error");
+        }
+        return;
+      }
+      if (destination.kind === "cash") return;
+
       const product = productsStore.getById(destination.productId);
       if (!product) {
         showToast(
@@ -821,19 +833,6 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
         dashboardController.close();
         productsController.openEditor(product);
         return;
-      }
-      if (
-        destination.kind === "cash"
-        && contextAdapter.get().cashRegister?.id
-      ) {
-        dashboardNavigation.begin(destination);
-        dashboardController.close();
-        try {
-          await cashController.openPanel();
-        } catch (error) {
-          dashboardNavigation.complete("cash");
-          showToast(errorMessage(error, "No se pudo abrir la caja"), "error");
-        }
       }
     }
   });
@@ -1052,8 +1051,15 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     applyOfflineSaleState: () => offlineController.applySaleState(),
     validateOfflinePayments: (payments) =>
       offlineController.validatePayments(payments),
-    registerOfflineSale: (items, payments, totals, observation) =>
-      offlineController.registerSale(items, payments, totals, observation),
+    registerOfflineSale: async (items, payments, totals, observation) =>
+      await offlineController.registerSale(
+        items,
+        payments,
+        totals,
+        observation
+      ) as unknown as Awaited<
+        ReturnType<PosDependencies["registerOfflineSale"]>
+      >,
     updateOfflineUi: () => offlineController.updateUi(),
     clearPersistedCart: () => offlineStorage.clearPersistedCart(),
     reloadProducts: loadProducts,
