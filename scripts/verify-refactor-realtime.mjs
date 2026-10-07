@@ -11,11 +11,14 @@ if (!runtimeFile || !appFile) throw new Error("Refactor Realtime verification co
 const runtime = readFileSync(resolve(outputRoot, runtimeFile), "utf8");
 const app = readFileSync(resolve(outputRoot, appFile), "utf8");
 const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
+const stockService = readFileSync(
+  resolve(projectRoot, "src/products/realtime-stock-service.ts"),
+  "utf8"
+);
 
 for (const marker of [
   "VendifyRealtimeV232",
   "createRealtimeController",
-  "producto_stock_sucursal",
   "CHANNEL_ERROR",
   "TIMED_OUT",
   "dependent-refresh",
@@ -37,6 +40,19 @@ for (const marker of [
   }
 }
 
+for (const stockMarker of [
+  '.from("producto_stock_sucursal")',
+  '.select("producto_id,stock,stock_minimo")',
+  '.eq("sucursal_id", branchId)'
+]) {
+  if (!stockService.includes(stockMarker)) {
+    throw new Error(`Typed Realtime stock service missing audited marker: ${stockMarker}`);
+  }
+  if (sourceApp.includes(stockMarker)) {
+    throw new Error(`Application composition leaked Realtime stock backend access: ${stockMarker}`);
+  }
+}
+
 for (const obsoleteMarker of [
   "let realtimeChannel",
   "function suscribirRealtime",
@@ -52,4 +68,4 @@ for (const obsoleteMarker of [
   }
 }
 
-console.log("PASS: root and generated runtimes delegate Realtime coordination to TypeScript");
+console.log("PASS: typed application delegates Realtime coordination and branch stock access to typed owners");
