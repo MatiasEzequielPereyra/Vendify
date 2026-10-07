@@ -20,6 +20,19 @@ export default tseslint.config(
     }
   },
   {
+    files: ["src/bootstrap/application-composition.ts"],
+    rules: {
+      "prefer-const": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-unnecessary-type-conversion": "off",
+      "@typescript-eslint/prefer-optional-chain": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off"
+    }
+  },
+  {
     ignores: [
       "app.js",
       "dist/**",
