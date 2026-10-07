@@ -345,6 +345,7 @@ export function createNavigationEventsController(
 
       if (dependencies.closeTopOpenModal(escapeTargets)) {
         event.preventDefault();
+        event.stopImmediatePropagation();
         return;
       }
 
