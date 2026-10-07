@@ -52,14 +52,16 @@ function errorMessage(error: unknown, fallback: string): string {
 export function createPlatformAdminController(
   dependencies: PlatformAdminControllerDependencies
 ): PlatformAdminController {
-  const documentRef =
-    dependencies.document ??
-    (globalThis.document as unknown as PlatformDocumentPort);
+  const documentRef = dependencies.document ?? globalThis.document;
 
   let setupComplete = false;
 
-  function query<T extends Element = Element>(selector: string): T | null {
-    return documentRef.querySelector(selector) as T | null;
+  function query(selector: string): Element | null {
+    return documentRef.querySelector(selector);
+  }
+
+  function html(selector: string): HTMLElement | null {
+    return documentRef.querySelector(selector) as HTMLElement | null;
   }
 
   async function refreshAccess(): Promise<void> {
@@ -73,7 +75,7 @@ export function createPlatformAdminController(
 
     try {
       const admin = await isPlatformAdmin(dependencies.client);
-      button.classList.toggle("hidden", admin !== true);
+      button.classList.toggle("hidden", !admin);
     } catch {
       button.classList.add("hidden");
     }
@@ -103,8 +105,8 @@ export function createPlatformAdminController(
             <div class="dashboard-list-copy-v231">
               <strong>${escapeHtml(textValue(row.nombre, "Negocio"))}</strong>
               <small>
-                ${numberValue(row.usuarios)} usuario(s) ·
-                ${numberValue(row.productos)} productos
+                ${String(numberValue(row.usuarios))} usuario(s) ·
+                ${String(numberValue(row.productos))} productos
                 ${trial}
               </small>
             </div>
@@ -172,22 +174,22 @@ export function createPlatformAdminController(
       const { overview, businesses, errors } =
         await loadPlatformBackoffice(dependencies.client);
 
-      const businessCount = query<HTMLElement>("#platform-businesses-v231");
+      const businessCount = html("#platform-businesses-v231");
       if (businessCount) businessCount.textContent = String(numberValue(overview.negocios));
 
-      const trials = query<HTMLElement>("#platform-trials-v231");
+      const trials = html("#platform-trials-v231");
       if (trials) trials.textContent = String(numberValue(overview.trials));
 
-      const sales = query<HTMLElement>("#platform-sales-v231");
+      const sales = html("#platform-sales-v231");
       if (sales) sales.textContent = dependencies.formatPrice(numberValue(overview.ventas_hoy));
 
-      const errorsCount = query<HTMLElement>("#platform-errors-v231");
+      const errorsCount = html("#platform-errors-v231");
       if (errorsCount) errorsCount.textContent = String(numberValue(overview.errores_24h));
 
       renderBusinesses(businesses);
       renderErrors(errors);
     } catch (error) {
-      const list = query<HTMLElement>("#platform-business-list-v231");
+      const list = html("#platform-business-list-v231");
       if (list) {
         list.innerHTML = dashboardEmpty(
           errorMessage(error, "No se pudo cargar el backoffice.")
