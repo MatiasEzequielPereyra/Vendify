@@ -322,7 +322,7 @@ export function createApplicationContextAdapter(
         employee: recordOrNull<ApplicationEmployeeRecord>(record.employee),
         ready: true,
         offlineMode: true,
-        savedAt: text(record.savedAt) || undefined
+        ...(text(record.savedAt) ? { savedAt: text(record.savedAt) } : {})
       };
     } catch {
       return null;
