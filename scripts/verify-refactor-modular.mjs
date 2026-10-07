@@ -4,108 +4,142 @@ import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
+
 const fail = (message) => {
   console.error(`FAIL: ${message}`);
   process.exit(1);
 };
 const pass = (message) => console.log(`PASS: ${message}`);
 
-if (!existsSync(resolve(root, "index.html"))) fail("refactor preview is missing index.html");
+if (!existsSync(resolve(root, "index.html"))) {
+  fail("refactor preview is missing index.html");
+}
 
 const index = readFileSync(resolve(root, "index.html"), "utf8");
 const files = readdirSync(root);
-const sources = [...index.matchAll(/src: "([^"]+\.js)"/g)].map((match) => match[1]);
-const core = sources.filter((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const app = sources.filter((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
-if (core.length !== 1) fail(`expected one modular core referenced by index, found ${core.length}`);
-if (app.length !== 1) fail(`expected one refactor app referenced by index, found ${app.length}`);
-if (!existsSync(resolve(root, core[0])) || !existsSync(resolve(root, app[0]))) {
-  fail("index references a missing modular bundle");
+const sources = [...index.matchAll(/src: "([^"]+\.js)"/gu)]
+  .map((match) => match[1]);
+
+const offline = sources.filter(
+  (file) => /^vendify-offline-v2312-[0-9a-f]{12}\.js$/u.test(file)
+);
+const core = sources.filter(
+  (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/u.test(file)
+);
+const app = sources.filter(
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/u.test(file)
+);
+const pending = sources.filter(
+  (file) =>
+    /^vendify-offline-v2312-pending-ui-[0-9a-f]{12}\.js$/u.test(file)
+);
+
+if (core.length !== 1) {
+  fail(`expected exactly one modular core, found ${core.length}`);
+}
+if (app.length !== 1) {
+  fail(`expected exactly one typed application entry, found ${app.length}`);
+}
+if (offline.length !== 1) {
+  fail(`expected exactly one offline runtime, found ${offline.length}`);
+}
+if (pending.length !== 1) {
+  fail(`expected exactly one pending offline UI bundle, found ${pending.length}`);
 }
 
-const coreMarker = `src: "${core[0]}"`;
-const appMarker = `src: "${app[0]}"`;
-const corePosition = index.indexOf(coreMarker);
-const appPosition = index.indexOf(appMarker);
-if (corePosition < 0 || appPosition < 0 || corePosition >= appPosition) {
-  fail("modular core must load before the compatibility app");
+for (const source of sources) {
+  if (!existsSync(resolve(root, source))) {
+    fail(`index references missing local bundle: ${source}`);
+  }
 }
-pass("modular core loads before compatibility app");
+pass("all local application bundles referenced by index exist");
+
+const position = (file) => index.indexOf(`src: "${file}"`);
+const order = [
+  position(offline[0]),
+  position(core[0]),
+  position(app[0]),
+  position(pending[0])
+];
+if (order.some((value) => value < 0)) {
+  fail("one or more runtime entries are not present in index");
+}
+if (!(order[0] < order[1] && order[1] < order[2] && order[2] < order[3])) {
+  fail("runtime order must be Offline -> modular core -> typed application -> pending offline UI");
+}
+pass("typed application loads after modular core in the required runtime order");
+
+for (const forbidden of [
+  "app-refactor-v232-",
+  "app-staging-v2312-",
+  'src: "app.js',
+  'src: "./app.js'
+]) {
+  if (index.includes(forbidden)) {
+    fail(`modular index retained forbidden compatibility runtime marker: ${forbidden}`);
+  }
+}
+if (files.includes("app.js")) {
+  fail("dist-refactor-modular still contains app.js");
+}
+if (
+  files.some((file) =>
+    /^app-(?:refactor-v232|staging-v2312)-/u.test(file)
+  )
+) {
+  fail("dist-refactor-modular still contains a compatibility application bundle");
+}
+pass("modular artifact has no app.js or app-refactor/app-staging application runtime");
 
 const corePath = resolve(root, core[0]);
 const appPath = resolve(root, app[0]);
 const coreSource = readFileSync(corePath, "utf8");
 const appSource = readFileSync(appPath, "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
-const buildSource = readFileSync(
-  resolve(projectRoot, "scripts/build-refactor-modular.mjs"),
-  "utf8"
-);
 
 try {
-  execFileSync(process.execPath, ["--check", appPath], { stdio: "pipe" });
+  execFileSync(process.execPath, ["--check", appPath], {
+    stdio: "pipe"
+  });
 } catch (error) {
-  const stderr = error?.stderr?.toString?.() || String(error);
-  fail(`generated compatibility app has invalid JavaScript syntax: ${stderr}`);
+  const stderr =
+    error && typeof error === "object" && "stderr" in error
+      ? String(error.stderr)
+      : String(error);
+  fail(`generated typed application has invalid JavaScript syntax: ${stderr}`);
 }
-pass("generated compatibility app parses without redeclarations");
-
-for (const marker of ["VendifyCoreV232", "formatArs", "productDisplayName", "escapeHtml", "queryOne", "queryAll", "showToast"]) {
-  if (!coreSource.includes(marker)) fail(`core bundle missing ${marker}`);
-}
-pass("core bundle exposes extracted helpers");
+pass("generated typed application entry parses as JavaScript");
 
 for (const marker of [
-  "const $ = (sel) => window.VendifyCoreV232.queryOne(sel);",
-  "const $$ = (sel) => window.VendifyCoreV232.queryAll(sel);",
-  "window.VendifyCoreV232.formatArs(valor)",
-  "window.VendifyCoreV232.escapeHtml(texto)",
-  "window.VendifyCoreV232.showToast(mensaje, tipo)"
+  "VendifyCoreV232",
+  "VendifyAuthV232",
+  "VendifyProductsV232",
+  "VendifyRealtimeV232",
+  "VendifyOfflineCompatV232",
+  "VendifyPwaV232"
 ]) {
-  if (!appSource.includes(marker)) fail(`compatibility app missing modular delegation ${marker}`);
-}
-pass("legacy runtime delegates active extracted helpers to modular core");
-
-for (const obsoleteCoreImplementation of [
-  "const $ = (sel) => document.querySelector(sel);",
-  "const $$ = (sel) => document.querySelectorAll(sel);",
-  'style: "currency", currency: "ARS"',
-  'const div = document.createElement("div");',
-  'const container = $("#toast-container");'
-]) {
-  if (sourceApp.includes(obsoleteCoreImplementation)) {
-    fail(`root app.js still contains migrated Core implementation ${obsoleteCoreImplementation}`);
+  if (!coreSource.includes(marker)) {
+    fail(`modular core missing expected API marker: ${marker}`);
   }
 }
-pass("root app.js no longer duplicates migrated Core implementations");
+pass("modular core retains expected typed owner APIs");
 
-for (const obsoleteBuildPatch of [
-  '"DOM helpers"',
-  '"currency formatter"',
-  '"product display name"',
-  '"HTML escaping"'
+for (const marker of [
+  "VendifyApplicationV232",
+  "typed application entry loaded"
 ]) {
-  if (buildSource.includes(obsoleteBuildPatch)) {
-    fail(`build still patches compacted Core block ${obsoleteBuildPatch}`);
+  if (!appSource.includes(marker)) {
+    fail(`typed application bundle missing entry marker: ${marker}`);
   }
 }
-pass("modular build no longer regex-patches compacted Core helpers");
+pass("typed application bundle exposes the Phase 13 application entry");
 
-const singleDollarDeclarations = [...appSource.matchAll(/^const \$ =/gm)].length;
-const doubleDollarDeclarations = [...appSource.matchAll(/^const \$\$ =/gm)].length;
-if (singleDollarDeclarations !== 1 || doubleDollarDeclarations !== 1) {
-  fail(
-    `expected exactly one $ and one $$ declaration, found $=${singleDollarDeclarations}, $$=${doubleDollarDeclarations}`
-  );
+const sw = readFileSync(resolve(root, "sw.js"), "utf8");
+if (sw.includes('"./app.js"') || sw.includes("'./app.js'")) {
+  fail("modular Service Worker still requires app.js");
 }
-pass("DOM helper declarations are collision-free");
+if (!sw.includes(`"./${app[0]}"`)) {
+  fail("typed application entry is not included in the modular Service Worker shell");
+}
+pass("modular Service Worker precaches the typed application entry and not app.js");
 
-if (!files.some((file) => /^vendify-offline-v2312-[0-9a-f]{12}\.js$/.test(file))) {
-  fail("offline v2.31.2 runtime missing from refactor preview");
-}
-if (!files.some((file) => /^vendify-offline-v2312-pending-ui-[0-9a-f]{12}\.js$/.test(file))) {
-  fail("pending sales UI missing from refactor preview");
-}
-pass("validated offline v2.31.2 staging runtime is preserved");
-
-console.log("PASS: Vendify modular refactor preview verified");
+console.log("PASS: Vendify typed modular runtime contract verified");
