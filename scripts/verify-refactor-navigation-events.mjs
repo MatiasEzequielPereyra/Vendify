@@ -121,7 +121,7 @@ for (const marker of [
   'getElementById("btn-gestion-v230")',
   'addEventListener("popstate", onPopState)',
   "function onPopState(): void",
-  "void handleBack();"
+  "void handleBack();",
   'addEventListener(\n      "keydown",\n      handleGlobalKeydown'
 ]) {
   if (!typedOwner.includes(marker)) {
