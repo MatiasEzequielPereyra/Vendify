@@ -47,7 +47,9 @@ if (pending.length !== 1) {
   fail(`expected exactly one pending offline UI bundle, found ${pending.length}`);
 }
 
-for (const source of sources) {
+for (const source of sources.filter(
+  (value) => !/^https?:\/\//u.test(value)
+)) {
   if (!existsSync(resolve(root, source))) {
     fail(`index references missing local bundle: ${source}`);
   }
