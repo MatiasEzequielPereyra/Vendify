@@ -55,13 +55,13 @@ function cartItem(
   product: Product,
   quantity: unknown
 ): CartItem | null {
-  const stock = Number(product.stock ?? 0);
+  const stock = product.stock;
   if (!product.id || stock <= 0) return null;
 
   return {
     id: product.id,
     nombre: product.nombre,
-    precioVenta: Number(product.precioVenta ?? 0),
+    precioVenta: product.precioVenta,
     stock,
     cantidad: Math.max(
       1,
@@ -194,7 +194,8 @@ export function createApplicationOfflineStorage(
         return false;
       }
 
-      const restored = parsed.carrito.flatMap((value): CartItem[] => {
+      const cartValues = parsed.carrito as unknown[];
+      const restored = cartValues.flatMap((value): CartItem[] => {
         if (
           typeof value !== "object"
           || value === null
