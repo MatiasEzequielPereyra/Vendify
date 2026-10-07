@@ -65,6 +65,8 @@ export interface CommercialFoundationController {
   readonly loadOperationalConfig: () => Promise<void>;
   readonly saveOperationalConfig: (event?: Event) => Promise<void>;
   readonly downloadBackup: () => Promise<void>;
+  readonly getAutoPrint: () => boolean;
+  readonly getTicketWidth: () => number;
 }
 
 interface OperationalConfigState {
@@ -513,6 +515,8 @@ export function createCommercialFoundationController(
     loadPlan,
     loadOperationalConfig,
     saveOperationalConfig: saveConfig,
-    downloadBackup
+    downloadBackup,
+    getAutoPrint: () => operationalConfig.autoPrintTicket,
+    getTicketWidth: () => operationalConfig.ticketWidthMm === 58 ? 58 : 80
   });
 }
