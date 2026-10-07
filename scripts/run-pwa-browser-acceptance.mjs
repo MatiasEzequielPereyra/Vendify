@@ -305,6 +305,428 @@ try {
     throw new Error(`El Examples real no alcanza al owner Products: ${JSON.stringify(onboardingExamples)}`);
   }
 
+  const navigationEventsFlow = await evaluate(
+    firstBrowser.cdp,
+    `(async () => {
+      const sleep = (ms) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
+      const frame = () =>
+        new Promise((resolve) => requestAnimationFrame(resolve));
+      const waitFor = async (predicate, label) => {
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          if (predicate()) return;
+          await sleep(25);
+        }
+        throw new Error("Timeout waiting for " + label);
+      };
+
+      const app = document.querySelector(".app");
+      const userButton = document.querySelector("#btn-user-menu");
+      const userMenu = document.querySelector("#user-menu");
+      const settingsButton =
+        document.querySelector("#btn-user-settings");
+      const managementButton =
+        document.querySelector("#btn-gestion-v230");
+      const managementMenu =
+        document.querySelector("#gestion-menu-v230");
+      const settingsModal =
+        document.querySelector("#modal-config");
+      const settingsClose =
+        document.querySelector("#btn-cerrar-config");
+      const saleModal =
+        document.querySelector("#modal-venta");
+      const search =
+        document.querySelector("#buscador");
+
+      if (
+        !app ||
+        !userButton ||
+        !userMenu ||
+        !settingsButton ||
+        !managementButton ||
+        !managementMenu ||
+        !settingsModal ||
+        !settingsClose ||
+        !saleModal ||
+        !search ||
+        !window.appContext
+      ) {
+        throw new Error(
+          "Navigation Events browser UI unavailable"
+        );
+      }
+
+      const previousReady = window.appContext.ready;
+      const appWasHidden = app.classList.contains("hidden");
+      const originalBodyTabIndex =
+        document.body.getAttribute("tabindex");
+      const cleanup = () => {
+        userMenu.classList.add("hidden");
+        managementMenu.classList.add("hidden");
+        settingsModal.classList.add("hidden");
+        saleModal.classList.add("hidden");
+        document.querySelector("#modal-confirm")
+          ?.classList.add("hidden");
+        document.querySelector(
+          "#ven007l-browser-management-action"
+        )?.remove();
+        window.appContext.ready = previousReady;
+        app.classList.toggle("hidden", appWasHidden);
+        if (originalBodyTabIndex === null) {
+          document.body.removeAttribute("tabindex");
+        } else {
+          document.body.setAttribute(
+            "tabindex",
+            originalBodyTabIndex
+          );
+        }
+      };
+
+      try {
+        app.classList.remove("hidden");
+
+        userButton.click();
+        await frame();
+        await frame();
+
+        const userOpen = {
+          visible: !userMenu.classList.contains("hidden"),
+          aria:
+            userButton.getAttribute("aria-expanded"),
+          position: userMenu.style.position,
+          placement: userMenu.dataset.placement || null,
+          left: Number.parseFloat(userMenu.style.left || "NaN"),
+          width: Number.parseFloat(userMenu.style.width || "NaN")
+        };
+
+        document.body.dispatchEvent(
+          new MouseEvent("click", { bubbles: true })
+        );
+        const userOutsideClosed =
+          userMenu.classList.contains("hidden");
+
+        userButton.click();
+        await frame();
+        userMenu.style.left = "-9999px";
+        window.dispatchEvent(new Event("resize"));
+        await frame();
+        const userResizeRepositioned =
+          userMenu.style.left !== "-9999px";
+
+        window.dispatchEvent(new Event("scroll"));
+        const userScrollClosed =
+          userMenu.classList.contains("hidden");
+
+        userButton.click();
+        await frame();
+        settingsButton.click();
+        await frame();
+        const settingsOpened =
+          settingsModal.classList.contains("hidden") === false &&
+          userMenu.classList.contains("hidden");
+        settingsClose.click();
+
+        userButton.click();
+        await frame();
+        managementButton.click();
+        await frame();
+        const mutualExclusion =
+          userMenu.classList.contains("hidden") &&
+          !managementMenu.classList.contains("hidden") &&
+          managementButton.getAttribute("aria-expanded") ===
+            "true";
+
+        const internal = document.createElement("button");
+        internal.type = "button";
+        internal.id =
+          "ven007l-browser-management-action";
+        managementMenu.appendChild(internal);
+        internal.click();
+        const managementInternalClosed =
+          managementMenu.classList.contains("hidden");
+        internal.remove();
+
+        managementButton.click();
+        await frame();
+        managementMenu.style.left = "-9999px";
+        window.dispatchEvent(new Event("resize"));
+        await frame();
+        const managementResizeRepositioned =
+          managementMenu.style.left !== "-9999px";
+
+        document.body.dispatchEvent(
+          new MouseEvent("click", { bubbles: true })
+        );
+        const managementOutsideClosed =
+          managementMenu.classList.contains("hidden");
+
+        managementButton.click();
+        await frame();
+        window.dispatchEvent(new Event("scroll"));
+        const managementScrollClosed =
+          managementMenu.classList.contains("hidden");
+
+        userButton.click();
+        await frame();
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Escape",
+            bubbles: true,
+            cancelable: true
+          })
+        );
+        await sleep(0);
+        const overlayMenuEscapeClosed =
+          userMenu.classList.contains("hidden");
+
+        settingsModal.classList.remove("hidden");
+        const confirmPromise =
+          window.VendifyCoreV232.showConfirmation(
+            "VEN-007L Escape",
+            "Confirmar precedencia de Escape",
+            {
+              okText: "Aceptar",
+              cancelText: "Cancelar",
+              danger: false
+            }
+          );
+        await frame();
+
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Escape",
+            bubbles: true,
+            cancelable: true
+          })
+        );
+
+        const confirmationAccepted =
+          await confirmPromise;
+        await sleep(0);
+        const escapeCoexistence = {
+          confirmationAccepted,
+          confirmHidden:
+            document
+              .querySelector("#modal-confirm")
+              ?.classList.contains("hidden") === true,
+          settingsStillOpen:
+            !settingsModal.classList.contains("hidden")
+        };
+        settingsClose.click();
+
+        document.body.tabIndex = -1;
+        document.body.focus();
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "/",
+            bubbles: true,
+            cancelable: true
+          })
+        );
+        const slashFocusedSearch =
+          document.activeElement === search;
+
+        search.blur();
+        document.body.focus();
+        saleModal.classList.add("hidden");
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "V",
+            bubbles: true,
+            cancelable: true
+          })
+        );
+        const vOpenedSale =
+          !saleModal.classList.contains("hidden");
+        saleModal.classList.add("hidden");
+
+        search.focus();
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "V",
+            bubbles: true,
+            cancelable: true
+          })
+        );
+        const typingGuardKeptSaleClosed =
+          saleModal.classList.contains("hidden");
+        search.blur();
+
+        window.appContext.ready = true;
+        document
+          .querySelectorAll(".modal")
+          .forEach((modal) => modal.classList.add("hidden"));
+        userMenu.classList.add("hidden");
+        managementMenu.classList.add("hidden");
+        document
+          .querySelector("#branch-menu-v23013")
+          ?.classList.add("hidden");
+        document
+          .querySelector("#cash-menu-v23013")
+          ?.classList.add("hidden");
+
+        if (!history.state?.vendifyGuardV2311) {
+          throw new Error(
+            "Back Guard was not armed by real app init"
+          );
+        }
+
+        userButton.click();
+        await frame();
+        history.back();
+        await waitFor(
+          () =>
+            userMenu.classList.contains("hidden") &&
+            history.state?.vendifyGuardV2311 === true,
+          "Back Guard popover rearm"
+        );
+        const backPopover = {
+          closed: userMenu.classList.contains("hidden"),
+          rearmed:
+            history.state?.vendifyGuardV2311 === true
+        };
+
+        settingsModal.classList.remove("hidden");
+        await frame();
+        history.back();
+        await waitFor(
+          () =>
+            settingsModal.classList.contains("hidden") &&
+            history.state?.vendifyGuardV2311 === true,
+          "Back Guard modal rearm"
+        );
+        const backModal = {
+          closed:
+            settingsModal.classList.contains("hidden"),
+          rearmed:
+            history.state?.vendifyGuardV2311 === true
+        };
+
+        document
+          .querySelectorAll(".modal")
+          .forEach((modal) => modal.classList.add("hidden"));
+        history.back();
+        await waitFor(
+          () =>
+            document
+              .querySelector("#modal-confirm")
+              ?.classList.contains("hidden") === false,
+          "Back Guard exit confirmation"
+        );
+
+        const exitConfirmationShown =
+          document
+            .querySelector("#modal-confirm")
+            ?.classList.contains("hidden") === false;
+
+        document
+          .querySelector("#btn-confirm-cancel")
+          ?.click();
+
+        await waitFor(
+          () =>
+            document
+              .querySelector("#modal-confirm")
+              ?.classList.contains("hidden") === true &&
+            history.state?.vendifyGuardV2311 === true,
+          "Back Guard exit cancel rearm"
+        );
+
+        const backExitCancel = {
+          confirmationShown: exitConfirmationShown,
+          confirmationClosed:
+            document
+              .querySelector("#modal-confirm")
+              ?.classList.contains("hidden") === true,
+          rearmed:
+            history.state?.vendifyGuardV2311 === true,
+          appStillVisible:
+            !app.classList.contains("hidden") &&
+            window.appContext.ready === true
+        };
+
+        userButton.click();
+        await frame();
+        const operativeAfterCancel =
+          !userMenu.classList.contains("hidden");
+        userMenu.classList.add("hidden");
+
+        return {
+          userOpen,
+          userOutsideClosed,
+          userResizeRepositioned,
+          userScrollClosed,
+          settingsOpened,
+          mutualExclusion,
+          managementInternalClosed,
+          managementResizeRepositioned,
+          managementOutsideClosed,
+          managementScrollClosed,
+          overlayMenuEscapeClosed,
+          escapeCoexistence,
+          shortcuts: {
+            slashFocusedSearch,
+            vOpenedSale,
+            typingGuardKeptSaleClosed
+          },
+          backPopover,
+          backModal,
+          backExitCancel,
+          operativeAfterCancel
+        };
+      } finally {
+        cleanup();
+      }
+    })()`
+  );
+
+  if (
+    !navigationEventsFlow.userOpen.visible
+    || navigationEventsFlow.userOpen.aria !== "true"
+    || navigationEventsFlow.userOpen.position !== "fixed"
+    || !["top", "bottom"].includes(
+      navigationEventsFlow.userOpen.placement
+    )
+    || !Number.isFinite(navigationEventsFlow.userOpen.left)
+    || !Number.isFinite(navigationEventsFlow.userOpen.width)
+    || !navigationEventsFlow.userOutsideClosed
+    || !navigationEventsFlow.userResizeRepositioned
+    || !navigationEventsFlow.userScrollClosed
+    || !navigationEventsFlow.settingsOpened
+    || !navigationEventsFlow.mutualExclusion
+    || !navigationEventsFlow.managementInternalClosed
+    || !navigationEventsFlow.managementResizeRepositioned
+    || !navigationEventsFlow.managementOutsideClosed
+    || !navigationEventsFlow.managementScrollClosed
+    || !navigationEventsFlow.overlayMenuEscapeClosed
+    || navigationEventsFlow.escapeCoexistence
+      .confirmationAccepted !== false
+    || !navigationEventsFlow.escapeCoexistence.confirmHidden
+    || !navigationEventsFlow.escapeCoexistence
+      .settingsStillOpen
+    || !navigationEventsFlow.shortcuts.slashFocusedSearch
+    || !navigationEventsFlow.shortcuts.vOpenedSale
+    || !navigationEventsFlow.shortcuts
+      .typingGuardKeptSaleClosed
+    || !navigationEventsFlow.backPopover.closed
+    || !navigationEventsFlow.backPopover.rearmed
+    || !navigationEventsFlow.backModal.closed
+    || !navigationEventsFlow.backModal.rearmed
+    || !navigationEventsFlow.backExitCancel
+      .confirmationShown
+    || !navigationEventsFlow.backExitCancel
+      .confirmationClosed
+    || !navigationEventsFlow.backExitCancel.rearmed
+    || !navigationEventsFlow.backExitCancel
+      .appStillVisible
+    || !navigationEventsFlow.operativeAfterCancel
+  ) {
+    throw new Error(
+      "Navigation/Events real browser flow failed: "
+      + JSON.stringify(navigationEventsFlow)
+    );
+  }
+
   const activeBranchFlow = await evaluate(firstBrowser.cdp, `(async () => {
     if (
       typeof activeBranchControllerV232 === "undefined"
@@ -1230,6 +1652,10 @@ try {
     productMedia: {
       runtimeComposition: "real-app-init-and-listeners",
       ...productMedia
+    },
+    navigationEvents: {
+      runtimeComposition: "real-app-init-and-listeners",
+      flow: navigationEventsFlow
     },
     activeBranch: {
       runtimeComposition: "real-app-composed-controller",
