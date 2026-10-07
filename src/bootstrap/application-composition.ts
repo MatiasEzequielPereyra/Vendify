@@ -460,7 +460,7 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     window.addEventListener("error", (event) => {
       void logClientError(
         "window_error",
-        event.message || event.error?.message || "Error JavaScript",
+        event.message || "Error JavaScript",
         {
           file: event.filename ? event.filename.split("/").pop() ?? null : null,
           line: event.lineno || null,
@@ -472,7 +472,11 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
       const reason = event.reason as unknown;
       void logClientError(
         "unhandled_rejection",
-        reason instanceof Error ? reason.message : String(reason ?? "Promise rechazada")
+        reason instanceof Error
+          ? reason.message
+          : typeof reason === "string"
+            ? reason
+            : "Promise rechazada"
       );
     });
   };
@@ -1013,7 +1017,9 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
       role: role()
     }),
     isCashOpenByCurrentUser: cashOpenByCurrentUser,
-    openCashPanel,
+    openCashPanel: () => {
+      void openCashPanel();
+    },
     formatCurrency: (value) => formatPrice(value),
     showToast,
     getAutoPrint: () => commercialFoundationController.getAutoPrint(),
@@ -1339,7 +1345,7 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
 
       const accepted = await confirm(
         "Importar catálogo",
-        `Se procesarán ${items.length} productos en ${
+        `Se procesarán ${String(items.length)} productos en ${
           contextAdapter.get().branch?.nombre ?? "la sucursal activa"
         }.`,
         { okText: "Importar", cancelText: "Cancelar" }
@@ -1367,9 +1373,11 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
           typeof data === "object" && data !== null && !Array.isArray(data)
             ? data as Record<string, unknown>
             : {};
+        const imported = Number(record.importados ?? 0);
+        const omitted = Number(record.omitidos ?? 0);
         showToast(
-          `${Number(record.importados ?? 0)} producto(s) importados · ${
-            Number(record.omitidos ?? 0)
+          `${String(imported)} producto(s) importados · ${
+            String(omitted)
           } omitidos`,
           "success"
         );
