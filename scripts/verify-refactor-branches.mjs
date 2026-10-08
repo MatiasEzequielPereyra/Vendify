@@ -1,4 +1,4 @@
-﻿import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -9,7 +9,7 @@ const runtimeFile = files.find(
   (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file)
 );
 
 if (!runtimeFile || !appFile) {
@@ -20,7 +20,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const controllerSource = readFileSync(
   resolve(projectRoot, "src/branches/branch-administration-controller.ts"),
   "utf8"
@@ -47,22 +47,20 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyBranchesV232.createBranchAdministrationController({",
-  "const branchAdministrationControllerV232 =",
-  "refreshBranches: () => activeBranchControllerV232.refresh(),",
-  "branchAdministrationControllerV232.setup();",
-  "refreshBranchSettings: () => branchAdministrationControllerV232.render(),"
+  "branchesApi.createBranchAdministrationController({",
+  "refreshBranches: () => activeBranchController.refresh(),",
+  "run: () => branchAdministrationController.setup()",
+  "refreshBranchSettings: () => branchAdministrationController.render()"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(
       `Root app.js missing Branch Administration composition: ${marker}`
     );
   }
-  if (!app.includes(marker)) {
-    throw new Error(
-      `Compatibility app missing Branch Administration composition: ${marker}`
-    );
-  }
+}
+
+if (!/let branchAdministrationController:\s*BranchAdministrationController;[\s\S]*?branchAdministrationController\s*=\s*branchesApi\.createBranchAdministrationController\(\{/u.test(sourceApp)) {
+  throw new Error("Branch Administration lost typed let declaration or owner composition");
 }
 
 if (!bridgeSource.includes("createBranchAdministrationController")) {
@@ -81,7 +79,7 @@ for (const obsoleteMarker of [
   "function cerrarModalCajaV226",
   "async function crearCajaV226"
 ]) {
-  if (sourceApp.includes(obsoleteMarker) || app.includes(obsoleteMarker)) {
+  if (sourceApp.includes(obsoleteMarker)) {
     throw new Error(
       `Legacy app still contains migrated Branch Administration logic: ${obsoleteMarker}`
     );

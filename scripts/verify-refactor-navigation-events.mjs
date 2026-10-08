@@ -1,4 +1,7 @@
-import { readFileSync, readdirSync } from "node:fs";
+import {
+  readFileSync,
+  readdirSync
+} from "node:fs";
 import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -6,25 +9,24 @@ const outputRoot = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(outputRoot);
 
 const coreFile = files.find(
-  (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/u.test(file)
 );
 const appFile = files.find(
-  (file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file)
+  (file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/u.test(file)
 );
 
 if (!coreFile || !appFile) {
   throw new Error(
-    "Navigation Events verification could not find modular bundles"
+    "Navigation Events verification could not find typed modular bundles"
   );
 }
 
 const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
-const generatedApp = readFileSync(
-  resolve(outputRoot, appFile),
-  "utf8"
-);
-const sourceApp = readFileSync(
-  resolve(projectRoot, "app.js"),
+const composition = readFileSync(
+  resolve(
+    projectRoot,
+    "src/bootstrap/application-composition.ts"
+  ),
   "utf8"
 );
 const typedOwner = readFileSync(
@@ -92,27 +94,23 @@ const retiredOwners = [
   "inicializarEventos"
 ];
 
-for (const app of [sourceApp, generatedApp]) {
-  for (const marker of [
-    "window.VendifyCoreV232.createNavigationEventsController({",
-    "navigationEventsControllerV232.setup();",
-    "closeUserMenu: () => navigationEventsControllerV232.closeUserMenu()",
-    "navigationEventsControllerV232.closeManagementMenu()",
-    "positionPopover: navigationEventsControllerV232.positionPopover"
-  ]) {
-    if (!app.includes(marker)) {
-      throw new Error(
-        `Compatibility app missing Navigation Events composition: ${marker}`
-      );
-    }
+for (const retired of retiredOwners) {
+  if (composition.includes(retired)) {
+    throw new Error(`Typed application retained legacy Navigation/Back owner: ${retired}`);
   }
+}
 
-  for (const retired of retiredOwners) {
-    if (app.includes(retired)) {
-      throw new Error(
-        `Compatibility app retained legacy Navigation/Back owner: ${retired}`
-      );
-    }
+for (const marker of [
+  "core.createNavigationEventsController({",
+  "navigationEventsController.setup()",
+  "closeUserMenu: () => navigationEventsController.closeUserMenu()",
+  "navigationEventsController.closeManagementMenu()",
+  "positionPopover: navigationEventsController.positionPopover"
+]) {
+  if (!composition.includes(marker)) {
+    throw new Error(
+      `Typed composition missing Navigation Events composition: ${marker}`
+    );
   }
 }
 
@@ -121,8 +119,7 @@ for (const marker of [
   'getElementById("btn-gestion-v230")',
   'addEventListener("popstate", onPopState)',
   "function onPopState(): void",
-  "void handleBack();",
-  'addEventListener(\n      "keydown",\n      handleGlobalKeydown'
+  "void handleBack();"
 ]) {
   if (!typedOwner.includes(marker)) {
     throw new Error(
@@ -131,9 +128,23 @@ for (const marker of [
   }
 }
 
-if (/\bpopstate\b/u.test(sourceApp)) {
+const keydownListener = /documentRef\s*\.addEventListener\(\s*"keydown"\s*,\s*handleGlobalKeydown\s*\)/gu;
+if ([...typedOwner.matchAll(keydownListener)].length !== 1) {
+  throw new Error("Typed Navigation Events owner must install exactly one global keydown listener");
+}
+if (!/function handleGlobalKeydown\(event: KeyboardEvent\): void/u.test(typedOwner)) {
+  throw new Error("Typed Navigation Events keydown listener has no typed handler owner");
+}
+const keydownPosition = typedOwner.search(keydownListener);
+const backGuardPosition = typedOwner.indexOf("armBackGuard();", keydownPosition);
+const popstatePosition = typedOwner.indexOf('windowRef.addEventListener("popstate", onPopState)', keydownPosition);
+if (!(keydownPosition >= 0 && keydownPosition < backGuardPosition && backGuardPosition < popstatePosition)) {
+  throw new Error("Typed Navigation Events listener and Back Guard setup order changed");
+}
+
+if (/\bpopstate\b/u.test(composition)) {
   throw new Error(
-    "app.js retained direct Back Guard popstate ownership"
+    "Application composition retained direct Back Guard popstate ownership"
   );
 }
 
@@ -141,15 +152,15 @@ for (const forbidden of [
   ".rpc(",
   "supabaseClient",
   "window.Vendify",
-  "posControllerV232",
-  "teamControllerV232",
-  "productsControllerV232",
-  "cashControllerV232",
-  "inventoryControllerV232",
-  "purchasesControllerV232",
-  "commercialFoundationControllerV232",
-  "platformAdminControllerV232",
-  "contextPickerControllerV232"
+  "posController",
+  "teamController",
+  "productsController",
+  "cashController",
+  "inventoryController",
+  "purchasesController",
+  "commercialFoundationController",
+  "platformAdminController",
+  "contextPickerController"
 ]) {
   if (typedOwner.includes(forbidden)) {
     throw new Error(
@@ -159,45 +170,46 @@ for (const forbidden of [
 }
 
 for (const marker of [
-  "window.VendifyCoreV232.createOverlayStabilityController({",
-  "overlayStabilityControllerV232.setup();",
-  "window.VendifyContextV232.createContextPickerController({",
-  "contextPickerControllerV232.setup();",
-  "window.VendifyProductsV232.createController({",
-  "window.VendifySalesV232.createPosController({",
-  "window.VendifyTeamV232.createController({",
-  "window.VendifyCashV232.createController({"
+  "core.createOverlayStabilityController({",
+  "contextApi.createContextPickerController({",
+  "productsApi.createController({",
+  "salesApi.createPosController({",
+  "teamApi.createController({",
+  "cashApi.createController({"
 ]) {
-  if (!sourceApp.includes(marker)) {
+  if (!composition.includes(marker)) {
     throw new Error(
-      `Existing owner was absorbed or lost during Navigation extraction: ${marker}`
+      `Existing typed owner was absorbed or lost: ${marker}`
     );
   }
 }
 
-for (const marker of [
+for (const legacyBootstrap of [
   "async function mostrarApp()",
+  "function mostrarApp()",
   "function init()"
 ]) {
-  if (!sourceApp.includes(marker)) {
+  if (
+    composition.includes(legacyBootstrap)
+  ) {
     throw new Error(
-      `VEN-007M boundary crossed; missing compatibility bootstrap marker: ${marker}`
+      `Legacy bootstrap marker restored in typed runtime: ${legacyBootstrap}`
     );
   }
 }
 
-for (const marker of [
-  "dist-staging-v2312",
-  "app-staging-v2312-",
-  "app-refactor-v232-"
+for (const forbiddenBuild of [
+  "app-refactor-v232-",
+  "writeFileSync(resolve(out, appName), app",
+  "const appName = \u0060app-refactor"
 ]) {
-  if (!buildSource.includes(marker)) {
+  if (buildSource.includes(forbiddenBuild)) {
     throw new Error(
-      `Compatibility build changed before VEN-007M: ${marker}`
+      `Modular build restored compatibility app behavior: ${forbiddenBuild}`
     );
   }
 }
 
 console.log(
-  "PASS: Navigation + global events + Back Guard ownership is typed, legacy app is composition-only for this domain, existing owners remain separate, and VEN-007M boundaries are preserved"
+  "PASS: Navigation + global events + Back Guard remain typed, composition-only, and independent of legacy app.js bootstrap"
 );

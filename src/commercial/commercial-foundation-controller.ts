@@ -9,6 +9,7 @@ import {
 } from "./commercial-service.js";
 
 type ToastType = "error" | "info" | "success";
+type IntervalHandle = ReturnType<typeof globalThis.setInterval>;
 
 interface CommercialBusiness {
   readonly id?: string | null;
@@ -51,8 +52,8 @@ export interface CommercialFoundationControllerDependencies {
   readonly icon: (name: string) => string;
   readonly storage?: CommercialStoragePort;
   readonly document?: CommercialDocumentPort;
-  readonly setIntervalFn?: (callback: () => void, ms: number) => number;
-  readonly clearIntervalFn?: (id: number) => void;
+  readonly setIntervalFn?: (callback: () => void, ms: number) => IntervalHandle;
+  readonly clearIntervalFn?: (id: IntervalHandle) => void;
   readonly now?: () => Date;
   readonly logger?: CommercialLogger;
 }
@@ -125,7 +126,7 @@ export function createCommercialFoundationController(
   const logger = dependencies.logger ?? console;
 
   let setupComplete = false;
-  let refreshTimer: number | null = null;
+  let refreshTimer: IntervalHandle | null = null;
   let operationalConfig: OperationalConfigState = {
     stockCoverageAlert: 3,
     largeAdjustmentUnits: 10,

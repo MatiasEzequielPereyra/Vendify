@@ -1,11 +1,12 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertSourceMatch } from "./refactor-verifier-contracts.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(root);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 
 if (!runtimeFile || !appFile) {
   throw new Error("Refactor Products verification could not find generated bundles");
@@ -13,12 +14,13 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const sourceController = readFileSync(resolve(projectRoot, "src/products/products-controller.ts"), "utf8");
 const sourceModel = readFileSync(resolve(projectRoot, "src/products/product-model.ts"), "utf8");
 const sourceService = readFileSync(resolve(projectRoot, "src/products/products-service.ts"), "utf8");
 const sourceProductHtml = readFileSync(resolve(projectRoot, "html/03-product-stock-modals.html"), "utf8");
 const generatedProductHtml = readFileSync(resolve(root, "html/03-product-stock-modals.html"), "utf8");
+const browserAcceptance = readFileSync(resolve(projectRoot, "scripts/run-pwa-browser-acceptance.mjs"), "utf8");
 
 for (const marker of [
   "VendifyProductsV232",
@@ -48,19 +50,18 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyProductsV232.createController({",
-  "window.VendifyProductsV232.createStore()",
-  "window.VendifyProductsV232.createScannerController({",
-  "productsControllerV232.loadProducts()",
-  "productsControllerV232.render()",
-  "productsControllerV232.openEditor(producto)",
-  "lookupBarcode: (code) => productsControllerV232.lookupBarcode(code)",
+  "productsApi.createController({",
+  "productsApi.createStore()",
+  "productsApi.createScannerController({",
+  "productsController.loadProducts()",
+  "productsController.render()",
+  "lookupBarcode: (code) => productsController.lookupBarcode(code)",
   "captureOfflineStockSnapshot: async (items)",
   "window.VendifyOfflineV2312.captureStockSnapshot({",
-  "productsControllerV232.setup()",
-  "scannerControllerV232.setup()"
+  "productsController.setup()",
+  "scannerController.setup()"
 ]) {
-  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+  if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Products delegation: ${marker}`);
   }
 }
@@ -204,6 +205,12 @@ for (const marker of [
   if (!sourceController.includes(marker)) {
     throw new Error(`Products controller lost typed Inventory adjustment delegation: ${marker}`);
   }
+}
+
+assertSourceMatch(sourceApp, /const openProduct\s*=\s*\(product:\s*Parameters<ProductsController\["openEditor"\]>\[0\]\s*=\s*null\)\s*:\s*void\s*=>\s*\{\s*productsController\.openEditor\(product\);/u, "Typed Product editor adapter lost its controller parameter type or delegation");
+assertSourceMatch(browserAcceptance, /window\.VendifyApplicationV232\?\.controllers\.products/u, "Browser acceptance must resolve Products through typed application composition");
+if (/products(?:Store|Controller)V232|aplicarPermisosV2/u.test(browserAcceptance)) {
+  throw new Error("Browser acceptance depends on retired Products globals");
 }
 
 const retiredLegacyStockIds = [

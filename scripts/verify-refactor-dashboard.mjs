@@ -5,7 +5,7 @@ const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
 const files = readdirSync(root);
 const runtimeFile = files.find((file) => /^vendify-core-v232-[0-9a-f]{12}\.js$/.test(file));
-const appFile = files.find((file) => /^app-refactor-v232-[0-9a-f]{12}\.js$/.test(file));
+const appFile = files.find((file) => /^vendify-app-v232-[0-9a-f]{12}\.js$/.test(file));
 
 if (!runtimeFile || !appFile) {
   throw new Error("Refactor Dashboard verification could not find generated bundles");
@@ -13,7 +13,7 @@ if (!runtimeFile || !appFile) {
 
 const runtime = readFileSync(resolve(root, runtimeFile), "utf8");
 const app = readFileSync(resolve(root, appFile), "utf8");
-const sourceApp = readFileSync(resolve(projectRoot, "app.js"), "utf8");
+const sourceApp = readFileSync(resolve(projectRoot, "src/bootstrap/application-composition.ts"), "utf8");
 const platformController = readFileSync(
   resolve(projectRoot, "src/platform/platform-admin-controller.ts"),
   "utf8"
@@ -36,12 +36,12 @@ for (const marker of [
 }
 
 for (const marker of [
-  "window.VendifyDashboardV232.createController({",
-  "dashboardControllerV232.loadAlertBadge()",
-  "dashboardControllerV232.setup()",
-  "window.VendifyDashboardV232.createNavigationCoordinator("
+  "dashboardApi.createController({",
+  "dashboardController.loadAlertBadge()",
+  "dashboardController.setup()",
+  "dashboardApi.createNavigationCoordinator("
 ]) {
-  if (!app.includes(marker) || !sourceApp.includes(marker)) {
+  if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Dashboard delegation: ${marker}`);
   }
 }
