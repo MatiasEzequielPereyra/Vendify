@@ -9,7 +9,7 @@ import {
 } from "./commercial-service.js";
 
 type ToastType = "error" | "info" | "success";
-type IntervalHandle = number | ReturnType<typeof globalThis.setInterval>;
+type IntervalHandle = ReturnType<typeof globalThis.setInterval>;
 
 interface CommercialBusiness {
   readonly id?: string | null;
