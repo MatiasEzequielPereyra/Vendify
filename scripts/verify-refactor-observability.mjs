@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertExactlyOneSourceMatch } from "./refactor-verifier-contracts.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const outputRoot = resolve(projectRoot, "dist-refactor-modular");
@@ -30,11 +31,6 @@ const sourceApp = readFileSync(
 
 const typedOverlayOwner = readFileSync(
   resolve(projectRoot, "src/core/overlay-stability.ts"),
-  "utf8"
-);
-
-const generatedApp = readFileSync(
-  resolve(outputRoot, appFile),
   "utf8"
 );
 
@@ -88,52 +84,25 @@ for (const marker of [
   }
 }
 
-for (const app of [sourceApp]) {
-  for (const marker of [
-    "observabilityApi.createDiagnosticsController({",
-    "contextApi.runDiagnostic(",
-    "diagnosticsController.setup();"
-  ]) {
-    if (!app.includes(marker)) {
-      throw new Error(
-        `Compatibility app missing Diagnostics composition: ${marker}`
-      );
-    }
-  }
-
-  for (const obsolete of [
-    "abrirDiagnosticoV23011",
-    "cerrarDiagnosticoV23011",
-    "renderDiagnosticoV23011",
-    "ejecutarDiagnosticoV23011"
-  ]) {
-    if (app.includes(obsolete)) {
-      throw new Error(
-        `Compatibility app retained legacy Diagnostics owner: ${obsolete}`
-      );
-    }
+for (const marker of [
+  "observabilityApi.createDiagnosticsController({",
+  "contextApi.runDiagnostic(",
+  "run: () => diagnosticsController.setup()"
+]) {
+  if (!sourceApp.includes(marker)) {
+    throw new Error(`Typed source missing Diagnostics composition: ${marker}`);
   }
 }
-
-const stabilityStart = sourceApp.indexOf(
-  "function setupStabilityV23011()"
-);
-
-const stabilityEnd = sourceApp.indexOf(
-  "overlayStabilityController.setup();",
-  stabilityStart
-);
-
-if (stabilityStart < 0 || stabilityEnd < 0) {
-  throw new Error(
-    "Could not inspect setupStabilityV23011 ownership boundary"
-  );
+for (const obsolete of [
+  "abrirDiagnosticoV23011",
+  "cerrarDiagnosticoV23011",
+  "renderDiagnosticoV23011",
+  "ejecutarDiagnosticoV23011"
+]) {
+  if (sourceApp.includes(obsolete)) {
+    throw new Error(`Typed composition retained legacy Diagnostics owner: ${obsolete}`);
+  }
 }
-
-const stabilitySetup = sourceApp.slice(
-  stabilityStart,
-  stabilityEnd
-);
 
 for (const forbiddenSelector of [
   "#btn-diagnostico-v23011",
@@ -141,12 +110,15 @@ for (const forbiddenSelector of [
   "#modal-diagnostico-v23011 .modal-backdrop",
   "#btn-run-diagnostic-v23011"
 ]) {
-  if (stabilitySetup.includes(forbiddenSelector)) {
+  if (typedOverlayOwner.includes(forbiddenSelector)) {
     throw new Error(
-      `setupStabilityV23011 still owns Diagnostics listener: ${forbiddenSelector}`
+      `Overlay Stability owner contains Diagnostics listener: ${forbiddenSelector}`
     );
   }
 }
+
+assertExactlyOneSourceMatch(sourceApp, /observabilityApi\.createDiagnosticsController\(\{/u, "Typed Observability diagnostics composition must exist exactly once");
+assertExactlyOneSourceMatch(sourceApp, /name: "diagnostics",\s*run: \(\) => diagnosticsController\.setup\(\)/u, "Typed Observability diagnostics lifecycle must start exactly once");
 
 for (const forbidden of [
   "diagnostico_integridad_v1",
@@ -203,5 +175,5 @@ for (const marker of [
 }
 
 console.log(
-  "PASS: Diagnostics UI ownership lives in typed Observability, Context retains RPC ownership, app source/generated composition is real, and browser acceptance uses real app listeners"
+  "PASS: Diagnostics UI ownership lives in typed Observability, Context retains RPC ownership, typed composition is singular, and browser acceptance uses real listeners"
 );

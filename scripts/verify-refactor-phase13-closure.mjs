@@ -62,7 +62,11 @@ for (const marker of [
     fail(`typed application entry missing marker: ${marker}`);
   }
 }
-if (!entrySource.includes("window.VendifyApplicationV232\n  ?? createBrowserApplicationComposition()")) {
+if (
+  !/const composition\s*=\s*window\.VendifyApplicationV232\s*\?\?\s*createBrowserApplicationComposition\(\);/u.test(
+    entrySource
+  )
+) {
   fail("application entry is missing explicit global composition guard");
 }
 if (!bootstrapSource.includes("if (started) return true;")) {

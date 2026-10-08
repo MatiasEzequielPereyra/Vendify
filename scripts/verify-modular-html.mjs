@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { normalizeLineEndings } from "./text-normalization.mjs";
+import { assertNoModularLegacyRuntime } from "./refactor-verifier-contracts.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const targetArg = process.argv[2] ?? ".";
@@ -30,6 +31,10 @@ for (const file of ["index.html", "html-loader.js", "sw.js", ...fragments]) {
 const index = readFileSync(resolve(target, "index.html"), "utf8");
 const loader = readFileSync(resolve(target, "html-loader.js"), "utf8");
 const serviceWorker = readFileSync(resolve(target, "sw.js"), "utf8");
+const outputFiles = readdirSync(target);
+const modularEntries = [...index.matchAll(/src: "(vendify-(?:offline-v2312|core-v232|app-v232)[^"]+\.js)"/gu)]
+  .map((match) => match[1]);
+const isModularTarget = modularEntries.some((file) => /^vendify-app-v232-/u.test(file));
 const parts = fragments.map((file) => readFileSync(resolve(target, file), "utf8"));
 const markup = normalizeLineEndings(parts.join(""));
 
@@ -89,8 +94,8 @@ for (const marker of [
 }
 try {
   execFileSync(process.execPath, ["--check", resolve(target, "html-loader.js")], { stdio: "pipe" });
-} catch {
-  fail("html-loader.js syntax is invalid");
+} catch (error) {
+  fail(`html-loader.js syntax check failed: ${error instanceof Error ? error.message : String(error)}`);
 }
 pass("HTML loader mounts fragments before loading the runtime sequentially");
 
@@ -100,14 +105,33 @@ for (const file of ["html-loader.js", ...fragments]) {
 if (!serviceWorker.includes('vendify-shell-v235-pinned-runtime')) fail("service worker HTML cache was not bumped");
 pass("offline shell caches the complete modular HTML");
 
-const app = readFileSync(resolve(target, "app.js"), "utf8");
-if (
-  !app.includes('if (document.readyState === "loading")') ||
-  !app.includes('document.addEventListener("DOMContentLoaded", init, { once: true })') ||
-  !app.includes("void init();")
-) {
-  fail("app bootstrap is not safe when fragments finish after DOMContentLoaded");
+if (isModularTarget) {
+  try {
+    assertNoModularLegacyRuntime(index, outputFiles, serviceWorker);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+  const corePosition = modularEntries.findIndex((file) => /^vendify-core-v232-/u.test(file));
+  const appPosition = modularEntries.findIndex((file) => /^vendify-app-v232-/u.test(file));
+  if (corePosition < 0 || appPosition <= corePosition) {
+    fail("modular target must load the typed application after its typed core");
+  }
+  if (!serviceWorker.includes(`"./${modularEntries[appPosition]}"`)) {
+    fail("modular Service Worker does not cache the typed application entry");
+  }
+  pass("modular target loads and caches typed application entry without app.js");
+} else {
+  const appPath = resolve(target, "app.js");
+  if (!existsSync(appPath)) fail("legacy/staging HTML target is missing app.js");
+  const app = readFileSync(appPath, "utf8");
+  if (
+    !app.includes('if (document.readyState === "loading")') ||
+    !app.includes('document.addEventListener("DOMContentLoaded", init, { once: true })') ||
+    !app.includes("void init();")
+  ) {
+    fail("legacy/staging app bootstrap is not safe when fragments finish after DOMContentLoaded");
+  }
+  pass("legacy/staging app initialization supports asynchronous fragment completion");
 }
-pass("app initialization supports asynchronous fragment completion");
 
 console.log(`PASS: modular HTML verified in ${targetArg}`);

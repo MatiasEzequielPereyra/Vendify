@@ -44,7 +44,7 @@ for (const marker of [
   "inventoryController.setup()",
   "branchTransferController.setup()",
   "activeBranchController.getBranches().map((branch) => ({",
-  "reloadProducts: cargarProductos",
+  "reloadProducts: loadProducts",
   "emitStockChange: realtimeController.emitStockChange"
 ]) {
   if (!sourceApp.includes(marker)) {

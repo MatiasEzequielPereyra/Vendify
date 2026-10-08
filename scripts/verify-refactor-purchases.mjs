@@ -43,7 +43,7 @@ for (const marker of [
   "purchasesController.refreshOpenViews()",
   "purchasesController.setup()",
   "activeBranchController.getBranches().map((branch) => ({",
-  "reloadProducts: cargarProductos",
+  "reloadProducts: loadProducts",
   "emitStockChange: realtimeController.emitStockChange"
 ]) {
   if (!sourceApp.includes(marker)) {

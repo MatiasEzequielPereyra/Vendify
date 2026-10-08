@@ -29,7 +29,6 @@ const offlineRuntime = readFileSync(
   resolve(outputRoot, offlineRuntimeFile),
   "utf8"
 );
-const app = readFileSync(resolve(outputRoot, appFile), "utf8");
 const composition = readFileSync(
   resolve(projectRoot, "src/bootstrap/application-composition.ts"),
   "utf8"
@@ -40,6 +39,14 @@ const bootstrap = readFileSync(
 );
 const offlineStorage = readFileSync(
   resolve(projectRoot, "src/bootstrap/application-offline-storage.ts"),
+  "utf8"
+);
+const productCache = readFileSync(
+  resolve(projectRoot, "src/products/products-offline-cache.ts"),
+  "utf8"
+);
+const productsBridge = readFileSync(
+  resolve(projectRoot, "src/legacy/products-bridge.ts"),
   "utf8"
 );
 const typedOverlayOwner = readFileSync(
@@ -143,7 +150,17 @@ for (const marker of [
 for (const marker of [
   "serializeProductCatalogCache",
   "parseProductCatalogCache",
-  "migrateLegacyProductCache",
+  "migrateLegacyProductCache"
+]) {
+  if (!new RegExp(`export function ${marker}\\s*\\(`, "u").test(productCache)) {
+    throw new Error(`Typed Products cache source lost ${marker}`);
+  }
+}
+
+for (const marker of [
+  "serializeCatalog",
+  "parseCatalog",
+  "migrateLegacyCatalog",
   "restoreCatalog",
   "persistCatalog",
   "restoreCart",
@@ -153,6 +170,34 @@ for (const marker of [
     throw new Error(
       `Typed offline application storage missing marker: ${marker}`
     );
+  }
+}
+
+for (const marker of [
+  "serializeOfflineCache: serializeProductCatalogCache",
+  "parseOfflineCache: parseProductCatalogCache",
+  "migrateLegacyOfflineCache: migrateLegacyProductCache"
+]) {
+  if (!productsBridge.includes(marker)) {
+    throw new Error(`Products bridge lost offline cache delegation: ${marker}`);
+  }
+}
+for (const marker of [
+  "serializeCatalog: productsApi.serializeOfflineCache",
+  "parseCatalog: productsApi.parseOfflineCache",
+  "migrateLegacyCatalog: productsApi.migrateLegacyOfflineCache"
+]) {
+  if (!composition.includes(marker)) {
+    throw new Error(`Application composition lost Products cache injection: ${marker}`);
+  }
+}
+for (const marker of [
+  "dependencies.serializeCatalog(",
+  "dependencies.parseCatalog(",
+  "dependencies.migrateLegacyCatalog("
+]) {
+  if (!offlineStorage.includes(marker)) {
+    throw new Error(`Application Offline Storage lost injected cache call: ${marker}`);
   }
 }
 
@@ -168,7 +213,7 @@ for (const obsoleteMarker of [
   "function esErrorRedV2311",
   'supabaseClient.rpc(\n          "registrar_venta_v4"'
 ]) {
-  if (composition.includes(obsoleteMarker) || app.includes(obsoleteMarker)) {
+  if (composition.includes(obsoleteMarker)) {
     throw new Error(
       `Typed application retained migrated Offline implementation: ${obsoleteMarker}`
     );
@@ -182,7 +227,6 @@ for (const obsoleteGlobal of [
 ]) {
   if (
     runtime.includes(obsoleteGlobal)
-    || app.includes(obsoleteGlobal)
     || composition.includes(obsoleteGlobal)
   ) {
     throw new Error(
@@ -234,14 +278,16 @@ for (const marker of [
 }
 
 for (const marker of [
-  "const escapeTargets: NavigationModalTarget[] = [",
-  'documentRef.addEventListener(\n      "keydown",\n      handleGlobalKeydown'
+  "const escapeTargets: NavigationModalTarget[] = ["
 ]) {
   if (!typedNavigationOwner.includes(marker)) {
     throw new Error(
       `Typed global Escape router disappeared: ${marker}`
     );
   }
+}
+if (!/documentRef\s*\.addEventListener\(\s*"keydown"\s*,\s*handleGlobalKeydown\s*\)/u.test(typedNavigationOwner)) {
+  throw new Error("Typed Navigation Events owner lost the global Escape keydown route");
 }
 
 for (const forbidden of [
@@ -278,6 +324,7 @@ for (const marker of [
   'window.dispatchEvent(new Event("offline"))',
   'Object.defineProperty(navigator, "onLine"',
   "VendifyApplicationV232",
+  "window.VendifyApplicationV232?.controllers.cash",
   "typed application runtime identity"
 ]) {
   if (!browserAcceptance.includes(marker)) {
@@ -285,6 +332,9 @@ for (const marker of [
       `Browser acceptance missing real typed Offline proof: ${marker}`
     );
   }
+}
+if (browserAcceptance.includes("cashControllerV232")) {
+  throw new Error("Browser acceptance still depends on the retired Cash global");
 }
 
 console.log(

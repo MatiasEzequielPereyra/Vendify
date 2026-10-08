@@ -45,22 +45,22 @@ if (!bridgeSource.includes("createActiveBranchController")) {
 }
 
 for (const marker of [
-  "const activeBranchController =",
   "branchesApi.createActiveBranchController({",
   "getBranches: () => activeBranchController.getBranches(),",
   "selectBranch: (id) => activeBranchController.select(id),",
   "refreshBranches: () => activeBranchController.refresh(),",
   "await activeBranchController.initialize();",
-  "activeBranchController.setup();",
-  "branchTransferController.setup();",
-  "branchAdministrationController.setup();"
+  "run: () => activeBranchController.setup()",
+  "run: () => branchTransferController.setup()",
+  "run: () => branchAdministrationController.setup()"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(`Root app.js missing Active Branch composition: ${marker}`);
   }
-  if (!app.includes(marker)) {
-    throw new Error(`Generated app missing Active Branch composition: ${marker}`);
-  }
+}
+
+if (!/let activeBranchController:\s*ActiveBranchController;[\s\S]*?activeBranchController\s*=\s*branchesApi\.createActiveBranchController\(\{/u.test(sourceApp)) {
+  throw new Error("Active Branch lost typed let declaration or owner composition");
 }
 
 for (const legacyMarker of [
@@ -73,7 +73,7 @@ for (const legacyMarker of [
   "function setupSucursalesV226",
   "sucursalesV226"
 ]) {
-  if (sourceApp.includes(legacyMarker) || app.includes(legacyMarker)) {
+  if (sourceApp.includes(legacyMarker)) {
     throw new Error(`Legacy Active Branch marker still present: ${legacyMarker}`);
   }
 }

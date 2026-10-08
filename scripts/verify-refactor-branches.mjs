@@ -1,4 +1,4 @@
-﻿import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -48,21 +48,19 @@ for (const marker of [
 
 for (const marker of [
   "branchesApi.createBranchAdministrationController({",
-  "const branchAdministrationController =",
   "refreshBranches: () => activeBranchController.refresh(),",
-  "branchAdministrationController.setup();",
-  "refreshBranchSettings: () => branchAdministrationController.render(),"
+  "run: () => branchAdministrationController.setup()",
+  "refreshBranchSettings: () => branchAdministrationController.render()"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(
       `Root app.js missing Branch Administration composition: ${marker}`
     );
   }
-  if (!app.includes(marker)) {
-    throw new Error(
-      `Compatibility app missing Branch Administration composition: ${marker}`
-    );
-  }
+}
+
+if (!/let branchAdministrationController:\s*BranchAdministrationController;[\s\S]*?branchAdministrationController\s*=\s*branchesApi\.createBranchAdministrationController\(\{/u.test(sourceApp)) {
+  throw new Error("Branch Administration lost typed let declaration or owner composition");
 }
 
 if (!bridgeSource.includes("createBranchAdministrationController")) {
@@ -81,7 +79,7 @@ for (const obsoleteMarker of [
   "function cerrarModalCajaV226",
   "async function crearCajaV226"
 ]) {
-  if (sourceApp.includes(obsoleteMarker) || app.includes(obsoleteMarker)) {
+  if (sourceApp.includes(obsoleteMarker)) {
     throw new Error(
       `Legacy app still contains migrated Branch Administration logic: ${obsoleteMarker}`
     );

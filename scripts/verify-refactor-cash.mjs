@@ -35,18 +35,21 @@ for (const marker of [
 
 for (const marker of [
   "cashApi.createController({",
-  "cashController.loadRegisters({ keep: mantener })",
-  "cashController.selectRegister(e.target.value)",
+  "cashController.loadRegisters({ keep })",
+  "cashController.selectRegister(id)",
   "cashController.loadState()",
   "cashController.isOpenByCurrentUser()",
   "cashController.getState()",
-  "setCashState: (state) => cashController.setState(state)",
   "cashController.renderOptions()",
   "cashController.setup()"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(`Compatibility app missing Cash delegation: ${marker}`);
   }
+}
+
+if (!/setCashState:\s*\(state\)\s*=>\s*cashController\.setState\(\s*state\s+as\s+unknown\s+as\s+Parameters<CashController\["setState"\]>\[0\]\s*\)/u.test(sourceApp)) {
+  throw new Error("Offline Cash state adapter lost its current CashController type boundary");
 }
 
 for (const obsoleteMarker of [

@@ -137,7 +137,13 @@ async function connectTarget(url) {
 
 async function evaluate(cdp, expression) {
   const result = await cdp.send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
-  if (result.exceptionDetails) throw new Error(result.exceptionDetails.text ?? "Falló Runtime.evaluate");
+  if (result.exceptionDetails) {
+    throw new Error(
+      result.exceptionDetails.exception?.description
+        ?? result.exceptionDetails.text
+        ?? "Falló Runtime.evaluate"
+    );
+  }
   return result.result.value;
 }
 
@@ -453,6 +459,8 @@ try {
         document.querySelector("#modal-venta");
       const search =
         document.querySelector("#buscador");
+      const cashController =
+        window.VendifyApplicationV232?.controllers.cash;
 
       if (
         !app ||
@@ -465,6 +473,7 @@ try {
         !settingsClose ||
         !saleModal ||
         !search ||
+        !cashController ||
         !window.appContext
       ) {
         throw new Error(
@@ -475,10 +484,7 @@ try {
       const previousReady = window.appContext.ready;
       const previousCashRegister =
         window.appContext.cashRegister;
-      const previousCashState =
-        typeof cashControllerV232 !== "undefined"
-          ? cashControllerV232.getState()
-          : null;
+      const previousCashState = cashController.getState();
       const appWasHidden = app.classList.contains("hidden");
       const originalBodyTabIndex =
         document.body.getAttribute("tabindex");
@@ -495,9 +501,7 @@ try {
         window.appContext.ready = previousReady;
         window.appContext.cashRegister =
           previousCashRegister;
-        if (typeof cashControllerV232 !== "undefined") {
-          cashControllerV232.setState(previousCashState);
-        }
+        cashController.setState(previousCashState);
         app.classList.toggle("hidden", appWasHidden);
         if (originalBodyTabIndex === null) {
           document.body.removeAttribute("tabindex");
@@ -660,7 +664,7 @@ try {
           id: "ven007l-browser-cash",
           nombre: "Caja Browser"
         };
-        cashControllerV232.setState({
+        cashController.setState({
           sesion: { id: "ven007l-browser-session" },
           es_mia: true
         });
@@ -870,8 +874,10 @@ try {
   }
 
   const activeBranchFlow = await evaluate(firstBrowser.cdp, `(async () => {
+    const activeBranchController =
+      window.VendifyApplicationV232?.controllers.activeBranch;
     if (
-      typeof activeBranchControllerV232 === "undefined"
+      !activeBranchController
       || typeof supabaseClient === "undefined"
       || !window.appContext
     ) {
@@ -880,6 +886,7 @@ try {
 
     const originalRpc = supabaseClient.rpc;
     const previousContext = window.appContext;
+    const previousContextSnapshot = { ...previousContext };
     const storageKey = "vendify_branch_browser-biz";
     const rpcCalls = [];
 
@@ -926,8 +933,8 @@ try {
 
     try {
       localStorage.removeItem(storageKey);
-      window.appContext = {
-        ...previousContext,
+      Object.assign(previousContext, {
+        ...previousContextSnapshot,
         business: { id: "browser-biz", nombre: "Browser Biz" },
         membership: { role: "owner" },
         branch: { id: "branch-a", nombre: "Sucursal A" },
@@ -935,9 +942,9 @@ try {
         permissions: previousContext?.permissions ?? {},
         ready: false,
         offlineMode: false
-      };
+      });
 
-      await activeBranchControllerV232.initialize();
+      await activeBranchController.initialize();
 
       const selector = document.querySelector("#branch-selector-v226");
       const branchLabel = document.querySelector("#branch-current-label-v23013");
@@ -955,7 +962,7 @@ try {
         )
       };
 
-      await activeBranchControllerV232.select("branch-b");
+      await activeBranchController.select("branch-b");
 
       const cashSelector = document.querySelector("#cash-selector-v227");
       const cashLabel = document.querySelector("#cash-current-label-v23013");
@@ -988,7 +995,7 @@ try {
     } finally {
       supabaseClient.rpc = originalRpc;
       localStorage.removeItem(storageKey);
-      window.appContext = previousContext;
+      Object.assign(previousContext, previousContextSnapshot);
     }
   })()`);
 
@@ -1019,9 +1026,13 @@ try {
   }
 
   const commercialPlatformFlow = await evaluate(firstBrowser.cdp, `(async () => {
+    const commercialController =
+      window.VendifyApplicationV232?.controllers.commercial;
+    const platformController =
+      window.VendifyApplicationV232?.controllers.platform;
     if (
-      typeof commercialFoundationControllerV232 === "undefined"
-      || typeof platformAdminControllerV232 === "undefined"
+      !commercialController
+      || !platformController
       || typeof supabaseClient === "undefined"
       || !window.appContext
     ) {
@@ -1030,6 +1041,7 @@ try {
 
     const originalRpc = supabaseClient.rpc;
     const previousContext = window.appContext;
+    const previousContextSnapshot = { ...previousContext };
     const hideKey = "vendify_onboarding_hide_v231:browser-commercial";
     const rpcCalls = [];
 
@@ -1131,19 +1143,19 @@ try {
 
     try {
       localStorage.removeItem(hideKey);
-      window.appContext = {
-        ...previousContext,
+      Object.assign(previousContext, {
+        ...previousContextSnapshot,
         business: { id: "browser-commercial", nombre: "Browser Commercial" },
         membership: { role: "owner" },
         branch: { id: "browser-branch", nombre: "Browser Branch" },
         cashRegister: { id: "browser-cash", nombre: "Browser Cash" },
         permissions: {
-          ...(previousContext?.permissions ?? {}),
+          ...(previousContextSnapshot.permissions ?? {}),
           manageProducts: true
         },
         ready: true,
         offlineMode: false
-      };
+      });
 
       const onboarding = document.querySelector("#commercial-onboarding-v231");
       const onboardingSteps = document.querySelector("#commercial-onboarding-steps-v231");
@@ -1179,9 +1191,9 @@ try {
       platformButton.classList.add("hidden");
       platformModal.classList.add("hidden");
 
-      await commercialFoundationControllerV232.refreshOnboarding();
-      await commercialFoundationControllerV232.loadPlan();
-      await commercialFoundationControllerV232.loadOperationalConfig();
+      await commercialController.refreshOnboarding();
+      await commercialController.loadPlan();
+      await commercialController.loadOperationalConfig();
 
       const onboardingBeforeHide = {
         visible: !onboarding.classList.contains("hidden"),
@@ -1223,7 +1235,7 @@ try {
         (call) => call.name === "guardar_config_operativa_v1"
       );
 
-      await platformAdminControllerV232.refreshAccess();
+      await platformController.refreshAccess();
       const platformVisible = !platformButton.classList.contains("hidden");
 
       platformButton.click();
@@ -1277,7 +1289,7 @@ try {
       document.querySelector("#commercial-onboarding-v231")?.classList.add("hidden");
       document.querySelector("#modal")?.classList.add("hidden");
       document.querySelector("#modal-platform-admin-v231")?.classList.add("hidden");
-      window.appContext = previousContext;
+      Object.assign(previousContext, previousContextSnapshot);
     }
   })()`);
 
@@ -1454,8 +1466,10 @@ try {
     );
   }
   const productMedia = await evaluate(firstBrowser.cdp, `(() => {
-    if (!window.appContext) {
-      throw new Error('Product runtime appContext unavailable');
+    const productsController =
+      window.VendifyApplicationV232?.controllers.products;
+    if (!window.appContext || !productsController) {
+      throw new Error('Typed Product runtime unavailable');
     }
 
     const originalProductContext = {
@@ -1471,7 +1485,10 @@ try {
     };
     window.appContext.ready = true;
 
-    aplicarPermisosV2();
+    productsController.applyRemoteChange({
+      eventType: 'DELETE',
+      old: { id: 'ven-007e-permission-refresh' }
+    });
 
     const modal = document.querySelector('#modal');
     const openButton = document.querySelector('#btn-nuevo');
@@ -1517,47 +1534,34 @@ try {
     closeButton.click();
     editor.closed = modal.classList.contains('hidden');
 
-    if (
-      typeof productsStoreV232 === 'undefined'
-      || typeof productsControllerV232 === 'undefined'
-    ) {
-      throw new Error('Typed Products runtime unavailable');
-    }
-
     const photoId = 'ven-007e-existing-photo-fixture';
     const fallbackId = 'ven-007e-no-photo-fixture';
 
     const photoValue =
       'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-    productsStoreV232.upsert({
-      id: photoId,
-      nombre: 'Producto con foto',
+    const productFixture = (id, nombre, foto) => ({
+      id,
+      nombre,
       marca: '',
       presentacion: '',
-      codigoBarras: '',
+      codigo_barras: '',
       categoria: 'Otros',
-      precioCompra: 10,
-      precioVenta: 20,
+      precio_compra: 10,
+      precio_venta: 20,
       stock: 5,
-      stockMinimo: 2,
-      foto: photoValue,
+      stock_minimo: 2,
+      foto,
       creado: null
     });
 
-    productsStoreV232.upsert({
-      id: fallbackId,
-      nombre: 'Producto sin foto',
-      marca: '',
-      presentacion: '',
-      codigoBarras: '',
-      categoria: 'Otros',
-      precioCompra: 10,
-      precioVenta: 20,
-      stock: 5,
-      stockMinimo: 2,
-      foto: null,
-      creado: null
+    productsController.applyRemoteChange({
+      eventType: 'INSERT',
+      new: productFixture(photoId, 'Producto con foto', photoValue)
+    });
+    productsController.applyRemoteChange({
+      eventType: 'INSERT',
+      new: productFixture(fallbackId, 'Producto sin foto', null)
     });
 
     const search = document.querySelector('#buscador');
@@ -1566,7 +1570,7 @@ try {
     const category = document.querySelector('#filtro-categoria');
     if (category) category.value = '';
 
-    productsControllerV232.render();
+    productsController.render();
 
     const photoCard = document.querySelector(
       '.producto-card[data-id="ven-007e-existing-photo-fixture"]'
@@ -1587,9 +1591,14 @@ try {
       fallbackPresent: Boolean(fallback)
     };
 
-    productsStoreV232.remove(photoId);
-    productsStoreV232.remove(fallbackId);
-    productsControllerV232.render();
+    productsController.applyRemoteChange({
+      eventType: 'DELETE',
+      old: { id: photoId }
+    });
+    productsController.applyRemoteChange({
+      eventType: 'DELETE',
+      old: { id: fallbackId }
+    });
 
     window.appContext.membership = originalProductContext.membership;
     window.appContext.permissions = originalProductContext.permissions;

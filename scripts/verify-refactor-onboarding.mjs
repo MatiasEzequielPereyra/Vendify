@@ -53,7 +53,7 @@ for (const app of [sourceApp]) {
   for (const marker of [
     "core.createOnboardingController({",
     "onExamples: () => productsController.openCatalog()",
-    "onboardingController.setup();"
+    "run: () => onboardingController.setup()"
   ]) {
     if (!app.includes(marker)) {
       throw new Error(`Compatibility app missing onboarding composition: ${marker}`);

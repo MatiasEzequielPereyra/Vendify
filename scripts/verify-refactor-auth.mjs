@@ -48,8 +48,8 @@ for (const marker of [
 for (const marker of [
   "authApi.createController({",
   "authApi.createInactivityGuard({",
-  "inactivityGuard.start();",
-  "authController.setup();",
+  "inactivityGuard.start()",
+  "authController.setup()",
   "authController.initialize()",
   "authController.getSession()",
   "authController.signOut()"

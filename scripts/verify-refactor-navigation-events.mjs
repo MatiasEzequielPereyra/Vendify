@@ -22,10 +22,6 @@ if (!coreFile || !appFile) {
 }
 
 const core = readFileSync(resolve(outputRoot, coreFile), "utf8");
-const generatedApp = readFileSync(
-  resolve(outputRoot, appFile),
-  "utf8"
-);
 const composition = readFileSync(
   resolve(
     projectRoot,
@@ -98,13 +94,9 @@ const retiredOwners = [
   "inicializarEventos"
 ];
 
-for (const source of [composition, generatedApp]) {
-  for (const retired of retiredOwners) {
-    if (source.includes(retired)) {
-      throw new Error(
-        `Typed application retained legacy Navigation/Back owner: ${retired}`
-      );
-    }
+for (const retired of retiredOwners) {
+  if (composition.includes(retired)) {
+    throw new Error(`Typed application retained legacy Navigation/Back owner: ${retired}`);
   }
 }
 
@@ -127,14 +119,27 @@ for (const marker of [
   'getElementById("btn-gestion-v230")',
   'addEventListener("popstate", onPopState)',
   "function onPopState(): void",
-  "void handleBack();",
-  'addEventListener(\n      "keydown",\n      handleGlobalKeydown'
+  "void handleBack();"
 ]) {
   if (!typedOwner.includes(marker)) {
     throw new Error(
       `Typed Navigation Events owner missing listener marker: ${marker}`
     );
   }
+}
+
+const keydownListener = /documentRef\s*\.addEventListener\(\s*"keydown"\s*,\s*handleGlobalKeydown\s*\)/gu;
+if ([...typedOwner.matchAll(keydownListener)].length !== 1) {
+  throw new Error("Typed Navigation Events owner must install exactly one global keydown listener");
+}
+if (!/function handleGlobalKeydown\(event: KeyboardEvent\): void/u.test(typedOwner)) {
+  throw new Error("Typed Navigation Events keydown listener has no typed handler owner");
+}
+const keydownPosition = typedOwner.search(keydownListener);
+const backGuardPosition = typedOwner.indexOf("armBackGuard();", keydownPosition);
+const popstatePosition = typedOwner.indexOf('windowRef.addEventListener("popstate", onPopState)', keydownPosition);
+if (!(keydownPosition >= 0 && keydownPosition < backGuardPosition && backGuardPosition < popstatePosition)) {
+  throw new Error("Typed Navigation Events listener and Back Guard setup order changed");
 }
 
 if (/\bpopstate\b/u.test(composition)) {
@@ -186,7 +191,6 @@ for (const legacyBootstrap of [
 ]) {
   if (
     composition.includes(legacyBootstrap)
-    || generatedApp.includes(legacyBootstrap)
   ) {
     throw new Error(
       `Legacy bootstrap marker restored in typed runtime: ${legacyBootstrap}`

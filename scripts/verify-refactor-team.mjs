@@ -42,7 +42,7 @@ for (const marker of [
 
 for (const marker of [
   "teamApi.createController({",
-  "teamController.setup();",
+  "run: () => teamController.setup()",
   "teamController.open()",
   "teamController.refreshBusinessAccessCode()",
   "teamController.closeEditor()",

@@ -65,24 +65,33 @@ for (const [bridge, marker, label] of [
 }
 
 for (const marker of [
-  "const commercialFoundationController =",
   "commercialApi.createCommercialFoundationController({",
-  "const platformAdminController =",
   "platformApi.createPlatformAdminController({",
   "await commercialFoundationController.load();",
   "reloadCommercialFoundation: () => commercialFoundationController.load(),",
-  "commercialFoundationController.setup();",
-  "platformAdminController.setup();",
-  "setupObservabilityV231();",
-  "setupOfflineSalesV2311();",
-  "dashboardController.setup();",
-  "setupProductCsvImportV231();"
+  "run: () => commercialFoundationController.setup()",
+  "run: () => platformAdminController.setup()",
+  "run: setupObservability",
+  "run: () => dashboardController.setup()",
+  "setupCsvImport"
 ]) {
   if (!sourceApp.includes(marker)) {
     throw new Error(`Root app.js missing Commercial/Platform composition: ${marker}`);
   }
-  if (!app.includes(marker)) {
-    throw new Error(`Generated app missing Commercial/Platform composition: ${marker}`);
+}
+
+for (const [name, type, factory] of [
+  ["commercialFoundationController", "CommercialFoundationController", "commercialApi.createCommercialFoundationController"],
+  ["platformAdminController", "PlatformAdminController", "platformApi.createPlatformAdminController"]
+]) {
+  const escapedFactory = factory.replaceAll(".", "\\.");
+  const pattern = new RegExp(`let ${name}:\\s*${type};[\\s\\S]*?${name}\\s*=\\s*${escapedFactory}\\(\\{`, "u");
+  if (!pattern.test(sourceApp)) throw new Error(`Typed ${name} declaration/composition was lost`);
+}
+
+for (const [name, lifecycle] of [["commercialFoundationController", "commercial"], ["platformAdminController", "platform"]]) {
+  if (!new RegExp(`name: "${lifecycle}",[\\s\\S]{0,100}run: \\(\\) => ${name}\\.setup\\(\\)`, "u").test(sourceApp)) {
+    throw new Error(`Typed ${name} setup lifecycle was lost`);
   }
 }
 
@@ -103,7 +112,7 @@ for (const legacyMarker of [
   "commercialConfigV231",
   "commercialRefreshTimerV231"
 ]) {
-  if (sourceApp.includes(legacyMarker) || app.includes(legacyMarker)) {
+  if (sourceApp.includes(legacyMarker)) {
     throw new Error(`Legacy Commercial/Platform marker still present: ${legacyMarker}`);
   }
 }

@@ -84,7 +84,7 @@ const retiredOwners = [
 for (const app of [sourceApp]) {
   for (const marker of [
     "contextApi.createContextPickerController({",
-    "contextPickerController.setup();",
+    "run: () => contextPickerController.setup()",
     "closeContextPickers: () => contextPickerController.close()",
     "updateContextLabels: () => contextPickerController.updateLabels()"
   ]) {

@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertSourceMatch } from "./refactor-verifier-contracts.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
@@ -19,6 +20,7 @@ const sourceModel = readFileSync(resolve(projectRoot, "src/products/product-mode
 const sourceService = readFileSync(resolve(projectRoot, "src/products/products-service.ts"), "utf8");
 const sourceProductHtml = readFileSync(resolve(projectRoot, "html/03-product-stock-modals.html"), "utf8");
 const generatedProductHtml = readFileSync(resolve(root, "html/03-product-stock-modals.html"), "utf8");
+const browserAcceptance = readFileSync(resolve(projectRoot, "scripts/run-pwa-browser-acceptance.mjs"), "utf8");
 
 for (const marker of [
   "VendifyProductsV232",
@@ -53,7 +55,6 @@ for (const marker of [
   "productsApi.createScannerController({",
   "productsController.loadProducts()",
   "productsController.render()",
-  "productsController.openEditor(producto)",
   "lookupBarcode: (code) => productsController.lookupBarcode(code)",
   "captureOfflineStockSnapshot: async (items)",
   "window.VendifyOfflineV2312.captureStockSnapshot({",
@@ -204,6 +205,12 @@ for (const marker of [
   if (!sourceController.includes(marker)) {
     throw new Error(`Products controller lost typed Inventory adjustment delegation: ${marker}`);
   }
+}
+
+assertSourceMatch(sourceApp, /const openProduct\s*=\s*\(product:\s*Parameters<ProductsController\["openEditor"\]>\[0\]\s*=\s*null\)\s*:\s*void\s*=>\s*\{\s*productsController\.openEditor\(product\);/u, "Typed Product editor adapter lost its controller parameter type or delegation");
+assertSourceMatch(browserAcceptance, /window\.VendifyApplicationV232\?\.controllers\.products/u, "Browser acceptance must resolve Products through typed application composition");
+if (/products(?:Store|Controller)V232|aplicarPermisosV2/u.test(browserAcceptance)) {
+  throw new Error("Browser acceptance depends on retired Products globals");
 }
 
 const retiredLegacyStockIds = [

@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { assertNoModularLegacyRuntime } from "./refactor-verifier-contracts.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const root = resolve(projectRoot, "dist-refactor-modular");
@@ -81,15 +82,10 @@ for (const forbidden of [
     fail(`modular index retained forbidden compatibility runtime marker: ${forbidden}`);
   }
 }
-if (files.includes("app.js")) {
-  fail("dist-refactor-modular still contains app.js");
-}
-if (
-  files.some((file) =>
-    /^app-(?:refactor-v232|staging-v2312)-/u.test(file)
-  )
-) {
-  fail("dist-refactor-modular still contains a compatibility application bundle");
+try {
+  assertNoModularLegacyRuntime(index, files, readFileSync(resolve(root, "sw.js"), "utf8"));
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
 }
 pass("modular artifact has no app.js or app-refactor/app-staging application runtime");
 
@@ -105,7 +101,7 @@ try {
 } catch (error) {
   const stderr =
     error && typeof error === "object" && "stderr" in error
-      ? String(error.stderr)
+      ? String(error.stderr ?? (error instanceof Error ? error.message : error))
       : String(error);
   fail(`generated typed application has invalid JavaScript syntax: ${stderr}`);
 }
