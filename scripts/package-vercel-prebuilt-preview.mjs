@@ -20,6 +20,7 @@ import {
   PRODUCTION_SUPABASE_PROJECT_REF
 } from "./staging-supabase-config.mjs";
 import { assertNoModularLegacyRuntime } from "./refactor-verifier-contracts.mjs";
+import { bootstrapScriptHash } from "./html-bootstrap-csp.mjs";
 
 export const EXPECTED_STAGING_SUPABASE_PROJECT_REF = "clqxfwiutwnhbejezakw";
 export const REQUIRED_SECURITY_HEADERS = Object.freeze([
@@ -214,7 +215,7 @@ function parseCspDirectives(csp) {
   return directives;
 }
 
-function validateCsp(csp) {
+function validateCsp(csp, indexSource) {
   const directives = parseCspDirectives(csp);
   for (const directive of REQUIRED_CSP_DIRECTIVES) {
     if (!directives.has(directive)) fail(`CSP is missing ${directive}`);
@@ -239,7 +240,10 @@ function validateCsp(csp) {
   if (csp.includes(PRODUCTION_SUPABASE_PROJECT_REF)) {
     fail("CSP still references the production Supabase project");
   }
-  for (const [name, expectedSources] of Object.entries(EXPECTED_CSP_SOURCES)) {
+  for (const [name, sources] of Object.entries(EXPECTED_CSP_SOURCES)) {
+    const expectedSources = name === "script-src"
+      ? [...sources, bootstrapScriptHash(indexSource)]
+      : sources;
     const actual = directives.get(name) ?? [];
     if (actual.length !== expectedSources.length || expectedSources.some((source) => !actual.includes(source))) {
       fail(`CSP ${name} contains unauthorized or overly permissive sources`);
@@ -248,7 +252,7 @@ function validateCsp(csp) {
   return directives;
 }
 
-function validateGeneratedVercelConfig(config) {
+function validateGeneratedVercelConfig(config, indexSource) {
   assertPlainObject(config, "generated staging vercel.json");
   if (!Array.isArray(config.headers) || config.headers.length === 0) {
     fail("generated staging vercel.json has no header rules");
@@ -269,7 +273,7 @@ function validateGeneratedVercelConfig(config) {
     if (!allHeaders.has(required)) fail(`generated staging vercel.json is missing ${required}`);
   }
 
-  validateCsp(allHeaders.get("content-security-policy"));
+  validateCsp(allHeaders.get("content-security-policy"), indexSource);
   return config;
 }
 
@@ -402,7 +406,7 @@ export async function packageModularPreview(options) {
   const stagingVercelConfig = validateGeneratedVercelConfig(parseJson(
     await readFile(files[relativeFiles.indexOf("vercel.json")], "utf8"),
     "generated staging vercel.json"
-  ));
+  ), await readFile(files[relativeFiles.indexOf("index.html")], "utf8"));
   const outputConfig = transformHeaders(stagingVercelConfig);
 
   const copiedAssets = relativeFiles.filter((path) => path !== "vercel.json");

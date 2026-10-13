@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { resolve } from "node:path";
 import { build } from "vite";
+import { authorizeBootstrapInVercelConfig } from "./html-bootstrap-csp.mjs";
 import {
   resolveStagingSupabaseConfig,
   stagingExpectedProjectRef
@@ -141,6 +142,12 @@ index = index.replace(
   `Object.freeze({ src: "${typedName}" })`
 );
 writeFileSync(indexPath, index, "utf8");
+const vercelConfigPath = resolve(out, "vercel.json");
+writeFileSync(
+  vercelConfigPath,
+  authorizeBootstrapInVercelConfig(readFileSync(vercelConfigPath, "utf8"), index),
+  "utf8"
+);
 
 unlinkSync(resolve(out, stagedAppName));
 const copiedAppPath = resolve(out, "app.js");
