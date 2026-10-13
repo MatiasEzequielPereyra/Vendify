@@ -14,6 +14,7 @@ import {
   renderStagingSupabaseConfig,
   renderStagingVercelConfig
 } from "../../scripts/staging-supabase-config.mjs";
+import { authorizeBootstrapInVercelConfig, bootstrapScriptHash } from "../../scripts/html-bootstrap-csp.mjs";
 
 const STAGING_REF = "clqxfwiutwnhbejezakw";
 const STAGING_CONNECT_TOKENS = `'self' https://${STAGING_REF}.supabase.co wss://${STAGING_REF}.supabase.co https://world.openfoodfacts.org`;
@@ -64,7 +65,7 @@ async function makeFixture(t, mutate = () => {}) {
   const artifactDir = join(root, "dist-refactor-modular");
   const outputDir = join(root, "ven008-synthetic-output");
   await mkdir(artifactDir, { recursive: true });
-  const index = `<!doctype html><script src="vendify-offline-v2312-0123456789ab.js"></script><script src="vendify-core-v232-0123456789ab.js"></script><script src="vendify-app-v232-0123456789ab.js"></script><script src="vendify-offline-v2312-pending-ui-0123456789ab.js"></script>`;
+  const index = `<!doctype html><script>window.VENDIFY_HTML_BOOTSTRAP = Object.freeze({});</script><script src="vendify-offline-v2312-0123456789ab.js"></script><script src="vendify-core-v232-0123456789ab.js"></script><script src="vendify-app-v232-0123456789ab.js"></script><script src="vendify-offline-v2312-pending-ui-0123456789ab.js"></script>`;
   const files = new Map([
     ["index.html", index],
     ["sw.js", 'const SHELL = ["./vendify-offline-v2312-0123456789ab.js", "./vendify-core-v232-0123456789ab.js", "./vendify-app-v232-0123456789ab.js", "./vendify-offline-v2312-pending-ui-0123456789ab.js"];'],
@@ -73,7 +74,7 @@ async function makeFixture(t, mutate = () => {}) {
     ["vendify-core-v232-0123456789ab.js", "VendifyCoreV232 VendifyAuthV232 VendifyProductsV232 VendifyRealtimeV232 VendifyOfflineCompatV232 VendifyPwaV232"],
     ["vendify-app-v232-0123456789ab.js", "VendifyApplicationV232 typed application entry loaded"],
     ["vendify-offline-v2312-pending-ui-0123456789ab.js", "pending"],
-    ["vercel.json", renderStagingVercelConfig(rootVercelConfig(), STAGING)]
+    ["vercel.json", authorizeBootstrapInVercelConfig(renderStagingVercelConfig(rootVercelConfig(), STAGING), index)]
   ]);
   for (const [path, content] of files) await writeFile(join(artifactDir, path), content);
   await mutate({ artifactDir, files, outputDir });
@@ -110,6 +111,11 @@ test("packages byte-identical modular static assets with v3 routes and safe prov
   assert.equal(config.version, 3);
   assert.ok(Array.isArray(config.routes));
   const sourceConfig = JSON.parse(await readFile(join(fixture.artifactDir, "vercel.json"), "utf8"));
+  const csp = sourceConfig.headers[0].headers[0].value;
+  assert.ok(csp.includes(bootstrapScriptHash(await readFile(join(fixture.artifactDir, "index.html"), "utf8"))));
+  const scriptCsp = csp.match(/script-src[^;]*/u)[0];
+  assert.ok(!scriptCsp.includes("'unsafe-inline'"));
+  assert.ok(!scriptCsp.includes("'unsafe-eval'"));
   const expectedSources = new Map([
     ["/(.*)", "^(?:/(.*))$"],
     ["/supabase-config.js", "^/supabase-config\\.js$"],
@@ -140,6 +146,22 @@ test("packages byte-identical modular static assets with v3 routes and safe prov
   assert.equal(JSON.stringify(config).includes(PRODUCTION_SUPABASE_PROJECT_REF), false);
   assert.equal(await readFile(join(fixture.artifactDir, "vendify-app-v232-0123456789ab.js"), "utf8"), await readFile(join(fixture.outputDir, "static", "vendify-app-v232-0123456789ab.js"), "utf8"));
   assert.equal(await readFile(join(fixture.outputDir, "static", "vercel.json")).catch(() => null), null);
+});
+
+test("rejects a bootstrap hash that does not match the packaged HTML", async (t) => {
+  const fixture = await makeFixture(t, async ({ artifactDir }) => {
+    const indexPath = join(artifactDir, "index.html");
+    await writeFile(indexPath, (await readFile(indexPath, "utf8")).replace("Object.freeze({})", "Object.freeze({ changed: true })"));
+  });
+  await assert.rejects(packageModularPreview({
+    artifactDir: fixture.artifactDir,
+    outputDir: fixture.outputDir,
+    sourceSha: BASE_SHA,
+    sourceTreeStatus: "modified",
+    buildCommand: "fixture",
+    packageCommand: "fixture",
+    backendSource: "synthetic"
+  }), /CSP script-src contains unauthorized or overly permissive sources/u);
 });
 
 test("keeps synthetic packages out of .vercel/output", async (t) => {

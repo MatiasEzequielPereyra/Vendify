@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { normalizeLineEndings } from "./text-normalization.mjs";
 import { assertNoModularLegacyRuntime } from "./refactor-verifier-contracts.mjs";
+import { bootstrapScriptHash } from "./html-bootstrap-csp.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const targetArg = process.argv[2] ?? ".";
@@ -32,6 +33,18 @@ const index = readFileSync(resolve(target, "index.html"), "utf8");
 const loader = readFileSync(resolve(target, "html-loader.js"), "utf8");
 const serviceWorker = readFileSync(resolve(target, "sw.js"), "utf8");
 const outputFiles = readdirSync(target);
+if (target !== projectRoot) {
+  const vercel = JSON.parse(readFileSync(resolve(target, "vercel.json"), "utf8"));
+  const csp = vercel.headers.flatMap((rule) => rule.headers)
+    .find((header) => header.key.toLowerCase() === "content-security-policy")?.value;
+  const scriptSources = csp?.match(/script-src ([^;]+)/u)?.[1]?.split(/\s+/u) ?? [];
+  const expectedSources = ["'self'", "https://cdn.jsdelivr.net", bootstrapScriptHash(index)];
+  if (scriptSources.length !== expectedSources.length ||
+      expectedSources.some((source) => !scriptSources.includes(source))) {
+    fail("generated CSP does not authorize only the exact HTML bootstrap inline script");
+  }
+  pass("generated CSP authorizes the exact HTML bootstrap and no other inline scripts");
+}
 const modularEntries = [...index.matchAll(/src: "(vendify-(?:offline-v2312|core-v232|app-v232)[^"]+\.js)"/gu)]
   .map((match) => match[1]);
 const isModularTarget = modularEntries.some((file) => /^vendify-app-v232-/u.test(file));

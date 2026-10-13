@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { build } from "vite";
+import { authorizeBootstrapInVercelConfig } from "./html-bootstrap-csp.mjs";
 import {
   renderStagingApplicationSource,
   renderStagingSupabaseConfig,
@@ -67,11 +68,6 @@ writeFileSync(
   renderStagingSupabaseConfig(stagingSupabaseConfig),
   "utf8"
 );
-writeFileSync(
-  resolve(out, "vercel.json"),
-  renderStagingVercelConfig(readFileSync(resolve(root, "vercel.json"), "utf8"), stagingSupabaseConfig),
-  "utf8"
-);
 
 const stagedApp = renderStagingApplicationSource(
   readFileSync(resolve(root, "app.js"), "utf8"),
@@ -110,6 +106,14 @@ if (!index.includes(appEntry)) {
 
 const stagedIndex = index.replace(appEntry, stagedEntries);
 writeFileSync(indexPath, stagedIndex, "utf8");
+writeFileSync(
+  resolve(out, "vercel.json"),
+  authorizeBootstrapInVercelConfig(
+    renderStagingVercelConfig(readFileSync(resolve(root, "vercel.json"), "utf8"), stagingSupabaseConfig),
+    stagedIndex
+  ),
+  "utf8"
+);
 
 console.log("Vendify v2.31.2 staging release created in dist-staging-v2312/");
 console.log("Staging Supabase mode: " + stagingSupabaseConfig.mode + ".");
