@@ -20,6 +20,18 @@ export default tseslint.config(
     }
   },
   {
+    // vite.config.ts is outside tsconfig.json's src-only include list.
+    files: ["vite.config.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ["vite.config.ts"]
+        },
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
+  },
+  {
     ignores: [
       "app.js",
       "dist/**",
