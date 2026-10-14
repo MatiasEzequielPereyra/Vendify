@@ -1,9 +1,4 @@
 {
-  "git": {
-    "deploymentEnabled": {
-      "codex/ven008-p1-inventory-history-cost-leak": false
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
