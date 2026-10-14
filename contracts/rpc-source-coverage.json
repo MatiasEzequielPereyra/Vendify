@@ -351,7 +351,8 @@
       "rpc": "listar_movimientos_inventario_v1",
       "sourceFound": true,
       "files": [
-        "supabase/legacy/modules/inventario_profesional.sql"
+        "supabase/legacy/modules/inventario_profesional.sql",
+        "supabase/migrations/20261014170534_inventory_history_role_guard.sql"
       ]
     },
     {
