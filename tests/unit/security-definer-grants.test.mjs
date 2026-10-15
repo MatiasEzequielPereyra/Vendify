@@ -33,6 +33,19 @@ test("SECURITY DEFINER grants expose only the versioned frontend contract", () =
       path.resolve(currentDirectory, "../..", file),
       "utf8"
     )).join("\n");
+    if (["listar_negocios_plataforma_v2", "obtener_negocio_plataforma_v1"].includes(rpc)) {
+      // These browser reads intentionally require no service_role execution grant.
+      assert.match(laterSources, new RegExp(
+        `revoke all on function public\\.${rpc}\\([^;]+from public, anon, authenticated;`, "i"
+      ));
+      assert.match(laterSources, new RegExp(
+        `grant execute on function public\\.${rpc}\\([^;]+to authenticated;`, "i"
+      ));
+      assert.doesNotMatch(laterSources, new RegExp(
+        `grant[^;]+on function public\\.${rpc}\\([^;]+to[^;]*(?:service_role|anon|public)`, "i"
+      ));
+      continue;
+    }
     assert.match(laterSources, new RegExp(
       `revoke execute on function public\\.${rpc}[\\s\\S]*from public,\\s*anon`,
       "i"

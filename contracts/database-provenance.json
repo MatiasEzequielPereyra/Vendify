@@ -338,6 +338,16 @@
         "constraint: public.movimientos.movimientos_tipo_check"
       ],
       "security": false
+    },
+    {
+      "file": "supabase/migrations/20261014192711_ven_admin_001b1_business_read_model.sql",
+      "purpose": "Add globally authorized pure business reads; repository inventory only, not remote deployment evidence.",
+      "creates": [
+        "public.listar_negocios_plataforma_v2",
+        "public.obtener_negocio_plataforma_v1"
+      ],
+      "modifies": [],
+      "security": true
     }
   ],
   "reconciliation": {

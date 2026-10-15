@@ -1,0 +1,83 @@
+{
+  "task": "VEN-ADMIN-001B1",
+  "baseSha": "7503ba24399967a93fab1711632adaf91fbbe662",
+  "branch": "feature/ven-admin-001b1-read-model",
+  "generatedAt": "2026-10-14T19:39:13.281Z",
+  "authorizationSha256": "b994bc9e90151dd35fbe78f20e1dd83f841c0d71c110c01a3ca154938c2b2258",
+  "exclusions": [
+    "docs/engineering/handoffs/vendify/VEN-ADMIN-001B1-20261014-001.md",
+    "docs/engineering/handoffs/vendify/VEN-ADMIN-001B1-20261014-001-manifest.json"
+  ],
+  "files": [
+    {
+      "path": "contracts/commercial-readiness.json",
+      "sha256": "45e24d1f6d993a22e8c4543e85083215830e475fc64e9faa59e0183a9cbbdc12"
+    },
+    {
+      "path": "contracts/database-provenance.json",
+      "sha256": "c13a49f9c4fcd93da6d8372d5690de3c5895392598bc35dc0ddab951e7b56386"
+    },
+    {
+      "path": "contracts/rpc-contract.json",
+      "sha256": "946b60aa8f52e7a60780cfa6cf3998ad3e5bd92da0b3d07a71ccc7a48825744f"
+    },
+    {
+      "path": "contracts/rpc-source-coverage.json",
+      "sha256": "793a2007a545edf82c67ad413a08866db3baf3472bd72c27ad94077406cc8f3e"
+    },
+    {
+      "path": "docs/PLATFORM-ADMIN-BUSINESS-READ-MODEL.md",
+      "sha256": "d1fa2038c2bf0d684cc4201426a2551de9030c429c2a14142fabb55fa491a364"
+    },
+    {
+      "path": "package.json",
+      "sha256": "fb475938e57a813b0c0bfd961942b708c2ce4dc05a090c276e0ca65588d637ca"
+    },
+    {
+      "path": "scripts/test-platform-business-read-local.mjs",
+      "sha256": "2e26a6ef84a83970c5286e36024649f56523d14493b6e69a5a4cdf6ffb9f06ea"
+    },
+    {
+      "path": "src/platform/business-read-model.ts",
+      "sha256": "6e5842e1e45ea055426838cd114685ac55c2c1fffb9ab0154f21454b2c545c45"
+    },
+    {
+      "path": "src/platform/business-read-service.ts",
+      "sha256": "ab0cc7d0d366400bf6dcbc96edbce1742837b77dfdadc8dd30e3baab51b9ebc6"
+    },
+    {
+      "path": "supabase/migrations/20261014192711_ven_admin_001b1_business_read_model.sql",
+      "sha256": "b710c969dd9c4c3f30e8a30a77a6a25b021bb2b22882e024a5adf3546d0244a7"
+    },
+    {
+      "path": "tests/integration/platform-business-read-model.sql",
+      "sha256": "50f9a33746594ff9395a3be84851de40164de5d663a8562798760afc618b058c"
+    },
+    {
+      "path": "tests/unit/database-provenance.test.mjs",
+      "sha256": "0a7844d0299e890fe7584f12487346f62df40b67d911ddccf22baec94e4d9af0"
+    },
+    {
+      "path": "tests/unit/platform-business-read-model.test.mjs",
+      "sha256": "2c93c080c6c002be6bc5b57edb29b347406fac79c1c49dae7dc2446f54ee2552"
+    },
+    {
+      "path": "tests/unit/rpc-source-recovery-diagnostic.test.mjs",
+      "sha256": "a023c70eefa62a34422ef818b2a1ba44286be1116090d5cdbed4eafcb4522023"
+    },
+    {
+      "path": "tests/unit/security-definer-grants.test.mjs",
+      "sha256": "bc409b5acecddb059cc275d615353686f998b3f06e62eabd87cfa7184d8ae396"
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".vendify-build/ven-admin-001b1-ci.log",
+      "sha256": "032704128da4d2801dd50cab6897e4d531c895789d8b7af0a556b2107df17944"
+    },
+    {
+      "path": ".vendify-build/ven-admin-001b1-sql.log",
+      "sha256": "c773cc6b317c170cb8c2ab5fbea7b1408fac237b6ddeeab4dddfac64ed339727"
+    }
+  ]
+}

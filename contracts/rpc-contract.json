@@ -1,7 +1,7 @@
 {
   "generatedFrom": "app.js + src/**/*.ts",
   "baselineVersion": "2.31.1",
-  "rpcCount": 75,
+  "rpcCount": 77,
   "critical": [
     "ajustar_stock_inventario_v2",
     "aplicar_conteo_fisico_v2",
@@ -72,6 +72,7 @@
     "listar_movimientos_caja_abierta_v1",
     "listar_movimientos_inventario_v1",
     "listar_negocios_plataforma_v1",
+    "listar_negocios_plataforma_v2",
     "listar_permisos_stock_equipo_v1",
     "listar_productos_sucursal_seguro_v1",
     "listar_proveedores_v1",
@@ -84,6 +85,7 @@
     "obtener_estado_caja_v1",
     "obtener_estado_lease_venta_offline_v1",
     "obtener_negocio_admin_actual",
+    "obtener_negocio_plataforma_v1",
     "obtener_perfil_empleado_actual",
     "obtener_permisos_personalizados_v1",
     "obtener_plan_actual_v1",
