@@ -1,8 +1,9 @@
 # VEN-ADMIN-001B1 — Business read model
 
 Base: `7503ba24399967a93fab1711632adaf91fbbe662` on `refactor/modular-runtime`.
-Scope: additive, unconnected read contracts for a future platform administration UI.
-The existing controller, bridge, read RPC v1 and subscription mutation are unchanged.
+Original scope: additive read contracts. The local 2026-10-22 MVP increment now
+connects the validated list to the existing modular platform administration UI.
+SQL, the detail contract, read RPC v1 and the subscription mutation RPC are unchanged.
 
 ## Authorization and purity
 
@@ -46,8 +47,10 @@ The TypeScript owner is `src/platform/business-read-model.ts`; the RPC adapter i
 `src/platform/business-read-service.ts`. The adapter validates unknown responses,
 required/extraneous fields, UUIDs, dates, nullability, counts, state, returned detail
 identity, page ordering and cursor boundaries. Malformed data raises a protocol
-error. Services expose `listPlatformBusinesses` and `getPlatformBusiness`; no UI or
-legacy bridge calls them yet. Input filters are normalized before the RPC call.
+error. Services expose `listPlatformBusinesses` and `getPlatformBusiness`.
+The modular controller uses the list projection directly, including usage/limits;
+detail remains available but is not required for these complete list rows.
+Input filters are normalized before the RPC call.
 
 ## Search and pagination
 
@@ -114,4 +117,35 @@ coordinated before merging. No VEN-008 fixture, worktree, Preview, live test,
 quota, subscription state or commercial permission is changed. The source
 historical migrations remain byte-for-byte unchanged. This ticket neither fixes
 nor closes VEN-008 security findings. External review and explicit remote migration
-authorization are required before adoption. No VEN-ADMIN-001B2 work is included.
+authorization are required before remote adoption. The historical B1 delivery
+included no UI; the separately authorized local MVP increment connects its read
+contract without applying the migration remotely.
+
+## Local modular administration increment (2026-10-22)
+
+In the modular runtime, open Administración Vendify from the user menu.
+The list shows active/inactive businesses, subscription plan/state, trial date,
+and users/branches/products as usage against limits. Null limits read “sin límite”;
+absent subscriptions read “Sin suscripción” and “sin límite informado”, with no
+preselected mutation values. Zero is displayed as a real zero limit.
+
+Buscar accepts a literal name/identifier, exact plan code and subscription state.
+Anterior/Siguiente navigate cursor pages of 50. Changing or refreshing a query,
+reopening the modal, and successful saves start at the first page. Pagination is
+the positional contract above, not an export snapshot or a total result count.
+
+Guardar uses only the existing privileged mutation RPC, validates the selected
+visible business and values, and reloads the typed list and summary. Existing
+catalogue plan codes outside the historical options remain selected and can be
+preserved when editing state. This is not a plan catalogue editor or billing UI.
+All authorization remains with the backend; UI access checks grant no authority.
+
+List, access or mutation failures clear privileged rows/summary; late responses
+are ignored after close, access refresh or session changes. Composition clears
+the modal before authenticated boot/signout. There is no v1 list fallback or data
+repair. Loading, empty, offline and failure states use the existing modal.
+
+Local tests and isolated Chrome fixtures are evidence for the client increment.
+Remote read-RPC availability and real Auth/PostgREST remain NOT_RUN in this task.
+See the successor MVP handoff for exact source identity, executed results and
+remaining pilot gates. This connection does not change the stable release build.

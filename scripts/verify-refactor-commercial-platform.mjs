@@ -153,12 +153,30 @@ for (const marker of [
 for (const marker of [
   'from "./platform-service.js"',
   "isPlatformAdmin",
-  "loadPlatformBackoffice",
+  "loadPlatformSummary",
   "updateBusinessPlan"
 ]) {
   if (!platformController.includes(marker)) {
     throw new Error(`Platform owner missing typed service usage: ${marker}`);
   }
+}
+
+for (const marker of ['from "./business-read-service.js"', "listPlatformBusinesses"]) {
+  if (!platformController.includes(marker)) {
+    throw new Error(`Platform controller missing validated business read: ${marker}`);
+  }
+}
+if (platformController.includes("loadPlatformBackoffice")) {
+  throw new Error("Platform controller must not fall back to the unvalidated v1 business list");
+}
+if (!runtime.includes("listar_negocios_plataforma_v2")) {
+  throw new Error("Generated modular runtime does not include the v2 business read RPC");
+}
+for (const marker of [
+  "getSessionKey: () => authController.getSession()?.user?.id ?? null",
+  "platformAdminController.close();"
+]) {
+  if (!sourceApp.includes(marker)) throw new Error(`Platform session protection missing: ${marker}`);
 }
 
 for (const marker of [

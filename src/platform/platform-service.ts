@@ -29,10 +29,20 @@ export async function loadPlatformBackoffice(client: PlatformRpcClientPort): Pro
   fail(errors.error, "No se pudieron cargar los errores");
   return { overview: record(overview.data), businesses: records(businesses.data), errors: records(errors.data) };
 }
+export async function loadPlatformSummary(client: PlatformRpcClientPort): Promise<{ readonly overview: PlatformRecord; readonly errors: PlatformRecord[]; }> {
+  const [overview, errors] = await Promise.all([
+    client.rpc("platform_overview_v1"),
+    client.rpc("listar_errores_plataforma_v1", { p_limit: 30 })
+  ]);
+  fail(overview.error, "No se pudo cargar el backoffice");
+  fail(errors.error, "No se pudieron cargar los errores");
+  return { overview: record(overview.data), errors: records(errors.data) };
+}
 export async function updateBusinessPlan(client: PlatformRpcClientPort, businessId: string, planCode: string, status: string): Promise<PlatformRecord> {
   const { data, error } = await client.rpc("actualizar_plan_negocio_plataforma_v1", { p_negocio_id: businessId, p_plan_codigo: planCode, p_estado: status });
   fail(error, "No se pudo actualizar el plan");
   const result = record(data);
   if (result.ok === false) throw new Error(typeof result.message === "string" ? result.message : "No se pudo actualizar el plan");
+  if (result.ok !== true) throw new Error("No se pudo confirmar la actualización del plan");
   return result;
 }

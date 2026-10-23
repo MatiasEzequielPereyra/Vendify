@@ -95,6 +95,7 @@ function createHarness({ online = true, withDom = true } = {}) {
   const document = withDom ? makeDom() : new FakeDocument();
   const state = {
     online,
+    session: "admin-a",
     responses: {
       es_admin_plataforma_v1: true,
       platform_overview_v1: {
@@ -103,15 +104,7 @@ function createHarness({ online = true, withDom = true } = {}) {
         ventas_hoy: 12345,
         errores_24h: 1
       },
-      listar_negocios_plataforma_v1: [{
-        id: "biz-1",
-        nombre: "Kiosco Centro",
-        usuarios: 3,
-        productos: 42,
-        trial_hasta: "2026-10-20T00:00:00Z",
-        plan_codigo: "pro",
-        estado: "activo"
-      }],
+      listar_negocios_plataforma_v2: { contract_version: 1, items: [business()], next_cursor: null },
       listar_errores_plataforma_v1: [{
         tipo: "window_error",
         mensaje: "boom",
@@ -144,6 +137,7 @@ function createHarness({ online = true, withDom = true } = {}) {
   const controller = createPlatformAdminController({
     client,
     isOnline: () => state.online,
+    getSessionKey: () => state.session,
     closeUserMenu() {
       calls.closeUserMenu += 1;
     },
@@ -167,7 +161,7 @@ function rpcCalls(h, name) {
 }
 
 function makePlanRow({
-  businessId = "biz-1",
+  businessId = "20000000-0000-4000-8000-000000000001",
   plan = "business",
   status = "activo"
 } = {}) {
@@ -187,229 +181,213 @@ function makePlanRow({
   return { row, button, planSelect, statusSelect };
 }
 
-test("factory construction performs no eager Platform calls", () => {
+
+function business(overrides = {}) {
+  return { id: "20000000-0000-4000-8000-000000000001", nombre: "Kiosco Centro", creado: "2026-10-01T00:00:00.000000Z", activo: true,
+    suscripcion: { plan_codigo: "pro", plan_nombre: "Pro", estado: "activo", trial_hasta: null, limites: { usuarios: 10, sucursales: null, productos: 500 } },
+    uso: { usuarios: 3, sucursales: 2, productos: 42 }, ...overrides };
+}
+function cursorFor(row, query = { search: null, plan_codigo: null, estado: null }, anchor = row) {
+  return { version: 1, order: "creado_desc_id_desc", query, anchor: { creado: anchor.creado, id: anchor.id }, after: { creado: row.creado, id: row.id } };
+}
+function deferred() { let resolve; const promise = new Promise((r) => { resolve = r; }); return { promise, resolve }; }
+const tick = () => new Promise((r) => setImmediate(r));
+
+test("construction is lazy; setup is idempotent and missing DOM is tolerated", async () => {
   const h = createHarness();
   assert.equal(h.calls.rpc.length, 0);
-  assert.equal(h.calls.closeUserMenu, 0);
-  assert.deepEqual(h.calls.toast, []);
-});
-
-test("setup is idempotent for open close backdrop and delegated save listeners", () => {
-  const h = createHarness();
-  h.controller.setup();
-  h.controller.setup();
-  assert.equal(el(h, "#btn-platform-admin-v231").listenerCount("click"), 1);
-  assert.equal(el(h, "#btn-close-platform-v231").listenerCount("click"), 1);
-  assert.equal(el(h, "#modal-platform-admin-v231 .modal-backdrop").listenerCount("click"), 1);
+  h.controller.setup(); h.controller.setup();
   assert.equal(el(h, "#platform-business-list-v231").listenerCount("click"), 1);
+  assert.equal(el(h, "#platform-business-list-v231").listenerCount("submit"), 1);
+  const absent = createHarness({ withDom: false });
+  absent.controller.setup(); await absent.controller.refreshAccess(); await absent.controller.open(); absent.controller.close();
 });
 
-test("missing Platform DOM is tolerated", async () => {
-  const h = createHarness({ withDom: false });
-  assert.doesNotThrow(() => h.controller.setup());
-  await assert.doesNotReject(h.controller.refreshAccess());
-  await assert.doesNotReject(h.controller.open());
-  assert.doesNotThrow(() => h.controller.close());
-});
-
-test("offline access check hides admin button without backend request", async () => {
-  const h = createHarness({ online: false });
-  el(h, "#btn-platform-admin-v231").classList.remove("hidden");
-  await h.controller.refreshAccess();
-  assert.equal(el(h, "#btn-platform-admin-v231").classList.contains("hidden"), true);
-  assert.equal(rpcCalls(h, "es_admin_plataforma_v1").length, 0);
-});
-
-test("isAdmin true shows Platform button", async () => {
-  const h = createHarness();
-  await h.controller.refreshAccess();
-  assert.equal(el(h, "#btn-platform-admin-v231").classList.contains("hidden"), false);
-});
-
-test("isAdmin false hides Platform button", async () => {
-  const h = createHarness();
-  h.state.responses.es_admin_plataforma_v1 = false;
-  el(h, "#btn-platform-admin-v231").classList.remove("hidden");
-  await h.controller.refreshAccess();
-  assert.equal(el(h, "#btn-platform-admin-v231").classList.contains("hidden"), true);
-});
-
-test("isAdmin error hides Platform button and never leaks undefined error state", async () => {
-  const h = createHarness();
-  h.state.errors.set("es_admin_plataforma_v1", "denied");
-  el(h, "#btn-platform-admin-v231").classList.remove("hidden");
-  await assert.doesNotReject(h.controller.refreshAccess());
-  assert.equal(el(h, "#btn-platform-admin-v231").classList.contains("hidden"), true);
-});
-
-test("open shows modal, loads all backoffice services and renders KPIs", async () => {
-  const h = createHarness();
-  await h.controller.open();
-  assert.equal(el(h, "#modal-platform-admin-v231").classList.contains("hidden"), false);
-  assert.equal(rpcCalls(h, "platform_overview_v1").length, 1);
-  assert.deepEqual(rpcCalls(h, "listar_negocios_plataforma_v1")[0].args, { p_limit: 50 });
-  assert.deepEqual(rpcCalls(h, "listar_errores_plataforma_v1")[0].args, { p_limit: 30 });
+test("typed list replaces v1, preserves summary and renders accurate usage/limits", async () => {
+  const h = createHarness(); await h.controller.open();
+  assert.equal(rpcCalls(h, "listar_negocios_plataforma_v1").length, 0);
+  assert.deepEqual(rpcCalls(h, "listar_negocios_plataforma_v2")[0].args, { p_search: null, p_plan_codigo: null, p_estado: null, p_cursor: null, p_limit: 50 });
   assert.equal(el(h, "#platform-businesses-v231").textContent, "4");
-  assert.equal(el(h, "#platform-trials-v231").textContent, "2");
   assert.equal(el(h, "#platform-sales-v231").textContent, "ARS 12345");
-  assert.equal(el(h, "#platform-errors-v231").textContent, "1");
+  const list = el(h, "#platform-business-list-v231").innerHTML;
+  assert.match(list, /Usuarios: 3 \/ 10/); assert.match(list, /Sucursales: 2 \/ sin límite/); assert.match(list, /Productos: 42 \/ 500/);
+  assert.match(list, /Negocio activo/); assert.match(list, /Pro · activo/);
+  assert.match(el(h, "#platform-error-list-v231").innerHTML, /boom/);
 });
 
-test("business and error rows preserve allowed plans statuses and observable data", async () => {
-  const h = createHarness();
+test("missing subscription is honest, no default selected and hostile names escaped", async () => {
+  const h = createHarness(); h.state.responses.listar_negocios_plataforma_v2.items = [business({ nombre: '<img src=x onerror="alert(1)">', activo: false, suscripcion: null })];
+  await h.controller.open(); const list = el(h, "#platform-business-list-v231").innerHTML;
+  assert.match(list, /Sin suscripción/); assert.match(list, /sin límite informado/); assert.match(list, /Negocio inactivo/);
+  assert.doesNotMatch(list, /<img/); assert.match(list, /&lt;img/); assert.doesNotMatch(list, /value="legacy" selected/);
+});
+
+test("cursor next/previous works and search/filter changes restart from first page", async () => {
+  const h = createHarness(); const first = business(); const next = cursorFor(first);
+  h.state.responses.listar_negocios_plataforma_v2.next_cursor = next;
   await h.controller.open();
-  const businesses = el(h, "#platform-business-list-v231").innerHTML;
-  const errors = el(h, "#platform-error-list-v231").innerHTML;
-
-  assert.match(businesses, /Kiosco Centro/);
-  assert.match(businesses, /3 usuario\(s\)/);
-  assert.match(businesses, /42 productos/);
-  for (const plan of ["legacy", "trial", "starter", "pro", "business"]) {
-    assert.match(businesses, new RegExp(`value="${plan}"`));
-  }
-  for (const status of ["legacy", "trial", "activo", "vencido", "suspendido"]) {
-    assert.match(businesses, new RegExp(`value="${status}"`));
-  }
-  assert.match(errors, /boom/);
-  assert.match(errors, /Kiosco Centro/);
-  assert.match(errors, /2\.31\.1/);
+  h.state.responses.listar_negocios_plataforma_v2 = { contract_version: 1, items: [business({ creado: "2026-09-01T00:00:00.000000Z" })], next_cursor: null };
+  await h.controller.nextPage();
+  assert.deepEqual(rpcCalls(h, "listar_negocios_plataforma_v2").at(-1).args.p_cursor, next);
+  h.state.responses.listar_negocios_plataforma_v2 = { contract_version: 1, items: [first], next_cursor: next };
+  await h.controller.previousPage(); assert.equal(rpcCalls(h, "listar_negocios_plataforma_v2").at(-1).args.p_cursor, null);
+  h.state.responses.listar_negocios_plataforma_v2 = { contract_version: 1, items: [business({ creado: "2026-09-01T00:00:00.000000Z" })], next_cursor: null };
+  await h.controller.nextPage();
+  await h.controller.setQuery({ search: " Kiosco ", planCode: " PRO ", state: "activo" });
+  assert.deepEqual(rpcCalls(h, "listar_negocios_plataforma_v2").at(-1).args, { p_search: "Kiosco", p_plan_codigo: "pro", p_estado: "activo", p_cursor: null, p_limit: 50 });
+  assert.match(el(h, "#platform-business-list-v231").innerHTML, /Página 1/);
 });
 
-test("admin button setup closes user menu then opens backoffice", async () => {
-  const h = createHarness();
-  h.controller.setup();
-  el(h, "#btn-platform-admin-v231").emit("click");
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(h.calls.closeUserMenu, 1);
-  assert.equal(el(h, "#modal-platform-admin-v231").classList.contains("hidden"), false);
-  assert.equal(rpcCalls(h, "platform_overview_v1").length, 1);
+test("invalid query never reaches RPC; empty result is visible", async () => {
+  const h = createHarness(); await h.controller.setQuery({ search: "x".repeat(121) }); assert.equal(h.calls.rpc.length, 0);
+  h.state.responses.listar_negocios_plataforma_v2.items = []; await h.controller.open();
+  assert.match(el(h, "#platform-business-list-v231").innerHTML, /No hay negocios/);
 });
 
-test("close button and backdrop both close Platform modal", () => {
-  const h = createHarness();
-  h.controller.setup();
-
-  el(h, "#modal-platform-admin-v231").classList.remove("hidden");
-  el(h, "#btn-close-platform-v231").emit("click");
-  assert.equal(el(h, "#modal-platform-admin-v231").classList.contains("hidden"), true);
-
-  el(h, "#modal-platform-admin-v231").classList.remove("hidden");
-  el(h, "#modal-platform-admin-v231 .modal-backdrop").emit("click");
-  assert.equal(el(h, "#modal-platform-admin-v231").classList.contains("hidden"), true);
-});
-
-test("save plan sends exact business plan and status, toasts success and reloads backoffice", async () => {
-  const h = createHarness();
-  const { button } = makePlanRow({
-    businessId: "biz-77",
-    plan: "business",
-    status: "suspendido"
+test("save validates current row and refreshes typed data after success", async () => {
+  const h = createHarness(); await h.controller.open();
+  h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () => {
+    h.state.responses.listar_negocios_plataforma_v2.items[0].suscripcion.limites.usuarios = 80;
+    return { data: { ok: true }, error: null };
   });
-
-  await h.controller.savePlan(button);
-
-  assert.deepEqual(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1")[0].args, {
-    p_negocio_id: "biz-77",
-    p_plan_codigo: "business",
-    p_estado: "suspendido"
-  });
+  const { button } = makePlanRow(); await h.controller.savePlan(button);
+  assert.deepEqual(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1")[0].args, { p_negocio_id: business().id, p_plan_codigo: "business", p_estado: "activo" });
+  assert.equal(rpcCalls(h, "listar_negocios_plataforma_v2").length, 2);
+  assert.match(el(h, "#platform-business-list-v231").innerHTML, /Usuarios: 3 \/ 80/);
   assert.deepEqual(h.calls.toast, [{ message: "Plan actualizado", type: "success" }]);
-  assert.equal(rpcCalls(h, "platform_overview_v1").length, 1);
   assert.equal(button.disabled, false);
-  assert.equal(button.textContent, "Guardar");
 });
 
-test("save plan does nothing when row data is incomplete", async () => {
-  const h = createHarness();
-  const { button } = makePlanRow({ businessId: "", plan: "pro", status: "activo" });
-  await h.controller.savePlan(button);
+test("status save preserves an existing custom plan outside classic catalogue", async () => {
+  const h = createHarness(); h.state.responses.listar_negocios_plataforma_v2.items[0].suscripcion.plan_codigo = "custom_2026";
+  await h.controller.open(); assert.match(el(h, "#platform-business-list-v231").innerHTML, /value="custom_2026" selected/);
+  const { button } = makePlanRow({ plan: "custom_2026", status: "suspendido" }); await h.controller.savePlan(button);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1")[0].args.p_plan_codigo, "custom_2026");
+});
+
+test("invalid or absent row, missing selections and offline prevent writes", async () => {
+  const h = createHarness(); await h.controller.open();
+  for (const args of [{ businessId: "invalid" }, { businessId: "20000000-0000-4000-8000-000000000099" }, { plan: "unread_custom" }, { status: "bad" }, { plan: "" }]) {
+    await h.controller.savePlan(makePlanRow(args).button);
+  }
   assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
-});
-
-test("save plan disables button while backend is pending and restores it in finally", async () => {
-  const h = createHarness();
-  let resolveUpdate;
-  h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () =>
-    new Promise((resolve) => {
-      resolveUpdate = resolve;
-    })
-  );
-  const { button } = makePlanRow();
-
-  const promise = h.controller.savePlan(button);
-  await Promise.resolve();
-  assert.equal(button.disabled, true);
-  assert.equal(button.textContent, "Guardando...");
-
-  resolveUpdate({ data: { ok: true }, error: null });
-  await promise;
-  assert.equal(button.disabled, false);
-  assert.equal(button.textContent, "Guardar");
-});
-
-test("update failure preserves backend message and restores button without backoffice reload", async () => {
-  const h = createHarness();
-  h.state.errors.set("actualizar_plan_negocio_plataforma_v1", "plan denied");
-  const { button } = makePlanRow();
-
-  await h.controller.savePlan(button);
-
-  assert.deepEqual(h.calls.toast, [{ message: "plan denied", type: "error" }]);
-  assert.equal(rpcCalls(h, "platform_overview_v1").length, 0);
-  assert.equal(button.disabled, false);
-  assert.equal(button.textContent, "Guardar");
-});
-
-test("delegated business-list click ignores non-save targets", async () => {
-  const h = createHarness();
-  h.controller.setup();
-  const target = new FakeElement();
-  el(h, "#platform-business-list-v231").emit("click", { target });
-  await new Promise((resolve) => setImmediate(resolve));
+  h.state.online = false; await h.controller.savePlan(makePlanRow().button);
   assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
 });
 
-test("delegated business-list click acts only on data-platform-save-plan", async () => {
-  const h = createHarness();
-  h.controller.setup();
-  const { button } = makePlanRow({ businessId: "biz-2", plan: "starter", status: "trial" });
-  el(h, "#platform-business-list-v231").emit("click", { target: button });
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.deepEqual(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1")[0].args, {
-    p_negocio_id: "biz-2",
-    p_plan_codigo: "starter",
-    p_estado: "trial"
+test("save cannot double submit and shows pending state", async () => {
+  const h = createHarness(); await h.controller.open(); const pending = deferred();
+  h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () => pending.promise);
+  const { button } = makePlanRow(); const promise = h.controller.savePlan(button);
+  assert.equal(button.disabled, true); assert.equal(button.textContent, "Guardando...");
+  await h.controller.savePlan(button); assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 1);
+  pending.resolve({ data: { ok: true }, error: null }); await promise; assert.equal(button.disabled, false);
+});
+
+test("save denial clears privileged data and does not reload as success", async () => {
+  const h = createHarness(); await h.controller.open(); h.state.errors.set("actualizar_plan_negocio_plataforma_v1", "denied");
+  await h.controller.savePlan(makePlanRow().button);
+  assert.equal(rpcCalls(h, "listar_negocios_plataforma_v2").length, 1);
+  assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  assert.equal(el(h, "#platform-error-list-v231").innerHTML, "");
+  assert.equal(h.calls.toast.at(-1).type, "error");
+});
+
+test("denied or malformed v2 fails closed without legacy fallback or stale data", async () => {
+  for (const malformed of [false, true]) {
+    const h = createHarness(); await h.controller.open();
+    if (malformed) h.state.responses.listar_negocios_plataforma_v2 = { items: [] };
+    else h.state.errors.set("listar_negocios_plataforma_v2", "missing RPC or denied");
+    await h.controller.open(); assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+    assert.equal(el(h, "#platform-error-list-v231").innerHTML, ""); assert.equal(el(h, "#platform-businesses-v231").textContent, "—");
+    assert.equal(rpcCalls(h, "listar_negocios_plataforma_v1").length, 0);
+  }
+});
+
+test("offline open/access never requests backend and reconnect can reload", async () => {
+  const h = createHarness({ online: false }); await h.controller.open(); await h.controller.refreshAccess();
+  assert.equal(h.calls.rpc.length, 0); assert.match(el(h, "#platform-business-list-v231").innerHTML, /Sin conexión/);
+  h.state.online = true; await h.controller.open(); assert.match(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+});
+
+test("access revocation invalidates an in-flight privileged response", async () => {
+  const h = createHarness(); const pending = deferred(); h.state.hooks.set("listar_negocios_plataforma_v2", () => pending.promise);
+  const loading = h.controller.open(); await tick();
+  h.state.responses.es_admin_plataforma_v1 = false; await h.controller.refreshAccess();
+  pending.resolve({ data: { contract_version: 1, items: [business()], next_cursor: null }, error: null }); await loading;
+  assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  assert.equal(el(h, "#btn-platform-admin-v231").classList.contains("hidden"), true);
+});
+
+test("session change and close discard late reads and saves", async () => {
+  const h = createHarness(); const pending = deferred(); h.state.hooks.set("listar_negocios_plataforma_v2", () => pending.promise);
+  const loading = h.controller.open(); await tick(); h.state.session = "admin-b";
+  pending.resolve({ data: { contract_version: 1, items: [business()], next_cursor: null }, error: null }); await loading;
+  assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  h.state.hooks.delete("listar_negocios_plataforma_v2"); await h.controller.open();
+  const save = deferred(); h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () => save.promise);
+  const saving = h.controller.savePlan(makePlanRow().button); h.controller.close(); save.resolve({ data: { ok: true }, error: null }); await saving;
+  assert.equal(el(h, "#platform-business-list-v231").innerHTML, ""); assert.deepEqual(h.calls.toast, []);
+});
+
+test("new query wins over slow older response", async () => {
+  const h = createHarness(); const pending = deferred(); let first = true;
+  h.state.hooks.set("listar_negocios_plataforma_v2", () => {
+    if (first) { first = false; return pending.promise; }
+    return { data: { contract_version: 1, items: [business({ nombre: "Resultado nuevo" })], next_cursor: null }, error: null };
   });
+  const old = h.controller.open(); await tick(); await h.controller.setQuery({ search: "nuevo" });
+  pending.resolve({ data: { contract_version: 1, items: [business()], next_cursor: null }, error: null }); await old;
+  const list = el(h, "#platform-business-list-v231").innerHTML;
+  assert.match(list, /Resultado nuevo/); assert.doesNotMatch(list, /Kiosco Centro/);
 });
 
-test("typed Platform source fixes undefined error bug and leaks no legacy ownership", () => {
-  const source = readFileSync(
-    resolve(import.meta.dirname, "../../src/platform/platform-admin-controller.ts"),
-    "utf8"
-  );
+test("event delegation opens, closes and submits typed search without duplicate controls", async () => {
+  const h = createHarness(); h.controller.setup(); el(h, "#btn-platform-admin-v231").emit("click"); await tick();
+  assert.equal(h.calls.closeUserMenu, 1);
+  const form = new FakeElement(); form.closestValues.set("[data-platform-search-form]", form);
+  const search = new FakeElement(); search.value = "Centro"; form.queryValues.set("[data-platform-search]", search);
+  let prevented = false;
+  el(h, "#platform-business-list-v231").emit("submit", { target: form, preventDefault: () => { prevented = true; } }); await tick();
+  assert.equal(prevented, true); assert.equal(rpcCalls(h, "listar_negocios_plataforma_v2").at(-1).args.p_search, "Centro");
+  await h.controller.open(); assert.equal((el(h, "#platform-business-list-v231").innerHTML.match(/data-platform-search-form/g) ?? []).length, 1);
+  el(h, "#btn-close-platform-v231").emit("click"); assert.equal(el(h, "#platform-business-list-v231").innerHTML, "");
+});
 
-  for (const required of [
-    'from "./platform-service.js"',
-    "isPlatformAdmin",
-    "loadPlatformBackoffice",
-    "updateBusinessPlan",
-    'classList.toggle("hidden", !admin)'
-  ]) {
-    assert.equal(source.includes(required), true, required);
-  }
+test("controller keeps RPC and legacy ownership behind services", () => {
+  const source = readFileSync(resolve(import.meta.dirname, "../../src/platform/platform-admin-controller.ts"), "utf8");
+  for (const required of ["isPlatformAdmin", "loadPlatformSummary", "listPlatformBusinesses", "updateBusinessPlan"]) assert.equal(source.includes(required), true);
+  for (const forbidden of [".rpc(", "window.Vendify", "supabaseClient", "loadPlatformBackoffice"]) assert.equal(source.includes(forbidden), false);
+});
 
-  assert.equal(source.includes("error || data !== true"), false);
 
-  for (const forbidden of [
-    ".rpc(",
-    "window.Vendify",
-    "dashboardControllerV232",
-    "teamControllerV232",
-    "cashControllerV232",
-    "posControllerV232",
-    "appContext",
-    "supabaseClient"
-  ]) {
-    assert.equal(source.includes(forbidden), false, forbidden);
-  }
+test("quoted names and search cannot create HTML attributes", async () => {
+  const h = createHarness(); h.state.responses.listar_negocios_plataforma_v2.items[0].nombre = 'x" onfocus="alert(1)';
+  await h.controller.setQuery({ search: 'x" onfocus="alert(1)' });
+  const list = el(h, "#platform-business-list-v231").innerHTML;
+  assert.match(list, /value="x&quot; onfocus=&quot;alert\(1\)"/);
+  assert.doesNotMatch(list, /aria-label="[^"<>]*" onfocus=/);
+});
+
+test("visible access refresh reloads and save denial leaves retry controls enabled", async () => {
+  const h = createHarness(); await h.controller.open(); await h.controller.refreshAccess();
+  assert.match(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  h.state.errors.set("actualizar_plan_negocio_plataforma_v1", "denied");
+  await h.controller.savePlan(makePlanRow().button);
+  const list = el(h, "#platform-business-list-v231").innerHTML;
+  assert.doesNotMatch(list, /data-platform-refresh disabled/);
+  assert.doesNotMatch(list, /type="submit"[^>]*disabled/);
+});
+
+test("offline event immediately clears privileged visible data and reconnect permits reload", async () => {
+  const previous = globalThis.addEventListener;
+  let offline;
+  globalThis.addEventListener = (event, callback) => { if (event === "offline") offline = callback; };
+  try {
+    const h = createHarness(); h.controller.setup(); await h.controller.open(); h.state.online = false; offline();
+    assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+    assert.equal(el(h, "#platform-error-list-v231").innerHTML, "");
+    h.state.online = true; await h.controller.open(); assert.match(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  } finally { if (previous) globalThis.addEventListener = previous; else delete globalThis.addEventListener; }
 });
