@@ -107,6 +107,3 @@ if (typeof document !== "undefined") {
     startAdminEntry(client);
   } catch { const status = document.querySelector("#admin-status"); if (status) status.textContent = "Administración no disponible: verificá la configuración y recargá."; }
 }
-
-
-
