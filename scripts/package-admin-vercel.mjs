@@ -34,7 +34,7 @@ export function getAdminRoutes(baselineConfig, adminHost, baselinePaths, adminPa
     ...exactRoutes(adminPaths, { has }),
     { src: "^/$", missing: has, dest: "/index.html" },
     ...exactRoutes(baselinePaths, { missing: has }),
-    { src: "^/.*$", status: 404 }
+    { src: "^/.*$", status: 404, dest: "/__vendify_admin_route_not_found__.html" }
   ];
 }
 

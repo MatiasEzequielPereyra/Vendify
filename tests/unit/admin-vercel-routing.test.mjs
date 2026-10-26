@@ -20,6 +20,7 @@ test("POS host keeps classic routes but denies every admin spelling without redi
   for (const path of ["/admin", "/admin/", "/admin/assets/entry.js", "/ADMIN/", "/AdMiN/"]) {
     const result = evaluate(path, "pos.example.com");
     assert.equal(result.status, 404);
+    assert.equal(result.dest, "/__vendify_admin_route_not_found__.html");
     assert.equal(result.headers.Location, undefined);
   }
   assert.equal(evaluate("/", "pos.example.com").status, "rewrite");
