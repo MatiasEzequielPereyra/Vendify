@@ -14,7 +14,7 @@ test("POS is the default locally and on its known project including Production",
 });
 
 test("unknown or missing hosted project identity fails closed", () => {
-  for (const env of [{ ...preview, VERCEL_PROJECT_ID: "prj_other" }, { ...preview, VERCEL_PROJECT_ID: undefined }, { VERCEL: "1" }, { VERCEL_PROJECT_ID: "prj_other", VENDIFY_VERCEL_TARGET: "pos" }]) assert.throws(() => resolveBuildTarget(env), /project identity/);
+  for (const env of [{ ...preview, VERCEL_PROJECT_ID: "prj_other" }, { ...preview, VERCEL_PROJECT_ID: "prj_E4ml6uYIVAH5wQ31WoQAvc5GD02p" }, { ...preview, VERCEL_PROJECT_ID: undefined }, { VERCEL: "1" }, { VERCEL_PROJECT_ID: "prj_other", VENDIFY_VERCEL_TARGET: "pos" }]) assert.throws(() => resolveBuildTarget(env), /project identity/);
 });
 
 test("independent project accepts only exact isolated Preview and cannot build POS or Production", () => {

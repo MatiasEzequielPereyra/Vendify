@@ -1,7 +1,7 @@
 # Independent administrative release
 
 Project: VendifyV3
-Revision: 1
+Revision: 2
 Updated: 2026-10-26
 Owner: Orchestrator B / DevOps
 Task: VEN_ADMIN_001B1_CONTROLLED_RELEASE_TARGET
@@ -9,16 +9,17 @@ Task: VEN_ADMIN_001B1_CONTROLLED_RELEASE_TARGET
 ## Explicit destination
 
 The versioned `contracts/admin-release-target.json` names the independent project
-`prj_E4ml6uYIVAH5wQ31WoQAvc5GD02p` (ven-admin-001b1-private-preview), team
-`team_cJL8jHMV3R0hsr8C0kOkznph`, proposed stable administrative hostname
+`prj_GBIFOT8NGgKEchQ0ZzC60EJiwyVy` (vendify-platform-admin-release), team
+`team_cJL8jHMV3R0hsr8C0kOkznph`, assigned stable administrative hostname
 `vendify-platform-admin-release.vercel.app`, production backend
 `puhkmblnptntorwptvld` and immutable POS baseline digest.
 This contract is destination identity, not Production deployment permission.
 
-Do not use the project's old default hostname: its historical deployment contains
+Do not use the old paused project's default hostname: its historical deployment contains
 a service worker. Do not assign or promote this artifact to a POS hostname.
-The new hostname is reserved only by successful alias assignment, not by a 404
-from an availability lookup. Current hosted verification belongs in the handoff.
+The new hostname is assigned and verified by project-creation domain metadata.
+An availability lookup404 alone would not prove ownership. Current hosted
+verification belongs in the handoff.
 
 ## Build selection
 
@@ -87,6 +88,34 @@ database function or execute SQL. Reverting a future administrative alias must
 never point it at the old POS/staging deployment; remove its exposure or use a
 previous specifically approved administrative-only artifact.
 
-The current task authorizes code, commits and Preview only. Merge, Production,
-paid services and database writes remain prohibited. Preview testing and a
-verified local artifact do not grant release acceptance.
+The preceding release-target task authorized code, commits and Preview only.
+The current bounded technical Production exception is recorded below. Merge,
+commercial publication, paid services and database writes remain prohibited.
+Preview testing and a verified local artifact do not grant release acceptance.
+
+## First protected technical bootstrap — 26 October 2026
+
+The owner explicitly authorized one prebuilt technical Production deployment to
+this new project, with --prod --skip-domain. The old paused project must stay
+untouched. This is not commercial release or permission to activate the stable
+hostname. Source Production builds remain blocked; only an isolated prebuilt
+upload may perform the authorized operation after all prechecks.
+
+Prepare with node scripts/package-admin-release.mjs --prepare-bootstrap
+--source-head <exact reviewed HEAD>. Normal release mode remains exact-host-only.
+Bootstrap adds an anchored host match restricted to the generated hostname
+namespace of vendify-platform-admin-release, using Build Output API MatchableValue
+re. It does not allow POS/old-project hostnames or arbitrary hosts. The returned
+URL must match the expected namespace AND be verified through Vercel as belonging
+to the exact new project/team; local matching alone is not hosted provenance.
+
+Stage only the verified six output files and an explicit project link outside
+Git. Verify CLI identity/project and All Deployments protection, then confirm
+zero previous deployments immediately before the single --prebuilt --prod
+--skip-domain submission. Never retry an ambiguous submission before inspection.
+Check unauthenticated HTTP access is blocked before owner-operated Vendify login.
+Do not use an authentication-bypass header/share link, commercial save, automatic
+Git connection, domain assignment, Supabase mutation or POS deployment.
+
+Existing prepared receipts reference their own old target and are not reusable
+as authorization for this new project. A new exact artifact receipt is required.

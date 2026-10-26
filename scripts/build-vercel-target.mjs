@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const POS_PROJECT_ID = "prj_xYZevIAo7SwzsoUU1FV5hbGQEJXZ";
-export const ADMIN_PROJECT_ID = "prj_E4ml6uYIVAH5wQ31WoQAvc5GD02p";
+export const ADMIN_PROJECT_ID = "prj_GBIFOT8NGgKEchQ0ZzC60EJiwyVy";
 export const ADMIN_PREVIEW_BRANCH = "feature/ven-admin-001b1-read-model";
 
 export function resolveBuildTarget(env) {
