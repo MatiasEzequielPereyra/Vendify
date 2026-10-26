@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Administración — Vendify</title><link rel="stylesheet" href="./admin.css"><script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script><script defer src="./public-config.js"></script><script type="module" src="/src/platform/admin-entry.ts"></script></head>
+<body><header><h1>Administración Vendify</h1><nav><button id="btn-platform-admin-v231" class="hidden" type="button">Abrir administración</button><button id="admin-logout" hidden type="button">Cerrar sesión</button></nav></header>
+<main><p id="admin-status" role="status" aria-live="polite">Verificando sesión…</p><form id="admin-login"><h2>Ingresar</h2><label>Email<input id="admin-email" type="email" autocomplete="username" required></label><label>Contraseña<input id="admin-password" type="password" autocomplete="current-password" required></label><button id="admin-submit" type="submit">Iniciar sesión</button></form>
+<div id="modal-platform-admin-v231" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content platform-modal-v231">
+      <div class="modal-header">
+        <div><div class="title-with-icon-v23011"><h2>Administración Vendify</h2></div><p class="hint">Backoffice interno.</p></div>
+        <button class="btn-icon" id="btn-close-platform-v231" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="platform-body-v231">
+        <div class="platform-kpis-v231">
+          <div><span>Negocios</span><strong id="platform-businesses-v231">—</strong></div>
+          <div><span>Trials</span><strong id="platform-trials-v231">—</strong></div>
+          <div><span>Ventas hoy</span><strong id="platform-sales-v231">—</strong></div>
+          <div><span>Errores 24h</span><strong id="platform-errors-v231">—</strong></div>
+        </div>
+        <div class="dashboard-panel-v231">
+          <div class="dashboard-panel-head-v231">
+            <div><h3>Negocios recientes</h3><p>Plan, uso y administración manual mientras billing no está conectado.</p></div>
+          </div>
+          <div id="platform-business-list-v231" class="dashboard-list-v231 platform-business-list-v231"></div>
+        </div>
+
+        <div class="dashboard-panel-v231 platform-errors-panel-v231">
+          <div class="dashboard-panel-head-v231">
+            <div><h3>Errores recientes</h3><p>Errores del frontend reportados automáticamente, sin credenciales.</p></div>
+          </div>
+          <div id="platform-error-list-v231" class="dashboard-list-v231"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main></body></html>
+
