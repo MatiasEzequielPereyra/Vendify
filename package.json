@@ -51,7 +51,7 @@
     "verify:admin": "node scripts/verify-admin-entry.mjs",
     "package:admin:preview": "node scripts/package-admin-vercel.mjs --preview-branch feature/ven-admin-001b1-read-model",
     "verify:admin:package": "node scripts/package-admin-vercel.mjs --admin-host vendify-admin-local.invalid",
-    "package:admin:release": "node scripts/package-admin-release.mjs --prepare"
+    "package:admin:release": "node scripts/package-admin-release.mjs --prepare --source-head"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

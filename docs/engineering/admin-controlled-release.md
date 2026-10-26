@@ -45,7 +45,7 @@ From the exact reviewed checkout with dependencies already installed:
 ```powershell
 npm run ci
 $releaseHead = git rev-parse HEAD
-npm run package:admin:release -- --source-head $releaseHead
+npm run package:admin:release -- $releaseHead
 ```
 
 This last command works locally only. It checks the exact explicit HEAD, strict
