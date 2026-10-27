@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<title>Vendify — guarda de guardado · prueba local con mocks</title>
+<body>
+<h1>Prueba local de guardado seguro</h1>
+<p>Todos los negocios y RPC son mocks en memoria. CSP bloquea conexiones de red.</p>
+<pre data-testid="guard-results" aria-live="polite">RUNNING</pre>
+<button id="btn-platform-admin-v231">Administración</button>
+<section id="modal-platform-admin-v231" aria-label="Administración de prueba">
+<button id="btn-close-platform-v231">Cerrar administración</button>
+<p id="platform-businesses-v231"></p><p id="platform-trials-v231"></p>
+<p id="platform-sales-v231"></p><p id="platform-errors-v231"></p>
+<div id="platform-business-list-v231"></div><div id="platform-error-list-v231"></div>
+</section>
+<section role="status" aria-label="Confirmación de prueba" data-testid="confirmation-text"></section>
+<script type="module" src="/fixture.mjs"></script>
+</body>
+</html>

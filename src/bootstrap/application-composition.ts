@@ -859,7 +859,8 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
     closeUserMenu: () => navigationEventsController.closeUserMenu(),
     formatPrice: (value) => formatPrice(value),
     icon,
-    showToast
+    showToast,
+    confirm: (title, message) => confirm(title, message)
   });
 
   const downloadText = (

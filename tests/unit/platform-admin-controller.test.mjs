@@ -35,6 +35,7 @@ class FakeElement {
     this.innerHTML = "";
     this.value = "";
     this.disabled = false;
+    this.isConnected = true;
     this.dataset = {};
     this.listeners = new Map();
     this.closestValues = new Map();
@@ -68,6 +69,9 @@ class FakeDocument {
   querySelector(selector) {
     return this.elements.get(selector) ?? null;
   }
+  querySelectorAll(selector) {
+    return this.elements.get(`${selector}:all`) ?? [];
+  }
 }
 
 function makeDom() {
@@ -96,6 +100,8 @@ function createHarness({ online = true, withDom = true } = {}) {
   const state = {
     online,
     session: "admin-a",
+    confirmation: true,
+    confirmHook: null,
     responses: {
       es_admin_plataforma_v1: true,
       platform_overview_v1: {
@@ -120,7 +126,8 @@ function createHarness({ online = true, withDom = true } = {}) {
   const calls = {
     rpc: [],
     closeUserMenu: 0,
-    toast: []
+    toast: [],
+    confirmations: []
   };
 
   const client = {
@@ -145,6 +152,10 @@ function createHarness({ online = true, withDom = true } = {}) {
     icon: (name) => `icon:${name}`,
     showToast(message, type) {
       calls.toast.push({ message, type });
+    },
+    async confirm(title, message) {
+      calls.confirmations.push({ title, message });
+      return state.confirmHook ? state.confirmHook(title, message) : state.confirmation;
     },
     document
   });
@@ -280,7 +291,8 @@ test("save cannot double submit and shows pending state", async () => {
   const h = createHarness(); await h.controller.open(); const pending = deferred();
   h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () => pending.promise);
   const { button } = makePlanRow(); const promise = h.controller.savePlan(button);
-  assert.equal(button.disabled, true); assert.equal(button.textContent, "Guardando...");
+  assert.equal(button.disabled, true); assert.equal(button.textContent, "Esperando confirmación...");
+  await tick(); assert.equal(button.textContent, "Guardando...");
   await h.controller.savePlan(button); assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 1);
   pending.resolve({ data: { ok: true }, error: null }); await promise; assert.equal(button.disabled, false);
 });
@@ -390,4 +402,144 @@ test("offline event immediately clears privileged visible data and reconnect per
     assert.equal(el(h, "#platform-error-list-v231").innerHTML, "");
     h.state.online = true; await h.controller.open(); assert.match(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
   } finally { if (previous) globalThis.addEventListener = previous; else delete globalThis.addEventListener; }
+});
+
+test("unchanged plan/state and an accidental delegated save click never confirm or write", async () => {
+  const h = createHarness(); h.controller.setup(); await h.controller.open();
+  const { button, row } = makePlanRow({ plan: "pro", status: "activo" });
+  row.dataset.originalPlan = "business";
+  await h.controller.savePlan(button);
+  el(h, "#platform-business-list-v231").emit("click", { target: button }); await tick();
+  assert.equal(button.disabled, true);
+  assert.equal(h.calls.confirmations.length, 0);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  assert.match(el(h, "#platform-business-list-v231").innerHTML, /data-platform-save-plan="[^"]+"[^>]*disabled/);
+});
+
+test("changing a selection and restoring the loaded value disables Save again", async () => {
+  const h = createHarness(); h.controller.setup(); await h.controller.open();
+  const { button, planSelect } = makePlanRow({ plan: "pro", status: "activo" });
+  h.document.elements.set("[data-platform-save-plan]:all", [button]);
+  const list = el(h, "#platform-business-list-v231");
+  list.emit("change"); assert.equal(button.disabled, true);
+  planSelect.value = "business"; list.emit("change"); assert.equal(button.disabled, false);
+  planSelect.value = "pro"; list.emit("change"); assert.equal(button.disabled, true);
+  await h.controller.savePlan(button);
+  assert.equal(h.calls.confirmations.length, 0);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+});
+
+test("real change confirmation names the business and exact loaded old/new values", async () => {
+  const h = createHarness(); await h.controller.open();
+  const { button, row } = makePlanRow({ plan: "business", status: "suspendido" });
+  row.dataset.originalPlan = "business"; row.dataset.originalState = "suspendido";
+  await h.controller.savePlan(button);
+  assert.equal(h.calls.confirmations.length, 1);
+  assert.equal(h.calls.confirmations[0].title, "Confirmar cambio de suscripción");
+  assert.equal(h.calls.confirmations[0].message, [
+    `Negocio: Kiosco Centro (${business().id})`, "Plan anterior: pro", "Plan nuevo: business", "Estado anterior: activo", "Estado nuevo: suspendido"
+  ].join("\n"));
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 1);
+});
+
+test("missing subscription is not replaced by invented legacy defaults in confirmation", async () => {
+  const h = createHarness(); h.state.responses.listar_negocios_plataforma_v2.items = [business({ suscripcion: null })];
+  await h.controller.open(); await h.controller.savePlan(makePlanRow({ plan: "", status: "" }).button);
+  assert.equal(h.calls.confirmations.length, 0);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  h.state.confirmation = false;
+  await h.controller.savePlan(makePlanRow({ plan: "legacy", status: "legacy" }).button);
+  assert.match(h.calls.confirmations[0].message, /Plan anterior: Sin suscripción/);
+  assert.match(h.calls.confirmations[0].message, /Estado anterior: Sin suscripción/);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+});
+
+test("canceling confirmation never calls the write RPC or reports success", async () => {
+  const h = createHarness(); await h.controller.open(); h.state.confirmation = false;
+  await h.controller.savePlan(makePlanRow().button);
+  assert.equal(h.calls.confirmations.length, 1);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  assert.deepEqual(h.calls.toast, []);
+  assert.equal(rpcCalls(h, "listar_negocios_plataforma_v2").length, 1);
+});
+
+test("only an explicit boolean true confirmation can authorize the mock write", async () => {
+  for (const value of [undefined, null, "yes", 1, {}, []]) {
+    const h = createHarness(); await h.controller.open(); h.state.confirmation = value;
+    await h.controller.savePlan(makePlanRow().button);
+    assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+    assert.deepEqual(h.calls.toast, []);
+  }
+});
+
+test("all Save controls remain disabled during confirmation and write; duplicate clicks send once", async () => {
+  const h = createHarness(); const secondId = "20000000-0000-4000-8000-000000000002";
+  h.state.responses.listar_negocios_plataforma_v2.items.push(business({ id: secondId, creado: "2026-09-01T00:00:00.000000Z" }));
+  h.controller.setup(); await h.controller.open();
+  const first = makePlanRow(); const second = makePlanRow({ businessId: secondId });
+  h.document.elements.set("[data-platform-save-plan]:all", [first.button, second.button]);
+  const confirmation = deferred(), write = deferred();
+  h.state.confirmHook = () => confirmation.promise;
+  h.state.hooks.set("actualizar_plan_negocio_plataforma_v1", () => write.promise);
+  const pending = h.controller.savePlan(first.button);
+  assert.equal(first.button.disabled, true); assert.equal(second.button.disabled, true);
+  await h.controller.savePlan(first.button); await h.controller.savePlan(second.button);
+  assert.equal(h.calls.confirmations.length, 1);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  confirmation.resolve(true); await tick();
+  assert.equal(first.button.disabled, true); assert.equal(second.button.disabled, true);
+  await h.controller.savePlan(second.button);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 1);
+  write.resolve({ data: { ok: true }, error: null }); await pending;
+});
+
+test("fresh permission check remains locked and denies expired/revoked authorization", async () => {
+  for (const mode of ["revoked", "expired", "changed-session"]) {
+    const h = createHarness(); await h.controller.open();
+    const role = deferred(); h.state.hooks.set("es_admin_plataforma_v1", () => role.promise);
+    const { button } = makePlanRow(); const pending = h.controller.savePlan(button); await tick();
+    await h.controller.savePlan(button); assert.equal(h.calls.confirmations.length, 1);
+    if (mode === "changed-session") h.state.session = "admin-b";
+    role.resolve(mode === "expired" ? { data: null, error: { message: "JWT expired" } } : { data: mode !== "revoked", error: null });
+    await pending;
+    assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0, mode);
+    assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/, mode);
+  }
+});
+
+test("confirmation cannot authorize changed session, offline, detached row or altered selections", async () => {
+  for (const mode of ["session", "offline", "detached", "selection", "closed", "reload"]) {
+    const h = createHarness(); await h.controller.open(); const confirmation = deferred(); h.state.confirmHook = () => confirmation.promise;
+    const { button, row, planSelect } = makePlanRow(); const pending = h.controller.savePlan(button);
+    if (mode === "session") h.state.session = null;
+    if (mode === "offline") h.state.online = false;
+    if (mode === "detached") row.isConnected = false;
+    if (mode === "selection") planSelect.value = "starter";
+    if (mode === "closed") h.controller.close();
+    if (mode === "reload") await h.controller.open();
+    confirmation.resolve(true); await pending;
+    assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0, mode);
+    assert.ok(h.calls.toast.every(toast => toast.type !== "success"), mode);
+  }
+});
+
+test("confirmation errors fail closed and never perform writes", async () => {
+  const h = createHarness(); await h.controller.open(); h.state.confirmHook = () => { throw new Error("dialog unavailable"); };
+  await h.controller.savePlan(makePlanRow().button);
+  assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+  assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  assert.equal(h.calls.toast.at(-1).type, "error");
+});
+
+test("missing or blank identity cannot enable Save, confirm or write even when the admin read says true", async () => {
+  for (const identity of [null, "", "   "]) {
+    const h = createHarness(); h.state.session = identity; h.controller.setup(); await h.controller.open();
+    const { button } = makePlanRow(); h.document.elements.set("[data-platform-save-plan]:all", [button]);
+    el(h, "#platform-business-list-v231").emit("change");
+    assert.equal(button.disabled, true);
+    await h.controller.savePlan(button);
+    assert.equal(h.calls.confirmations.length, 0);
+    assert.equal(rpcCalls(h, "actualizar_plan_negocio_plataforma_v1").length, 0);
+    assert.doesNotMatch(el(h, "#platform-business-list-v231").innerHTML, /Kiosco Centro/);
+  }
 });

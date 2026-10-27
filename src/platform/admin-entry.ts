@@ -28,7 +28,8 @@ export function startAdminEntry(client: AdminClient): void {
     client, isOnline: () => navigator.onLine && identity !== null,
     getSessionKey: () => identity, closeUserMenu: () => undefined,
     formatPrice: value => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(value),
-    icon: () => "", showToast: notify
+    icon: () => "", showToast: notify,
+    confirm: (title, message) => Promise.resolve(window.confirm(`${title}\n\n${message}`))
   });
   panel.setup();
   const clear = (): void => {

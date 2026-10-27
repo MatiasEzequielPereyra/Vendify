@@ -5,7 +5,10 @@ import { listPlatformBusinesses } from "./business-read-service.js";
 import { normalizeBusinessListInput, parseBusinessId, type BusinessCursor, type BusinessListInput, type BusinessQuery, type PlatformBusiness } from "./business-read-model.js";
 
 type ToastType = "error" | "info" | "success";
-interface PlatformDocumentPort { querySelector(selector: string): Element | null; }
+interface PlatformDocumentPort {
+  querySelector(selector: string): Element | null;
+  querySelectorAll?(selector: string): Iterable<Element>;
+}
 export interface PlatformAdminControllerDependencies {
   readonly client: PlatformRpcClientPort;
   readonly isOnline: () => boolean;
@@ -14,6 +17,7 @@ export interface PlatformAdminControllerDependencies {
   readonly formatPrice: (value: number) => string;
   readonly icon: (name: string) => string;
   readonly showToast: (message: string, type: ToastType) => void;
+  readonly confirm: (title: string, message: string) => Promise<boolean>;
   readonly document?: PlatformDocumentPort;
 }
 export interface PlatformAdminController {
@@ -100,7 +104,7 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
       const plan = sub?.plan_codigo ?? "";
       const state = sub?.estado ?? "";
       const availablePlans = plan && !plans.includes(plan) ? [plan, ...plans] : plans;
-      return `<div class="platform-business-row-v231" data-platform-business="${row.id}">
+      return `<div class="platform-business-row-v231" data-platform-business="${row.id}" role="group" aria-label="${attribute(`Negocio ${row.nombre} (${row.id})`)}">
         <span class="dashboard-list-icon-v231">${dependencies.icon("store")}</span>
         <div class="dashboard-list-copy-v231"><strong>${escapeHtml(row.nombre)}</strong>
           <small>${row.activo ? "Negocio activo" : "Negocio inactivo"} · ${sub ? `${escapeHtml(sub.plan_nombre)} · ${escapeHtml(sub.estado)}` : "Sin suscripción"}</small>
@@ -110,7 +114,7 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
         <div class="platform-plan-controls-v231">
           <select class="platform-plan-select-v231" aria-label="Plan del negocio"><option value="">Seleccionar plan</option>${options(availablePlans, plan)}</select>
           <select class="platform-state-select-v231" aria-label="Estado de suscripción"><option value="">Seleccionar estado</option>${options(states, state)}</select>
-          <button type="button" class="btn btn-secondary btn-sm" data-platform-save-plan="${row.id}" ${busy || saving ? "disabled" : ""}>Guardar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-platform-save-plan="${row.id}" aria-label="${attribute(`Guardar cambios de ${row.nombre} (${row.id})`)}" disabled>Guardar</button>
         </div></div>`;
     }).join("") : dashboardEmpty(message ?? "No hay negocios para esta búsqueda.")) + `<div>
       <button type="button" class="btn btn-secondary btn-sm" data-platform-previous ${busy || !history.length ? "disabled" : ""}>Anterior</button>
@@ -203,6 +207,23 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
     await load();
   }
   function renderAfterSave(): void { if (!busy && visible) renderBusinesses(messageState); }
+  function hasPlanChanges(business: PlatformBusiness, plan: string, state: string): boolean {
+    return plan !== (business.suscripcion?.plan_codigo ?? "") || state !== (business.suscripcion?.estado ?? "");
+  }
+  function updateSaveButtons(extra?: HTMLButtonElement): void {
+    const identity = session();
+    const hasIdentity = identity !== null && identity.trim().length > 0 && identity === owner;
+    const buttons = new Set<HTMLButtonElement>();
+    for (const element of documentRef.querySelectorAll?.("[data-platform-save-plan]") ?? []) buttons.add(element as HTMLButtonElement);
+    if (extra) buttons.add(extra);
+    for (const button of buttons) {
+      const row = button.closest<HTMLElement>("[data-platform-business]");
+      const business = rows.find((item) => item.id === row?.dataset.platformBusiness);
+      const plan = row?.querySelector<HTMLSelectElement>(".platform-plan-select-v231")?.value ?? "";
+      const state = row?.querySelector<HTMLSelectElement>(".platform-state-select-v231")?.value ?? "";
+      button.disabled = saving || busy || !authorized || !hasIdentity || !business || !plan || !state || !hasPlanChanges(business, plan, state);
+    }
+  }
   async function savePlan(button: HTMLButtonElement): Promise<void> {
     if (saving || busy) return;
     const row = button.closest<HTMLElement>("[data-platform-business]");
@@ -210,18 +231,38 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
     const plan = row?.querySelector<HTMLSelectElement>(".platform-plan-select-v231")?.value;
     const state = row?.querySelector<HTMLSelectElement>(".platform-state-select-v231")?.value;
     if (!row || !id || !plan || !state) { dependencies.showToast("Seleccioná un plan y un estado.", "error"); return; }
-    if (!authorized || session() !== owner || !dependencies.isOnline()) { ++epoch; unavailable("Verificá tu acceso y conexión antes de guardar."); return; }
+    const identity = session();
+    if (!authorized || !identity?.trim() || identity !== owner || !dependencies.isOnline()) { ++epoch; unavailable("Verificá tu acceso y conexión antes de guardar."); return; }
+    const business = rows.find((item) => item.id === id);
     try {
       parseBusinessId(id);
       normalizeBusinessListInput({ planCode: plan, state: state as BusinessQuery["estado"] });
-      if (!rows.some((business) => business.id === id) || !states.includes(state) || (!plans.includes(plan) && rows.find((business) => business.id === id)?.suscripcion?.plan_codigo !== plan)) throw new Error("invalid");
+      if (!business || !row.isConnected || !states.includes(state) || (!plans.includes(plan) && business.suscripcion?.plan_codigo !== plan)) throw new Error("invalid");
     } catch { dependencies.showToast("El negocio, plan o estado no es válido.", "error"); return; }
+    if (!hasPlanChanges(business, plan, state)) { updateSaveButtons(button); return; }
     const request = epoch;
-    const identity = session();
+    const previousPlan = business.suscripcion?.plan_codigo ?? null;
+    const previousState = business.suscripcion?.estado ?? null;
+    const stillCurrent = (): boolean => current(request, identity) && authorized && visible && owner === identity &&
+      rows.find((item) => item.id === id) === business && row.isConnected &&
+      (business.suscripcion?.plan_codigo ?? null) === previousPlan && (business.suscripcion?.estado ?? null) === previousState &&
+      row.querySelector<HTMLSelectElement>(".platform-plan-select-v231")?.value === plan &&
+      row.querySelector<HTMLSelectElement>(".platform-state-select-v231")?.value === state;
     saving = true;
-    button.disabled = true;
-    button.textContent = "Guardando...";
+    updateSaveButtons(button);
+    button.textContent = "Esperando confirmación...";
     try {
+      const confirmed: unknown = await dependencies.confirm("Confirmar cambio de suscripción", [
+        `Negocio: ${business.nombre} (${id})`,
+        `Plan anterior: ${previousPlan ?? "Sin suscripción"}`,
+        `Plan nuevo: ${plan}`,
+        `Estado anterior: ${previousState ?? "Sin suscripción"}`,
+        `Estado nuevo: ${state}`
+      ].join("\n"));
+      if (confirmed !== true || !stillCurrent()) return;
+      if (!await isPlatformAdmin(dependencies.client)) { if (current(request, identity)) unavailable("No tenés acceso a la administración de plataforma."); return; }
+      if (!stillCurrent()) return;
+      button.textContent = "Guardando...";
       await updateBusinessPlan(dependencies.client, id, plan, state);
       if (!current(request, identity)) return;
       dependencies.showToast("Plan actualizado", "success");
@@ -233,7 +274,7 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
         unavailable("No se pudo actualizar el plan. Verificá tu acceso y volvé a cargar los negocios.");
         dependencies.showToast("No se pudo actualizar el plan.", "error");
       }
-    } finally { saving = false; button.disabled = false; button.textContent = "Guardar"; renderAfterSave(); }
+    } finally { saving = false; button.textContent = "Guardar"; updateSaveButtons(button); renderAfterSave(); }
   }
   function setup(): void {
     if (setupComplete) return;
@@ -264,6 +305,7 @@ export function createPlatformAdminController(dependencies: PlatformAdminControl
       if (target?.closest("[data-platform-previous]")) void previousPage();
       if (!saving && target?.closest("[data-platform-refresh]")) { history = []; cursor = null; void load(); }
     });
+    query("#platform-business-list-v231")?.addEventListener("change", () => { updateSaveButtons(); });
   }
   return Object.freeze({ setup, refreshAccess, open, close, savePlan, setQuery, nextPage, previousPage });
 }
