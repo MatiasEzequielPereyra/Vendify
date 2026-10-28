@@ -340,6 +340,15 @@
       "security": false
     },
     {
+      "file": "supabase/migrations/20261014170534_inventory_history_role_guard.sql",
+      "purpose": "Require active owner/admin/manager for cost-bearing inventory history, aligning the RPC with existing SELECT RLS.",
+      "creates": [],
+      "modifies": [
+        "public.listar_movimientos_inventario_v1"
+      ],
+      "security": true
+    },
+    {
       "file": "supabase/migrations/20261014192711_ven_admin_001b1_business_read_model.sql",
       "purpose": "Add globally authorized pure business reads; repository inventory only, not remote deployment evidence.",
       "creates": [
