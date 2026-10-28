@@ -855,10 +855,12 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
   platformAdminController = platformApi.createPlatformAdminController({
     client: client as PlatformDependencies["client"],
     isOnline: () => navigator.onLine,
+    getSessionKey: () => authController.getSession()?.user?.id ?? null,
     closeUserMenu: () => navigationEventsController.closeUserMenu(),
     formatPrice: (value) => formatPrice(value),
     icon,
-    showToast
+    showToast,
+    confirm: (title, message) => confirm(title, message)
   });
 
   const downloadText = (
@@ -1415,9 +1417,18 @@ export function createBrowserApplicationComposition(): BrowserApplicationComposi
 
   authController = authApi.createController({
     auth: (client as { readonly auth: AuthDependencies["auth"] }).auth,
-    showApp: (session) => applicationBootstrap.bootAuthenticated(session),
-    beforeSignOut: () => contextAdapter.clear(),
-    handleSignedOut: () => applicationBootstrap.handleSignedOut(),
+    showApp: (session) => {
+      platformAdminController.close();
+      return applicationBootstrap.bootAuthenticated(session);
+    },
+    beforeSignOut: () => {
+      platformAdminController.close();
+      contextAdapter.clear();
+    },
+    handleSignedOut: () => {
+      platformAdminController.close();
+      applicationBootstrap.handleSignedOut();
+    },
     showToast,
     icon
   });

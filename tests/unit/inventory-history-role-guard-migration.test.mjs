@@ -24,7 +24,10 @@ test("history guard denies non-supervisors before reading any history", () => {
 });
 test("forward migration is registered and keeps anonymous execution revoked", () => {
   const readiness = JSON.parse(readFileSync(resolve(root, "contracts/commercial-readiness.json"), "utf8"));
-  assert.equal(readiness.migrationChain.files.at(-1), file);
+  const files = readiness.migrationChain.files;
+  const guardIndex = files.indexOf(file);
+  assert.ok(guardIndex >= 0, "P1 security correction must remain registered");
+  assert.equal(files[guardIndex + 1], "supabase/migrations/20261014192711_ven_admin_001b1_business_read_model.sql");
   assert.match(migration, /revoke all on function public\.listar_movimientos_inventario_v1\(uuid,integer\) from public, anon/);
   assert.match(migration, /grant execute on function public\.listar_movimientos_inventario_v1\(uuid,integer\) to authenticated/);
 });

@@ -43,7 +43,15 @@ test("recovered RPC definitions close the source coverage gap as executable base
   for (const rpc of recoveredRpcNames) {
     assert.match(source, new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${rpc}\\b`, "i"));
     const row = coverage.rows.find((entry) => entry.rpc === rpc);
-    assert.deepEqual(row?.files, ["supabase/sources/recovered_rpc_definitions_20260910.sql"]);
+    const teamRedefinitions = new Set([
+      "actualizar_rol_miembro_v2", "cambiar_estado_miembro_v3",
+      "listar_equipo_v3", "obtener_negocio_admin_actual"
+    ]);
+    const expected = ["supabase/sources/recovered_rpc_definitions_20260910.sql"];
+    if (teamRedefinitions.has(rpc)) {
+      expected.unshift("supabase/migrations/20261005192108_team_manager_delegation_audit.sql");
+    }
+    assert.deepEqual(row?.files, expected);
   }
 });
 

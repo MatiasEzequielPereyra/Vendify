@@ -26,6 +26,7 @@
     "test:integration:tenant": "node --env-file-if-exists=.env.tenant-tests tests/integration/tenant-isolation.mjs",
     "test:integration:sales-concurrency": "node --env-file-if-exists=.env.tenant-tests tests/integration/sales-concurrency.mjs",
     "test:integration:local": "node scripts/run-local-integration-gates.mjs",
+    "test:integration:platform-read:local": "npm run build:database-baseline && node scripts/test-platform-business-read-local.mjs",
     "qa:static": "node scripts/qa-baseline.mjs",
     "qa:rpc": "node scripts/check-rpc-contract.mjs",
     "qa:secrets": "node scripts/scan-secrets.mjs",
@@ -41,11 +42,16 @@
     "qa": "npm run qa:static && npm run qa:rpc && npm run qa:secrets && npm run qa:edge-functions && npm run qa:legacy-dead-code && npm run typecheck && npm test",
     "qa:staging:v2312": "npm run build:staging:v2312 && npm run verify:staging:v2312 && node scripts/verify-modular-css.mjs dist-staging-v2312 && node scripts/verify-modular-html.mjs dist-staging-v2312",
     "build": "node scripts/build-release.mjs",
-    "vercel-build": "node scripts/prepare-vercel-release-baseline.mjs && npm run build",
+    "vercel-build": "node scripts/build-vercel-target.mjs",
     "verify:release": "node scripts/verify-release.mjs dist",
     "lint": "eslint src",
-    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix",
-    "qa:edge-functions": "node scripts/verify-edge-functions-versioning.mjs"
+    "ci": "npm run qa && npm run qa:database-baseline && npm run qa:commercial && npm run lint && npm run verify:css && npm run verify:html && npm run build && npm run verify:release && npm run qa:staging:v2312 && npm run qa:refactor:modular && npm run qa:pwa:matrix && npm run build:admin && npm run verify:admin && npm run verify:admin:package",
+    "qa:edge-functions": "node scripts/verify-edge-functions-versioning.mjs",
+    "build:admin": "node scripts/build-admin-entry.mjs",
+    "verify:admin": "node scripts/verify-admin-entry.mjs",
+    "package:admin:preview": "node scripts/package-admin-vercel.mjs --preview-branch feature/ven-admin-001b1-read-model",
+    "verify:admin:package": "node scripts/package-admin-vercel.mjs --admin-host vendify-admin-local.invalid",
+    "package:admin:release": "node scripts/package-admin-release.mjs --prepare --source-head"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",

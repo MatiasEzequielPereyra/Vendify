@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-10-06",
+  "updatedAt": "2026-10-14",
   "branch": "refactor/modular-runtime",
   "migrationChain": {
     "kind": "incremental",
@@ -31,7 +31,8 @@
       "supabase/migrations/20260921143000_operational_backup_artifacts_v2.sql",
       "supabase/migrations/20261005192108_team_manager_delegation_audit.sql",
       "supabase/migrations/20261006171531_preserve_stock_inicial_movement_type.sql",
-      "supabase/migrations/20261014170534_inventory_history_role_guard.sql"
+      "supabase/migrations/20261014170534_inventory_history_role_guard.sql",
+      "supabase/migrations/20261014192711_ven_admin_001b1_business_read_model.sql"
     ]
   },
   "gates": [

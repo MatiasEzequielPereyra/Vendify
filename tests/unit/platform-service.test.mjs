@@ -21,3 +21,10 @@ test("platform service preserves administration contracts", async () => {
 test("platform service keeps backend business errors", async () => {
   await assert.rejects(() => updateBusinessPlan({ rpc: async () => ({ data: { ok: false, message: "Plan inválido" }, error: null }) }, "b", "x", "activo"), /Plan inválido/);
 });
+
+
+test("malformed plan mutation acknowledgement never becomes success", async () => {
+  for (const data of [null, undefined, {}, [], "ok", { ok: "true" }]) {
+    await assert.rejects(() => updateBusinessPlan({ rpc: async () => ({ data, error: null }) }, "b", "pro", "activo"), /confirmar/);
+  }
+});

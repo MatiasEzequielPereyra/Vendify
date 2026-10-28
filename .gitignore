@@ -51,3 +51,9 @@ playwright-report/
 test-results/
 supabase/baseline/vendify_pre_v231_baseline.sql
 supabase/migrations/20260830000000_pre_v231_baseline.local.sql
+
+# Additive administrative release
+dist-admin-release/
+
+# Generated Vercel Build Output API artifact
+.vercel/output/
