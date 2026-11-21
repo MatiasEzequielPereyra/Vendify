@@ -2,7 +2,7 @@
   "version": "2.31.1",
   "files": {
     "index.html": "51c0ab2c7741e6eb788caf3b8499be140b6fbd2ea10c740287cde464183ae86a",
-    "app.js": "6434bfe02ac7c03d73c363542e313cb3a5ec7a048d867eea656fbd338ff074da",
+    "app.js": "eae7f59d1d24731dd27c482734be4a02c172f300aa2dda5fdf7380936ec39202",
     "styles.css": "9bb1914b0f880ebb6bc6cee36926289c13cc6950e3f59fbfc6d78da68acd2488",
     "sw.js": "f1f3c0fc10bfe2c7985a114310bf5f4b648d018aceeb0ee3b28f542c463e43b4",
     "supabase-config.js": "f184bf91928b56c85c8c2e17835b5b5e89aa99c76b3a19cd53a55a91fa6dbe4b",

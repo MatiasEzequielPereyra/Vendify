@@ -140,9 +140,11 @@ let deferredInstallPrompt = null;
 let sesionActual = null;
 let realtimeChannel = null;
 
+const CATEGORIAS_ADICIONALES = ["Lencería", "Skin Care"];
 const CATEGORIAS_DEFAULT = [
   "Bebidas", "Golosinas", "Snacks", "Cigarrillos", "Lácteos",
   "Panadería", "Helados", "Limpieza", "Útiles", "Otros",
+  ...CATEGORIAS_ADICIONALES,
 ];
 
 // =====================
@@ -2402,10 +2404,15 @@ function cerrarConfirm() {
 // =====================
 // Categorías
 // =====================
+function obtenerCategoriasParaProducto(categoriasDisponibles = categorias) {
+  return [...new Set([...categoriasDisponibles, ...CATEGORIAS_ADICIONALES])]
+    .sort((a, b) => a.localeCompare(b, "es"));
+}
+
 function renderSelectCategorias(selected = "") {
   const select = $("#categoria");
   select.innerHTML = `<option value="">Sin categoría</option>`;
-  categorias.forEach((c) => {
+  obtenerCategoriasParaProducto().forEach((c) => {
     const opt = document.createElement("option");
     opt.value = c;
     opt.textContent = c;
@@ -2417,7 +2424,7 @@ function renderSelectCategorias(selected = "") {
 function actualizarFiltroCategorias() {
   const actual = $("#filtro-categoria").value;
   const usadas = [...new Set([
-    ...categorias,
+    ...obtenerCategoriasParaProducto(),
     ...productos.map((p) => p.categoria).filter(Boolean),
   ])].sort((a, b) => a.localeCompare(b, "es"));
 
